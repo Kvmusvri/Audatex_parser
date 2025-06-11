@@ -1,0 +1,11 @@
+# created by virtualenv automatically
+cookies.pkl
+Scripts
+Lib
+static/data
+static/screenshots
+static/svgs
+pyvenv.cfg
+.env
+endpoint_test/test_json.json
+.idea
