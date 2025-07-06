@@ -104,7 +104,7 @@ def init_browser():
             driver_url = "https://storage.googleapis.com/chrome-for-testing-public/137.0.7151.122/linux64/chromedriver-linux64.zip"
             driver_zip_path = os.path.join(base_tmp_dir, "chromedriver-linux64.zip")
             driver_dir = os.path.join(base_tmp_dir, "chromedriver-linux64")
-            driver_path = os.path.join(driver_dir, "chromedriver")
+            driver_path = os.path.join(driver_dir, "chromedriver-linux64", "chromedriver.exe")
 
         # Создаём директорию для распаковки
         os.makedirs(driver_dir, exist_ok=True)
