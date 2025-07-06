@@ -10,3 +10,5 @@ pyvenv.cfg
 endpoint_test/test_json.json
 .idea
 __pycache__/
+tmp/
+core/login/__pycache__/parser.cpython-311.pyc

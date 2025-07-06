@@ -45,6 +45,43 @@ class SearchRequest(BaseModel):
     searchList: List[SearchItem]
 
 
+def normalize_paths(record: dict, claim_number: str) -> dict:
+    """Нормализует пути к файлам, добавляя claim_number и исправляя слеши"""
+
+    def fix_path(path: str, folder: str) -> str:
+        if not path:
+            return path
+        # Убираем двойные слеши и добавляем claim_number
+        parts = path.split('/')
+        if len(parts) >= 4 and parts[3] == '':
+            parts[3] = claim_number
+        return '/'.join(parts)
+
+    if record.get("main_screenshot_path"):
+        record["main_screenshot_path"] = fix_path(record["main_screenshot_path"], claim_number)
+    if record.get("main_svg_path"):
+        record["main_svg_path"] = fix_path(record["main_svg_path"], claim_number)
+    if record.get("all_svgs_zip"):
+        record["all_svgs_zip"] = fix_path(record["all_svgs_zip"], claim_number)
+
+    for zone in record.get("zone_data", []):
+        if zone.get("screenshot_path"):
+            zone["screenshot_path"] = fix_path(zone["screenshot_path"], claim_number)
+        if zone.get("svg_path"):
+            zone["svg_path"] = fix_path(zone["svg_path"], claim_number)
+
+        for detail in zone.get("details", []):
+            if detail.get("svg_path"):
+                detail["svg_path"] = fix_path(detail["svg_path"], claim_number)
+
+        for pictogram in zone.get("pictograms", []):
+            for work in pictogram.get("works", []):
+                if work.get("svg_path"):
+                    work["svg_path"] = fix_path(work["svg_path"], claim_number)
+
+    return record
+
+
 @app.post("/process_audatex_requests")
 async def import_from_json(request: SearchRequest):
     results = []
@@ -255,42 +292,19 @@ async def login(request: Request, username: str = Form(...), password: str = For
     # Формируем folder_name
     folder_name = claim_number if claim_number else datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Формируем record для history_detail.html
+    # Формируем record
     record = {
         "folder": folder_name,
         "vin_value": parser_result.get("vin_value", vin_number or claim_number),
-        "zone_data": [
-            {
-                "title": zone["title"],
-                "screenshot_path": zone["screenshot_path"].replace("\\", "/"),
-                "svg_path": zone["svg_path"].replace("\\", "/") if zone.get("svg_path") else "",
-                "has_pictograms": zone.get("has_pictograms", False),
-                "graphics_not_available": zone.get("graphics_not_available", False),
-                "details": [
-                    {
-                        "title": detail["title"],
-                        "svg_path": detail["svg_path"].replace("\\", "/")
-                    } for detail in zone.get("details", [])
-                ],
-                "pictograms": [
-                    {
-                        "section_name": pictogram["section_name"],
-                        "works": [
-                            {
-                                "work_name1": work["work_name1"],
-                                "work_name2": work["work_name2"],
-                                "svg_path": work["svg_path"].replace("\\", "/")
-                            } for work in pictogram["works"]
-                        ]
-                    } for pictogram in zone.get("pictograms", [])
-                ]
-            } for zone in zone_data
-        ],
-        "main_screenshot_path": parser_result.get("main_screenshot_path", "").replace("\\", "/"),
-        "main_svg_path": parser_result.get("main_svg_path", "").replace("\\", "/"),
-        "all_svgs_zip": parser_result.get("all_svgs_zip", "").replace("\\", "/"),
+        "zone_data": parser_result.get("zone_data", []),
+        "main_screenshot_path": parser_result.get("main_screenshot_path", ""),
+        "main_svg_path": parser_result.get("main_svg_path", ""),
+        "all_svgs_zip": parser_result.get("all_svgs_zip", ""),
         "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
+
+    # Нормализуем пути
+    record = normalize_paths(record, folder_name)
 
     logger.info("Парсинг успешно завершен, отображаем результаты")
 
@@ -376,43 +390,21 @@ async def history_detail(request: Request, folder: str):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        file_stat = os.stat(file_path)  # Исправлено: получаем метаданные файла
-        claim_number = folder  # Используем folder как claim_number
+        file_stat = os.stat(file_path)
+
         record = {
             "folder": folder,
             "vin_value": data.get("vin_value", folder),
-            "zone_data": [
-                {
-                    "title": zone["title"],
-                    "screenshot_path": zone["screenshot_path"].replace("\\", "/"),
-                    "svg_path": zone["svg_path"].replace("\\", "/") if zone.get("svg_path") else "",
-                    "has_pictograms": zone.get("has_pictograms", False),
-                    "graphics_not_available": zone.get("graphics_not_available", False),
-                    "details": [
-                        {
-                            "title": detail["title"],
-                            "svg_path": detail["svg_path"].replace("\\", "/")
-                        } for detail in zone.get("details", [])
-                    ],
-                    "pictograms": [
-                        {
-                            "section_name": pictogram["section_name"],
-                            "works": [
-                                {
-                                    "work_name1": work["work_name1"],
-                                    "work_name2": work["work_name2"],
-                                    "svg_path": work["svg_path"].replace("\\", "/")
-                                } for work in pictogram["works"]
-                            ]
-                        } for pictogram in zone.get("pictograms", [])
-                    ]
-                } for zone in data.get("zone_data", [])
-            ],
-            "main_screenshot_path": data.get("main_screenshot_path", "").replace("\\", "/"),
-            "main_svg_path": data.get("main_svg_path", "").replace("\\", "/"),
-            "all_svgs_zip": data.get("all_svgs_zip", "").replace("\\", "/"),
+            "zone_data": data.get("zone_data", []),
+            "main_screenshot_path": data.get("main_screenshot_path", ""),
+            "main_svg_path": data.get("main_svg_path", ""),
+            "all_svgs_zip": data.get("all_svgs_zip", ""),
             "created": datetime.fromtimestamp(file_stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
         }
+
+        # Нормализуем пути
+        record = normalize_paths(record, folder)
+
         logger.debug(f"Успешно загружен JSON: {file_path}")
         return templates.TemplateResponse("history_detail.html", {
             "request": request,
