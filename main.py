@@ -23,6 +23,7 @@ from core.database.requests import (
     create_car_detail,
 )
 from core.database.engine import engine
+import time
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -235,6 +236,8 @@ async def index(request: Request):
 @app.post("/login", response_class=HTMLResponse)
 async def login(request: Request, username: str = Form(...), password: str = Form(...),
                 claim_number: str = Form(default=""), vin_number: str = Form(default="")):
+    start_time = time.time()
+
     parser_result = await login_audatex(username, password, claim_number, vin_number)
 
     if "error" in parser_result:
@@ -290,6 +293,12 @@ async def login(request: Request, username: str = Form(...), password: str = For
     }
 
     logger.info("Парсинг успешно завершен, отображаем результаты")
+
+    end_time = time.time()
+    duration_sec = end_time - start_time
+    duration_min = duration_sec / 60
+    logger.info(f"Обработка заняла {duration_sec:.2f} секунд\n({duration_min:.2f} минут)")
+
     return templates.TemplateResponse("history_detail.html", {
         "request": request,
         "record": record

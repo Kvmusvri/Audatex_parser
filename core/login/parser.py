@@ -28,6 +28,11 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import logging
 import subprocess
+from webdriver_manager.core.os_manager import ChromeType
+import shutil
+import requests
+import zipfile
+import platform
 
 
 # Настройка логирования
@@ -72,20 +77,53 @@ def get_chromedriver_version():
         logger.warning(f"Не удалось получить версию ChromeDriver: {str(e)}")
         return "неизвестно"
 
+
 def init_browser():
     try:
+        system = platform.system()
+        print(f"ПЛАТФОРМА - {system}")
+
         options = uc.ChromeOptions()
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_argument("--disable-images")
         options.add_argument(
-            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 YaBrowser/24.7.0.0 Safari/537.36"
+            f"user-agent=Mozilla/5.0 ({'Windows NT 10.0; Win64; x64' if system == 'Windows' else 'X11; Linux x86_64'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.7151.122 Safari/537.36"
         )
+        options.add_argument('--headless=new')  # Включаем headless-режим
+        options.add_argument('--no-sandbox')    # Для стабильной работы на Ubuntu
+        options.add_argument('--disable-dev-shm-usage')  # Для избежания проблем с памятью
 
-        # Автоматически устанавливаем ChromeDriver
-        service = Service(ChromeDriverManager().install())
-        driver = uc.Chrome(options=options, service=service)
-        chromedriver_version = get_chromedriver_version()
-        logger.info(f"Браузер запущен с ChromeDriver версии {chromedriver_version}")
+        # Определяем пути для ChromeDriver в зависимости от платформы
+        base_tmp_dir = "tmp" if system == "Windows" else "/tmp"
+        if system == "Windows":
+            driver_url = "https://storage.googleapis.com/chrome-for-testing-public/137.0.7151.122/win64/chromedriver-win64.zip"
+            driver_zip_path = os.path.join(base_tmp_dir, "chromedriver-win64.zip")
+            driver_dir = os.path.join(base_tmp_dir, "chromedriver-win64")
+            driver_path = os.path.join(driver_dir, "chromedriver-win64", "chromedriver.exe")
+        else:
+            driver_url = "https://storage.googleapis.com/chrome-for-testing-public/137.0.7151.122/linux64/chromedriver-linux64.zip"
+            driver_zip_path = os.path.join(base_tmp_dir, "chromedriver-linux64.zip")
+            driver_dir = os.path.join(base_tmp_dir, "chromedriver-linux64")
+            driver_path = os.path.join(driver_dir, "chromedriver")
+
+        # Создаём директорию для распаковки
+        os.makedirs(driver_dir, exist_ok=True)
+
+        # Загружаем ChromeDriver, если он ещё не существует
+        if not os.path.exists(driver_path):
+            response = requests.get(driver_url)
+            with open(driver_zip_path, "wb") as f:
+                f.write(response.content)
+            with zipfile.ZipFile(driver_zip_path, "r") as zip_ref:
+                zip_ref.extractall(driver_dir)
+            if system != "Windows":
+                os.chmod(driver_path, 0o755)
+            logger.info(f"Скачан и разархивирован ChromeDriver: {driver_path}")
+        else:
+            logger.info(f"Используется существующий ChromeDriver: {driver_path}")
+
+        driver = uc.Chrome(driver_executable_path=driver_path, options=options, use_subprocess=True)
+        logger.info(f"Используется ChromeDriver: {driver_path}")
         return driver
     except Exception as e:
         logger.error(f"Ошибка при инициализации браузера: {str(e)}")
@@ -1223,15 +1261,17 @@ def search_and_extract(driver, claim_number, vin_number):
 
 async def login_audatex(username: str, password: str, claim_number: str, vin_number: str):
     driver = None
-    max_attempts = 2
-    attempt = 1
+    max_attempts = 10
+    error_message = None
+    error_count = 0
 
-    while attempt <= max_attempts:
+    for attempt in range(1, max_attempts + 1):
         try:
             if not claim_number and not vin_number:
                 logger.error("Ни номер дела, ни VIN не введены")
                 return {"error": "Введите хотя бы номер дела или VIN"}
 
+            logger.info(f"Попытка {attempt} из {max_attempts}: Запуск парсинга для claim_number={claim_number}, vin_number={vin_number}")
             kill_chrome_processes()
             driver = init_browser()
             cookies_valid = load_cookies(driver, BASE_URL, COOKIES_FILE)
@@ -1242,24 +1282,18 @@ async def login_audatex(username: str, password: str, claim_number: str, vin_num
                 )
                 logger.info("Страница логина найдена")
             except TimeoutException:
-                logger.error(f"Страница логина не найдена. URL: {driver.current_url}")
+                logger.error(f"Попытка {attempt}: Страница логина не найдена. URL: {driver.current_url}")
                 if os.path.exists(COOKIES_FILE):
                     try:
                         os.remove(COOKIES_FILE)
                         logger.info("Файл cookies.pkl удалён из-за ошибки страницы")
                     except Exception as e:
                         logger.error(f"Ошибка при удалении cookies.pkl: {e}")
-                if attempt == max_attempts:
-                    logger.error("Достигнуто максимальное количество попыток входа")
-                    return {"error": "Не удалось загрузить страницу логина после нескольких попыток"}
-                attempt += 1
-                driver.quit()
-                logger.info("Браузер закрыт, повторная попытка входа")
-                continue
+                raise Exception("Не удалось загрузить страницу логина")
 
             if not cookies_valid:
                 if not perform_login(driver, username, password, COOKIES_FILE):
-                    return {"error": "Не удалось авторизоваться"}
+                    raise Exception("Не удалось авторизоваться")
 
             # Выполняем синхронную функцию search_and_extract в пуле потоков
             loop = asyncio.get_event_loop()
@@ -1269,15 +1303,58 @@ async def login_audatex(username: str, password: str, claim_number: str, vin_num
                 cookies = driver.get_cookies()
                 with open(COOKIES_FILE, "wb") as f:
                     pickle.dump(cookies, f)
-                logger.info("Cookies обновлены после выполнения")
+                logger.info(f"Попытка {attempt}: Cookies обновлены после успешного выполнения")
+                return result
 
-            return result
+            # Если search_and_extract вернул ошибку, выбрасываем исключение
+            raise Exception(result.get("error", "Неизвестная ошибка в search_and_extract"))
+
         except Exception as e:
-            logger.error(f"Ошибка: {str(e)}")
+            current_error = str(e)
+            logger.error(f"Попытка {attempt}: Ошибка: {current_error}")
             logger.error(f"Текущий URL: {driver.current_url if driver else 'Неизвестно'}")
             logger.error(f"Код страницы: {driver.page_source[:500] if driver else 'Неизвестно'}")
-            return {"error": f"Ошибка: {str(e)}"}
-        finally:
+
+            # Закрываем браузер, если он открыт
             if driver:
-                driver.quit()
-                logger.info("Браузер закрыт")
+                try:
+                    driver.quit()
+                    logger.info(f"Попытка {attempt}: Браузер закрыт")
+                except Exception as close_error:
+                    logger.error(f"Ошибка при закрытии браузера: {str(close_error)}")
+                driver = None
+
+            # Проверяем, совпадает ли ошибка с предыдущей
+            if error_message == current_error:
+                error_count += 1
+            else:
+                error_message = current_error
+                error_count = 1
+
+            # Если одна и та же ошибка повторилась 10 раз, выбрасываем её
+            if error_count >= max_attempts:
+                logger.error(f"Ошибка повторилась {max_attempts} раз: {error_message}")
+                return {"error": f"Не удалось выполнить парсинг после {max_attempts} попыток: {error_message}"}
+
+            # Если это не последняя попытка, продолжаем
+            if attempt < max_attempts:
+                logger.info(f"Повторная попытка {attempt + 1} из {max_attempts}")
+                time.sleep(1)  # Пауза перед следующей попыткой
+                continue
+
+            # Если последняя попытка провалилась, возвращаем текущую ошибку
+            logger.error(f"Исчерпаны все {max_attempts} попыток")
+            return {"error": f"Не удалось выполнить парсинг: {current_error}"}
+
+        finally:
+            # Закрываем браузер в случае любых ошибок, если он ещё открыт
+            if driver:
+                try:
+                    driver.quit()
+                    logger.info(f"Попытка {attempt}: Браузер закрыт в finally")
+                except Exception as close_error:
+                    logger.error(f"Ошибка при закрытии браузера в finally: {str(close_error)}")
+                driver = None
+
+    # На случай, если цикл завершится без возврата (хотя это не должно произойти)
+    return {"error": f"Не удалось выполнить парсинг после {max_attempts} попыток"}

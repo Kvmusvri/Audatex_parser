@@ -9,3 +9,4 @@ pyvenv.cfg
 .env
 endpoint_test/test_json.json
 .idea
+__pycache__/
