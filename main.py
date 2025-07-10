@@ -45,8 +45,8 @@ class SearchRequest(BaseModel):
     searchList: List[SearchItem]
 
 
-def normalize_paths(record: dict, claim_number: str) -> dict:
-    """Нормализует пути к файлам, добавляя claim_number и исправляя слеши"""
+def normalize_paths(record: dict, folder_name: str) -> dict:
+    """Нормализует пути к файлам, добавляя claim_number и vin исправляя слеши"""
 
     def fix_path(path: str, folder: str) -> str:
         if not path:
@@ -54,30 +54,30 @@ def normalize_paths(record: dict, claim_number: str) -> dict:
         # Убираем двойные слеши и добавляем claim_number
         parts = path.split('/')
         if len(parts) >= 4 and parts[3] == '':
-            parts[3] = claim_number
+            parts[3] = folder_name
         return '/'.join(parts)
 
     if record.get("main_screenshot_path"):
-        record["main_screenshot_path"] = fix_path(record["main_screenshot_path"], claim_number)
+        record["main_screenshot_path"] = fix_path(record["main_screenshot_path"], folder_name)
     if record.get("main_svg_path"):
-        record["main_svg_path"] = fix_path(record["main_svg_path"], claim_number)
+        record["main_svg_path"] = fix_path(record["main_svg_path"], folder_name)
     if record.get("all_svgs_zip"):
-        record["all_svgs_zip"] = fix_path(record["all_svgs_zip"], claim_number)
+        record["all_svgs_zip"] = fix_path(record["all_svgs_zip"], folder_name)
 
     for zone in record.get("zone_data", []):
         if zone.get("screenshot_path"):
-            zone["screenshot_path"] = fix_path(zone["screenshot_path"], claim_number)
+            zone["screenshot_path"] = fix_path(zone["screenshot_path"], folder_name)
         if zone.get("svg_path"):
-            zone["svg_path"] = fix_path(zone["svg_path"], claim_number)
+            zone["svg_path"] = fix_path(zone["svg_path"], folder_name)
 
         for detail in zone.get("details", []):
             if detail.get("svg_path"):
-                detail["svg_path"] = fix_path(detail["svg_path"], claim_number)
+                detail["svg_path"] = fix_path(detail["svg_path"], folder_name)
 
         for pictogram in zone.get("pictograms", []):
             for work in pictogram.get("works", []):
                 if work.get("svg_path"):
-                    work["svg_path"] = fix_path(work["svg_path"], claim_number)
+                    work["svg_path"] = fix_path(work["svg_path"], folder_name)
 
     return record
 
@@ -290,7 +290,7 @@ async def login(request: Request, username: str = Form(...), password: str = For
         })
 
     # Формируем folder_name
-    folder_name = claim_number if claim_number else datetime.now().strftime("%Y%m%d_%H%M%S")
+    folder_name = f"{parser_result.get('claim_number')}_{parser_result.get('vin_value')}"
 
     # Формируем record
     record = {
@@ -365,9 +365,11 @@ async def history(request: Request):
 # Эндпоинт для данных конкретной папки
 @app.get("/history/{folder:path}", response_class=HTMLResponse)
 async def history_detail(request: Request, folder: str):
+    print(f"folder::{folder}")
     data_base_dir = "static/data"
     folder_path = os.path.join(data_base_dir, folder)
     logger.debug(f"Загрузка данных для папки: {folder_path}")
+    print(f"Загрузка данных для папки: {folder_path}")
 
     if not os.path.isdir(folder_path):
         logger.error(f"Папка {folder_path} не существует")

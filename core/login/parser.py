@@ -47,9 +47,10 @@ MODAL_BUTTON_SELECTOR = "#btn-confirm"
 SCREENSHOT_DIR = "static/screenshots"
 SVG_DIR = "static/svgs"
 DATA_DIR = "static/data"
-TIMEOUT = 30
+TIMEOUT = 60
 MORE_ICON_SELECTOR = "#BREForm > div > div > div.gdc-contentBlock-body > div > div.list-grid-container.worklistgrid_custom_sent > div.worklist-grid-component > div.react-datagrid.z-cell-ellipsis.z-style-alternate.z-with-column-menu > div.z-inner > div.z-scroller > div.z-content-wrapper > div.z-content-wrapper-fix > div > div:nth-child(1) > div.z-last.z-cell > div"
 VIN_SELECTOR = "#root\\.task\\.basicClaimData\\.vehicle\\.vehicleIdentification\\.VINQuery-VIN"
+CLAIM_NUMBER_SELECTOR = "#root\.task\.claimNumber"
 TABLE_SELECTOR = "#BREForm > div > div > div.gdc-contentBlock-body > div > div.list-grid-container.worklistgrid_custom_sent > div.worklist-grid-component > div.react-datagrid.z-cell-ellipsis.z-style-alternate.z-with-column-menu > div.z-inner > div.z-scroller > div.z-content-wrapper > div.z-content-wrapper-fix > div"
 ROW_SELECTOR = "#BREForm .react-datagrid .z-row"
 IFRAME_ID = "iframe_root.task.damageCapture.inlineWebPad"
@@ -202,12 +203,9 @@ def perform_login(driver, username, password, cookies_file):
         return False
 
 # Создаёт папки для сохранения данных
-def create_folders(claim_number):
+def create_folders(claim_number, vin):
     # Формируем имя папки на основе VIN, номера дела или текущей даты
-    if claim_number:
-        folder_name = claim_number
-    else:
-        folder_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    folder_name = f"{claim_number}_{vin}"
 
     # Создаём пути для папок
     screenshot_dir = os.path.join(SCREENSHOT_DIR, folder_name)
@@ -314,24 +312,45 @@ def open_task(driver):
         logger.error(f"Ошибка при клике по openTask: {str(e)}")
         return False
 
-# Извлекает VIN с страницы
-def extract_vin(driver, current_url):
-    vin_url = current_url.split('step')[0][:-1] + '&step=Osago+Vehicle+Identification'
-    logger.info(f"Переход на URL для VIN: {vin_url}")
-    driver.get(vin_url)
-    try:
-        WebDriverWait(driver, TIMEOUT).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "body"))
-        )
-        vin_input = WebDriverWait(driver, TIMEOUT).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, VIN_SELECTOR))
-        )
-        vin_value = vin_input.get_attribute("value") or ""
-        logger.info(f"Извлечён VIN: {vin_value}")
-        return vin_value
-    except (TimeoutException, StaleElementReferenceException):
-        logger.warning("Не удалось извлечь VIN")
-        return ""
+# Извлекает VIN и claim_number со страницы
+def extract_vin_and_claim_number(driver, current_url):
+    base_url = current_url.split('step')[0][:-1]
+    configs = [
+        {
+            'url': current_url,
+            'selector': CLAIM_NUMBER_SELECTOR,
+            'log_name': 'CLAIM NUMBER',
+            'key': 'claim_number'
+        },
+        {
+            'url': base_url + '&step=Osago+Vehicle+Identification',
+            'selector': VIN_SELECTOR,
+            'log_name': 'VIN',
+            'key': 'vin'
+        }
+    ]
+
+    result = {}
+    for config in configs:
+        time.sleep(5)
+        logger.info(f"Переход на URL для {config['log_name']}: {config['url']}")
+        driver.get(config['url'])
+        try:
+            WebDriverWait(driver, TIMEOUT).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "body"))
+            )
+            input_element = WebDriverWait(driver, TIMEOUT).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, config['selector']))
+            )
+            result[config['key']] = input_element.get_attribute("value") or ""
+            logger.info(f"Извлечён {config['log_name']}: {result[config['key']]}")
+
+            time.sleep(5)
+        except (TimeoutException, StaleElementReferenceException):
+            logger.warning(f"Не удалось извлечь {config['log_name']}")
+            result[config['key']] = ""
+
+    return result['claim_number'], result['vin']
 
 # Переключается на фрейм и нажимает кнопку подтверждения
 def switch_to_frame_and_confirm(driver):
@@ -405,7 +424,7 @@ def is_zone_file(filename: str) -> bool:
     return 'zone' in filename.split('_')
 
 # Функция для разбиения SVG на детали
-def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number=""):
+def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", vin=""):
     """
     Разбивает SVG-файл на отдельные SVG для каждой детали, где каждая деталь соответствует уникальному data-title.
     """
@@ -446,7 +465,7 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number=""):
 
             # Формируем путь с учетом поддиректории
             output_path = os.path.normpath(os.path.join(output_dir, f"{safe_name}.svg"))
-            relative_base = f"/static/svgs/{claim_number}"
+            relative_base = f"/static/svgs/{claim_number}_{vin}"
             output_path_relative = f"{relative_base}/{safe_name}.svg".replace("\\", "/")
 
             # Создаем директорию
@@ -465,7 +484,7 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number=""):
         return []
 
 # Сохраняет SVG с сохранением цветов
-def save_svg_sync(driver, element, path, claim_number=''):
+def save_svg_sync(driver, element, path, claim_number='', vin=''):
     try:
         if element.tag_name not in ['svg', 'g']:
             logger.warning(f"Элемент {element.tag_name} не является SVG или группой")
@@ -605,7 +624,7 @@ svg * {{
             filename = os.path.basename(path)
             if is_zone_file(filename):
                 logger.info(f"Файл {filename} соответствует шаблону, запускаем разбиение")
-                detail_paths = split_svg_by_details(path, os.path.dirname(path), claim_number=claim_number)
+                detail_paths = split_svg_by_details(path, os.path.dirname(path), claim_number=claim_number, vin=vin)
             else:
                 detail_paths = []
         else:
@@ -618,11 +637,11 @@ svg * {{
         return False, None, []
 
 # Сохраняет основной скриншот и SVG
-def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, claim_number):
+def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, claim_number, vin):
     main_screenshot_path = os.path.join(screenshot_dir, f"main_screenshot.png")
-    main_screenshot_relative = f"/static/screenshots/{claim_number}/main_screenshot.png"
+    main_screenshot_relative = f"/static/screenshots/{claim_number}_{vin}/main_screenshot.png"
     main_svg_path = os.path.join(svg_dir, f"main.svg")
-    main_svg_relative = f"/static/svgs/{claim_number}/main.svg"
+    main_svg_relative = f"/static/svgs/{claim_number}_{vin}/main.svg"
 
     # Проверяем наличие SVG на странице
     try:
@@ -634,7 +653,7 @@ def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, cla
         os.makedirs(os.path.dirname(main_screenshot_path), exist_ok=True)
         svg.screenshot(main_screenshot_path)
         logger.info(f"Основной скриншот сохранён: {main_screenshot_path}")
-        success, _, _ = save_svg_sync(driver, svg, main_svg_path, claim_number=claim_number)
+        success, _, _ = save_svg_sync(driver, svg, main_svg_path, claim_number=claim_number, vin=vin)
         if not success:
             logger.warning("Не удалось сохранить основной SVG")
         return main_screenshot_relative.replace("\\", "/"), main_svg_relative.replace("\\", "/")
@@ -643,7 +662,7 @@ def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, cla
         return None, None
 
 # Обрабатывает одну зону
-def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_number=""):
+def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_number="", vin=""):
     """
     Обрабатывает одну зону, включая сохранение скриншота, SVG и пиктограмм.
     max_retries: максимальное количество повторных попыток при ошибке сессии.
@@ -681,10 +700,10 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
                                'ru', reversed=True).replace(" ", "_").replace("/", "_").lower().replace("'", "")
     safe_zone_title = re.sub(r'\.+', '', safe_zone_title)
     zone_screenshot_path = os.path.join(screenshot_dir, f"zone_{safe_zone_title}.png")
-    zone_screenshot_relative = f"/static/screenshots/{claim_number}/zone_{safe_zone_title}.png".replace(
+    zone_screenshot_relative = f"/static/screenshots/{claim_number}_{vin}/zone_{safe_zone_title}.png".replace(
         "\\", "/")
     zone_svg_path = os.path.join(svg_dir, f"zone_{safe_zone_title}.svg")
-    zone_svg_relative = f"/static/svgs/{claim_number}/zone_{safe_zone_title}.svg".replace("\\", "/")
+    zone_svg_relative = f"/static/svgs/{claim_number}_{vin}/zone_{safe_zone_title}.svg".replace("\\", "/")
 
     # Проверяем наличие пиктограмм
     try:
@@ -807,7 +826,7 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
                 logger.info(f"Заглушка для зоны {zone['title']}: скриншот не создан")
 
             # Собираем данные пиктограмм, передаем zone_screenshot_relative
-            zone_data = process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries, zone_screenshot_relative, claim_number=claim_number)
+            zone_data = process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries, zone_screenshot_relative, claim_number=claim_number, vin="")
 
             # Второй клик для возврата к меню зон
             WebDriverWait(driver, 10).until(
@@ -889,7 +908,7 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
                 })
                 return zone_data
 
-            success, _, detail_paths = save_svg_sync(driver, svg, zone_svg_path, claim_number=claim_number)
+            success, _, detail_paths = save_svg_sync(driver, svg, zone_svg_path, claim_number=claim_number, vin=vin)
             if not success:
                 logger.warning(f"Не удалось сохранить SVG для зоны {zone['title']}")
                 zone_data.append({
@@ -940,7 +959,7 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
     return zone_data
 
 # Обрабатывает пиктограммы в зоне
-def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zone_screenshot_relative="", claim_number=""):
+def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zone_screenshot_relative="", claim_number="", vin=""):
     """
     Собирает данные о пиктограммах в зоне, сохраняя SVG для каждой работы.
     max_retries: максимальное количество повторных попыток при ошибке сессии.
@@ -1045,10 +1064,10 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
                         safe_section_name = re.sub(r'\.+', '', safe_section_name)
                         svg_filename = f"{safe_section_name}_{safe_work_name1}" + (f"_{safe_work_name2}" if work_name2 else "") + ".svg"
                         work_svg_path = os.path.join(svg_dir, svg_filename)
-                        work_svg_relative = f"/static/svgs/{claim_number}/{svg_filename}".replace("\\", "/")
+                        work_svg_relative = f"/static/svgs/{claim_number}_{vin}/{svg_filename}".replace("\\", "/")
 
                         # Сохраняем SVG
-                        success, saved_path, _ = save_svg_sync(driver, svg, work_svg_path, claim_number=claim_number)
+                        success, saved_path, _ = save_svg_sync(driver, svg, work_svg_path, claim_number=claim_number, vin=vin)
                         if success:
                             logger.info(f"SVG пиктограммы сохранён: {work_svg_path}")
                             works.append({
@@ -1114,7 +1133,7 @@ def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path,
     json_path = os.path.join(data_dir, f"data_{timestamp}.json")
 
     # Формируем относительные пути с прямыми слэшами
-    relative_data_dir = f"/static/data/{claim_number}"  # Используем прямые слэши
+    relative_data_dir = f"/static/data/{claim_number}_{vin_value}"  # Используем прямые слэши
     data = {
         "vin_value": vin_value,
         "zone_data": [
@@ -1161,9 +1180,6 @@ def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path,
 def search_and_extract(driver, claim_number, vin_number):
     zone_data = []
 
-    # Создаём папки
-    screenshot_dir, svg_dir, data_dir = create_folders(claim_number)
-
     # Проверяем загрузку таблицы
     if not wait_for_table(driver):
         return {"error": "Таблица не загрузилась"}
@@ -1204,8 +1220,11 @@ def search_and_extract(driver, claim_number, vin_number):
     current_url = driver.current_url
     logger.info(f"Текущий URL: {current_url}")
 
-    # Извлекаем VIN
-    vin_value = extract_vin(driver, current_url)
+    # Извлекаем VIN и claim_number со страницы для надежности
+    claim_number, vin_number = extract_vin_and_claim_number(driver, current_url)
+
+    # Создаём папки
+    screenshot_dir, svg_dir, data_dir = create_folders(claim_number, vin_number)
 
     # Переходим на страницу повреждений
     base_url = current_url.split('step')[0][:-1] + '&step=Damage+capturing'
@@ -1223,7 +1242,7 @@ def search_and_extract(driver, claim_number, vin_number):
 
     # Сохраняем основной скриншот и SVG
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    main_screenshot_relative, main_svg_relative = save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, claim_number)
+    main_screenshot_relative, main_svg_relative = save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, claim_number, vin_number)
 
     # Нажимаем на breadcrumb
     if not click_breadcrumb(driver):
@@ -1238,7 +1257,7 @@ def search_and_extract(driver, claim_number, vin_number):
 
     # Обрабатываем каждую зону
     for zone in zones:
-        zone_data.extend(process_zone(driver, zone, screenshot_dir, svg_dir, claim_number=claim_number))
+        zone_data.extend(process_zone(driver, zone, screenshot_dir, svg_dir, claim_number=claim_number, vin=vin_number))
 
     # Возвращаемся в основной контент
     driver.switch_to.default_content()
@@ -1247,7 +1266,7 @@ def search_and_extract(driver, claim_number, vin_number):
     zones_table = create_zones_table(zone_data)
 
     # Сохраняем данные в JSON
-    json_path = save_data_to_json(vin_value, zone_data, main_screenshot_relative, main_svg_relative, zones_table, "", data_dir, claim_number)
+    json_path = save_data_to_json(vin_number, zone_data, main_screenshot_relative, main_svg_relative, zones_table, "", data_dir, claim_number)
 
     # Возвращаем результат
     return {
@@ -1256,7 +1275,8 @@ def search_and_extract(driver, claim_number, vin_number):
         "main_svg_path": main_svg_relative,
         "zones_table": zones_table,
         "zone_data": zone_data,
-        "vin_value": vin_value
+        "vin_value": vin_number,
+        "claim_number": claim_number
     }
 
 async def login_audatex(username: str, password: str, claim_number: str, vin_number: str):
