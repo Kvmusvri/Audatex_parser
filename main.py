@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from core.login.parser import login_audatex
+from core.parser.parser import login_audatex
 import json
 import os
 from datetime import datetime

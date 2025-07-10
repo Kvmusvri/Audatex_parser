@@ -51,9 +51,18 @@ TIMEOUT = 60
 MORE_ICON_SELECTOR = "#BREForm > div > div > div.gdc-contentBlock-body > div > div.list-grid-container.worklistgrid_custom_sent > div.worklist-grid-component > div.react-datagrid.z-cell-ellipsis.z-style-alternate.z-with-column-menu > div.z-inner > div.z-scroller > div.z-content-wrapper > div.z-content-wrapper-fix > div > div:nth-child(1) > div.z-last.z-cell > div"
 VIN_SELECTOR = "#root\\.task\\.basicClaimData\\.vehicle\\.vehicleIdentification\\.VINQuery-VIN"
 CLAIM_NUMBER_SELECTOR = "#root\.task\.claimNumber"
-TABLE_SELECTOR = "#BREForm > div > div > div.gdc-contentBlock-body > div > div.list-grid-container.worklistgrid_custom_sent > div.worklist-grid-component > div.react-datagrid.z-cell-ellipsis.z-style-alternate.z-with-column-menu > div.z-inner > div.z-scroller > div.z-content-wrapper > div.z-content-wrapper-fix > div"
+OUTGOING_TABLE_SELECTOR = "#BREForm > div > div > div.gdc-contentBlock-body > div > div.list-grid-container.worklistgrid_custom_sent > div.worklist-grid-component > div.react-datagrid.z-cell-ellipsis.z-style-alternate.z-with-column-menu > div.z-inner > div.z-scroller > div.z-content-wrapper > div.z-content-wrapper-fix > div"
+OPEN_TABLE_SELECTOR = "#BREForm > div > div > div.gdc-contentBlock-body > div > div.list-grid-container.worklistgrid_custom_open > div.worklist-grid-component > div.react-datagrid.z-cell-ellipsis.z-style-alternate.z-with-column-menu > div.z-inner > div.z-scroller > div.z-content-wrapper > div.z-content-wrapper-fix > div"
 ROW_SELECTOR = "#BREForm .react-datagrid .z-row"
 IFRAME_ID = "iframe_root.task.damageCapture.inlineWebPad"
+EMPTY_TABLE_TEXT_SELECTOR = (
+    "#BREForm > div > div > div.gdc-contentBlock-body > div > "
+    "div.list-grid-container div.noHeaderDataGrid > div > "
+    "div.z-inner > div.z-scroller > div.z-content-wrapper > "
+    "div.z-empty-text > div > div.no-items-title"
+)
+EMPTY_TABLE_TEXT = "Похоже у вас нет ни одного дела"
+
 
 
 def kill_chrome_processes():
@@ -90,7 +99,7 @@ def init_browser():
         options.add_argument(
             f"user-agent=Mozilla/5.0 ({'Windows NT 10.0; Win64; x64' if system == 'Windows' else 'X11; Linux x86_64'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.7151.122 Safari/537.36"
         )
-        options.add_argument('--headless=new')  # Включаем headless-режим
+        # options.add_argument('--headless=new')  # Включаем headless-режим
         options.add_argument('--no-sandbox')    # Для стабильной работы на Ubuntu
         options.add_argument('--disable-dev-shm-usage')  # Для избежания проблем с памятью
 
@@ -220,19 +229,25 @@ def create_folders(claim_number, vin):
     return screenshot_dir, svg_dir, data_dir
 
 # Проверяет, загрузилась ли таблица
-def wait_for_table(driver):
-    try:
-        WebDriverWait(driver, TIMEOUT).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, TABLE_SELECTOR))
-        )
-        logger.info("Таблица загрузилась")
-        return True
-    except TimeoutException:
-        logger.error("Таблица не загрузилась")
-        return Fals
+def wait_for_table(driver, selector=None):
+    selectors_to_check = [selector] if selector else [OPEN_TABLE_SELECTOR, OUTGOING_TABLE_SELECTOR]
 
-# Нажимает на кнопку подтверждения, если она есть
-def click_confirm_button(driver):
+    for sel in selectors_to_check:
+        try:
+            WebDriverWait(driver, TIMEOUT).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, sel))
+            )
+            logger.info(f"Таблица с селектором '{sel}' загрузилась")
+            return True
+        except TimeoutException:
+            logger.warning(f"Таблица с селектором '{sel}' не загрузилась")
+
+    logger.error("Ни одна из таблиц не загрузилась")
+    return False
+
+
+# Нажимает на кнопку закрыть при входа в раздел дела, если она есть
+def click_cansel_button(driver):
     try:
         confirm_button = WebDriverWait(driver, 15).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "#confirm > div > div > div.modal-footer > button"))
@@ -242,20 +257,33 @@ def click_confirm_button(driver):
     except TimeoutException:
         logger.info("Кнопка подтверждения не найдена")
 
-# Переходит в раздел с дополнительными видами
-def click_more_views_link(driver):
+
+
+# сначала переходим в раздел с открытыми заявками, потом переходим в исходящие, если не нашли в открытых
+def click_request_type_button(driver, req_type: str):
+    """
+    Совершает клик по выбранной кнопке типа заявок
+
+    params: req_type - принимает значения "outgoing" или "open"
+    """
     try:
         WebDriverWait(driver, TIMEOUT).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "body"))
         )
-        more_views_link = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "#view-link-worklistgrid_custom_sent"))
-        )
+
+        if req_type == "open":
+            more_views_link = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "#view-link-worklistgrid_custom_open"))
+            )
+        elif req_type == "outgoing":
+            more_views_link = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "#view-link-worklistgrid_custom_sent"))
+            )
         more_views_link.click()
-        logger.info("Клик по ссылке дополнительных видов")
+        logger.info("Клик по кнопке исходящие")
         return True
     except (TimeoutException, StaleElementReferenceException) as e:
-        logger.error(f"Ошибка при клике по ссылке дополнительных видов: {str(e)}")
+        logger.error(f"Ошибка при клике по кнопке исходящие: {str(e)}")
         return False
 
 # Выполняет поиск в таблице по значению
@@ -1176,6 +1204,50 @@ def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path,
     return json_path
 
 
+def is_table_empty(driver, selector=EMPTY_TABLE_TEXT_SELECTOR):
+    try:
+        element = driver.find_element(By.CSS_SELECTOR, selector)
+        if EMPTY_TABLE_TEXT in element.text:
+            logger.info("Таблица пуста: данных нет")
+            return True
+    except Exception:
+        pass  # Элемент не найден — таблица, скорее всего, не пуста
+    return False
+
+
+
+# проверяем наличие нашей заявки по секциям
+def find_claim_data(driver, claim_number=None, vin_number=None):
+    section_selector_map = {
+        "open": OPEN_TABLE_SELECTOR,
+        "outgoing": OUTGOING_TABLE_SELECTOR
+    }
+
+    for section in ["open", "outgoing"]:
+        if not click_request_type_button(driver, section):
+            logger.error(f"Не удалось перейти в раздел {section}")
+            return {"error": f"Не удалось перейти в раздел {section}"}
+
+        if not wait_for_table(driver, section_selector_map.get(section)):
+            return {"error": f"Таблица не загрузилась в разделе {section}"}
+
+        if is_table_empty(driver):
+            logger.info(f"Раздел {section} пуст — переходим дальше")
+            continue  # Пробуем следующий раздел
+
+        if claim_number and search_in_table(driver, claim_number, "номеру дела"):
+            return {"success": True}
+        elif vin_number and search_in_table(driver, vin_number, "VIN"):
+            return {"success": True}
+
+        logger.info(f"Данные не найдены в разделе {section}")
+
+    return {"error": "Данные не найдены ни в одном разделе"}
+
+
+
+
+
 # Основная функция
 def search_and_extract(driver, claim_number, vin_number):
     zone_data = []
@@ -1185,22 +1257,14 @@ def search_and_extract(driver, claim_number, vin_number):
         return {"error": "Таблица не загрузилась"}
 
     # Нажимаем кнопку подтверждения
-    click_confirm_button(driver)
+    click_cansel_button(driver)
 
-    # Переходим в раздел
-    if not click_more_views_link(driver):
-        return {"error": "Не удалось перейти в раздел"}
-
+    # сначала переходим в раздел открытые
+    # если заявки нет, то переходим в исходящие
     # Ищем данные по номеру дела или VIN
-    table_has_rows = False
-    if claim_number:
-        table_has_rows = search_in_table(driver, claim_number, "номеру дела")
-    if not table_has_rows and vin_number:
-        table_has_rows = search_in_table(driver, vin_number, "VIN")
-
-    if not table_has_rows:
-        logger.error("Данные не найдены")
-        return {"error": "Данные не найдены"}
+    result = find_claim_data(driver, claim_number=claim_number, vin_number=vin_number)
+    if "error" in result:
+        return result
 
     # Нажимаем на иконку "ещё"
     if not click_more_icon(driver):
