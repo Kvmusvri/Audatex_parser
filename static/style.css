@@ -489,6 +489,7 @@ button[type="submit"]:hover {
     word-wrap: break-word;
 }
 
+
 /* Адаптивность */
 @media (max-width: 600px) {
     .form-wrapper {
@@ -500,3 +501,4 @@ button[type="submit"]:hover {
         max-height: 200px;
     }
 }
+

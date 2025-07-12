@@ -6,7 +6,7 @@ import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, WebDriverException
 import logging
 import time
 import pickle
@@ -21,18 +21,19 @@ import re
 import xml.etree.ElementTree as ET
 from collections import Counter
 from transliterate import translit
-from selenium.common.exceptions import WebDriverException
 from PIL import Image
 from io import BytesIO
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-import logging
 import subprocess
 from webdriver_manager.core.os_manager import ChromeType
 import shutil
 import requests
 import zipfile
 import platform
+import sys
+import signal
+
 
 
 # Настройка логирования
@@ -1442,3 +1443,63 @@ async def login_audatex(username: str, password: str, claim_number: str, vin_num
 
     # На случай, если цикл завершится без возврата (хотя это не должно произойти)
     return {"error": f"Не удалось выполнить парсинг после {max_attempts} попыток"}
+
+# Функция для немедленного завершения всех процессов приложения и перезапуска парсера с открытием стартовой страницы
+def terminate_all_processes_and_restart(current_url=None):
+    """
+    Абсолютно приоритетная функция: немедленно завершает все процессы Python, Chrome/Chromedriver,
+    а также любые дочерние процессы, после чего запускает новое веб-приложение и открывает главную страницу.
+    После завершения текущего процесса, новое приложение будет запущено на порту 8000.
+    """
+
+    logger.critical("ПРИНУДИТЕЛЬНОЕ завершение всех процессов приложения и браузера инициировано!")
+
+    # 1. Завершаем все процессы Chrome и Chromedriver
+    try:
+        for proc in psutil.process_iter(['name', 'pid']):
+            if proc.info['name'] in ['chrome.exe', 'chromedriver.exe', 'chrome', 'chromedriver']:
+                try:
+                    proc.kill()
+                    logger.critical(f"Завершён процесс браузера: {proc.info['name']} (pid={proc.info['pid']})")
+                except Exception as e:
+                    logger.error(f"Ошибка при завершении процесса {proc.info['name']}: {e}")
+    except Exception as e:
+        logger.error(f"Ошибка при завершении процессов Chrome/Chromedriver: {e}")
+
+    # 2. Завершаем все дочерние процессы текущего Python-процесса
+    try:
+        parent = psutil.Process(os.getpid())
+        children = parent.children(recursive=True)
+        for child in children:
+            try:
+                child.kill()
+                logger.critical(f"Завершён дочерний процесс Python: {child.name()} (pid={child.pid})")
+            except Exception as e:
+                logger.error(f"Ошибка при завершении дочернего процесса {child.pid}: {e}")
+    except Exception as e:
+        logger.error(f"Ошибка при завершении дочерних процессов: {e}")
+
+    # 3. Формируем команду для запуска нового веб-приложения на порту 8000
+    uvicorn_cmd = [sys.executable, "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+    # 4. Логируем информацию о перезапуске
+    if current_url:
+        logger.critical(f"Приложение будет перезапущено. Главная страница будет доступна по адресу: http://localhost:8000{current_url}")
+    else:
+        logger.critical("Приложение будет перезапущено.")
+
+    # 5. Запускаем новое веб-приложение на порту 8000 уже после завершения текущего процесса
+    logger.critical("Текущий процесс Python будет немедленно завершён. Новое приложение будет запущено на порту 8000.")
+
+    try:
+        # Используем os.execv для замены текущего процесса на новый uvicorn
+        os.execv(sys.executable, uvicorn_cmd)
+    except Exception as e:
+        logger.error(f"Ошибка при запуске нового веб-приложения через execv: {e}")
+        # Если execv не сработал, пробуем через Popen и завершаем процесс
+        try:
+            subprocess.Popen(uvicorn_cmd)
+            logger.critical("Новое веб-приложение запущено на порту 8000 через Popen.")
+        except Exception as e2:
+            logger.error(f"Ошибка при запуске веб-приложения через Popen: {e2}")
+        os._exit(0)

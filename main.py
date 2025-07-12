@@ -1,18 +1,17 @@
 import asyncio
 import uvicorn
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from core.parser.parser import login_audatex
+from core.parser.parser import login_audatex, terminate_all_processes_and_restart
 import json
 import os
 from datetime import datetime
 import logging
-from core.database.models import start_db
+from core.database.models import start_db, ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, async_session
 from pydantic import BaseModel
 from typing import List
-from core.database.models import ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, async_session
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.sql import text
 import re
@@ -24,6 +23,10 @@ from core.database.requests import (
 )
 from core.database.engine import engine
 import time
+import concurrent.futures
+import threading
+import psutil
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -269,13 +272,71 @@ async def import_from_json(request: SearchRequest):
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# Эндпоинт для авторизации и поиска
+# Эндпоинт для авторизации и поиска с запуском парсера в отдельном процессе через пул
+
+# Глобальный пул для парсер-процессов (можно ограничить max_workers)
+parser_process_pool = concurrent.futures.ProcessPoolExecutor(max_workers=1)
+
+# Для хранения текущего future парсера и его PID
+current_parser_future = None
+current_parser_pid = None
+parser_lock = threading.Lock()
+
+def run_parser_in_subprocess(username, password, claim_number, vin_number):
+    """
+    Обёртка для запуска login_audatex в отдельном процессе.
+    Важно: login_audatex должен быть синхронной функцией или запускаться через asyncio.run.
+    """
+
+    # Ставим низкий приоритет процессу (чтобы его можно было быстро убить через stop_parser)
+    try:
+        p = psutil.Process(os.getpid())
+        p.nice(10)  # 10 — ниже обычного, но не idle
+    except Exception as e:
+        pass
+
+    # Запускаем парсер
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    result = loop.run_until_complete(login_audatex(username, password, claim_number, vin_number))
+    loop.close()
+    return result
+
 @app.post("/login", response_class=HTMLResponse)
 async def login(request: Request, username: str = Form(...), password: str = Form(...),
                 claim_number: str = Form(default=""), vin_number: str = Form(default="")):
+    global current_parser_future, current_parser_pid
+
     start_time = time.time()
 
-    parser_result = await login_audatex(username, password, claim_number, vin_number)
+    # Проверяем, не запущен ли уже парсер
+    with parser_lock:
+        if current_parser_future and not current_parser_future.done():
+            logger.warning("Парсер уже запущен, ожидаем завершения предыдущего процесса")
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Парсер уже запущен. Пожалуйста, дождитесь завершения предыдущего запроса или остановите его."
+            })
+
+        # Запускаем парсер в отдельном процессе через пул
+        future = parser_process_pool.submit(run_parser_in_subprocess, username, password, claim_number, vin_number)
+        current_parser_future = future
+
+        # Получаем PID процесса парсера (через _process, это внутреннее API, но работает)
+        try:
+            current_parser_pid = future._process.pid
+            logger.info(f"Парсер запущен в процессе PID={current_parser_pid}")
+        except Exception as e:
+            current_parser_pid = None
+            logger.warning(f"Не удалось получить PID процесса парсера: {e}")
+
+    # Ожидаем завершения парсера (асинхронно, чтобы не блокировать event loop)
+    loop = asyncio.get_event_loop()
+    parser_result = await loop.run_in_executor(None, current_parser_future.result)
+
+    # После завершения сбрасываем PID
+    with parser_lock:
+        current_parser_pid = None
 
     if "error" in parser_result:
         logger.error(f"Ошибка парсинга: {parser_result['error']}")
@@ -418,6 +479,45 @@ async def history_detail(request: Request, folder: str):
             "request": request,
             "error": f"Ошибка загрузки данных: {e}"
         })
+
+
+
+@app.post("/stop_parser")
+async def stop_parser_endpoint():
+    global current_parser_future, current_parser_pid
+    try:
+        logger.warning("Получен запрос на остановку парсера. Запущена процедура завершения всех процессов и перезапуска приложения.")
+
+        # Если есть запущенный процесс парсера — убиваем его
+
+        killed = False
+        with parser_lock:
+            if current_parser_pid:
+                try:
+                    proc = psutil.Process(current_parser_pid)
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=5)
+                        logger.warning(f"Процесс парсера PID={current_parser_pid} успешно завершён.")
+                    except psutil.TimeoutExpired:
+                        proc.kill()
+                        logger.warning(f"Процесс парсера PID={current_parser_pid} был принудительно убит.")
+                    killed = True
+                except Exception as e:
+                    logger.error(f"Не удалось завершить процесс парсера PID={current_parser_pid}: {e}")
+                current_parser_pid = None
+                current_parser_future = None
+
+        # Возвращаем редирект на главную страницу сразу, чтобы пользователь не видел ошибку соединения
+        response = RedirectResponse(url="/")
+        # Запускаем завершение процессов и перезапуск приложения в фоне, чтобы не блокировать редирект
+        # Передаём current_url как относительный путь, функция сама определит правильный хост
+        threading.Thread(target=terminate_all_processes_and_restart, args=("/",), daemon=True).start()
+        return response
+    except Exception as e:
+        logger.error(f"Ошибка при попытке остановки парсера: {e}")
+        return JSONResponse(content={"success": False, "message": f"Ошибка при остановке парсера: {e}"})
+
 
 if __name__ == "__main__":
     asyncio.run(start_db())

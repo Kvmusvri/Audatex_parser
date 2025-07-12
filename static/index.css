@@ -75,6 +75,131 @@ button:hover {
     background-color: #5a6268;
 }
 
+.stop-button {
+    background: linear-gradient(135deg, #ff3019 0%, #cf0404 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    margin: 20px 0 10px 0;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: block;
+}
+
+.stop-button:hover {
+    background: linear-gradient(135deg, #cf0404 0%, #ff3019 100%);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.stop-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Добавим в конец файла */
+
+.stop-button {
+    background: linear-gradient(to bottom, #ff4d4d, #cc0000);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    display: none; /* Скрыта по умолчанию */
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.stop-button:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: 0.5s;
+}
+
+.stop-button:hover {
+    background: linear-gradient(to bottom, #ff3333, #b30000);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    transform: translateY(-2px);
+}
+
+.stop-button:hover:before {
+    left: 100%;
+}
+
+.stop-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.notification {
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.notification.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.notification.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.hidden {
+    display: none;
+}
+.stop-button {
+    width: 100%;
+    padding: 12px 0;
+    margin-top: 15px;
+    background: linear-gradient(90deg, #ff4e50 0%, #f44336 50%, #b71c1c 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(255, 76, 76, 0.15);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s, box-shadow 0.3s, transform 0.2s;
+}
+
+.stop-button:hover {
+    background: linear-gradient(90deg, #ff3333 0%, #b30000 100%);
+    box-shadow: 0 6px 16px rgba(255, 76, 76, 0.25);
+    transform: translateY(-2px) scale(1.03);
+}
+
+.stop-button:active {
+    background: linear-gradient(90deg, #b30000 0%, #ff3333 100%);
+    box-shadow: 0 2px 6px rgba(255, 76, 76, 0.18);
+    transform: translateY(1px) scale(0.98);
+}
+
 @media (max-width: 768px) {
     .form-wrapper {
         width: 100%;

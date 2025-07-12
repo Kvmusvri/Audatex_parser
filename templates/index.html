@@ -29,8 +29,54 @@
                     <input type="text" id="vin_number" name="vin_number">
                 </div>
                 <button type="submit">Войти</button>
+                <button type="button" class="stop-button" id="stop-parser-btn" style="display: block; margin-top: 10px;">Остановить парсер</button>
             </form>
+            <div id="stop-parser-notification" class="notification" style="display:none;"></div>
         </div>
     </div>
+    <script>
+        document.getElementById('stop-parser-btn').addEventListener('click', async function() {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Остановка...';
+
+            // Логируем в консоль, что отправляется запрос на остановку парсера
+            console.log('Отправка POST запроса на /stop_parser для остановки парсера');
+
+            try {
+                const response = await fetch('/stop_parser', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                // Логируем ответ сервера
+                console.log('Ответ от /stop_parser:', response);
+
+                const data = await response.json();
+                console.log('Данные ответа:', data);
+
+                const notif = document.getElementById('stop-parser-notification');
+                if (response.ok && data.success) {
+                    notif.textContent = 'Парсер успешно остановлен.';
+                    notif.className = 'notification success';
+                } else {
+                    notif.textContent = data.message || 'Ошибка при остановке парсера.';
+                    notif.className = 'notification error';
+                }
+                notif.style.display = 'block';
+            } catch (e) {
+                console.error('Ошибка при обращении к /stop_parser:', e);
+                const notif = document.getElementById('stop-parser-notification');
+                notif.textContent = 'Ошибка соединения с сервером.';
+                notif.className = 'notification error';
+                notif.style.display = 'block';
+            }
+            btn.disabled = false;
+            btn.textContent = 'Остановить парсер';
+            // Закрываем текущую страницу и открываем главную страницу приложения
+            window.open('/', '_self');
+        });
+    </script>
 </body>
 </html>
