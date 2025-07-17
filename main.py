@@ -46,6 +46,7 @@ class SearchRequest(BaseModel):
     login: str
     password: str
     searchList: List[SearchItem]
+    svg_collection: bool = True  # По умолчанию включен сбор SVG
 
 
 def normalize_paths(record: dict, folder_name: str) -> dict:
@@ -87,6 +88,7 @@ def normalize_paths(record: dict, folder_name: str) -> dict:
 
 @app.post("/process_audatex_requests")
 async def import_from_json(request: SearchRequest):
+    logger.info(f"🎛️ API запрос с флагом сбора SVG: {'ВКЛЮЧЕН' if request.svg_collection else 'ОТКЛЮЧЕН'}")
     results = []
     try:
         # Разделяем searchList на группы по 10
@@ -103,7 +105,7 @@ async def import_from_json(request: SearchRequest):
                 logger.info(f"Запуск парсера для requestId: {claim_number}, VIN: {vin_number}")
 
                 # Вызываем парсер
-                parser_result = await login_audatex(request.login, request.password, claim_number, vin_number)
+                parser_result = await login_audatex(request.login, request.password, claim_number, vin_number, request.svg_collection)
 
                 if "error" in parser_result:
                     logger.error(f"Ошибка парсинга для requestId {claim_number}: {parser_result['error']}")
@@ -282,7 +284,7 @@ current_parser_future = None
 current_parser_pid = None
 parser_lock = threading.Lock()
 
-def run_parser_in_subprocess(username, password, claim_number, vin_number):
+def run_parser_in_subprocess(username, password, claim_number, vin_number, svg_collection):
     """
     Обёртка для запуска login_audatex в отдельном процессе.
     Важно: login_audatex должен быть синхронной функцией или запускаться через asyncio.run.
@@ -298,16 +300,21 @@ def run_parser_in_subprocess(username, password, claim_number, vin_number):
     # Запускаем парсер
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    result = loop.run_until_complete(login_audatex(username, password, claim_number, vin_number))
+    result = loop.run_until_complete(login_audatex(username, password, claim_number, vin_number, svg_collection))
     loop.close()
     return result
 
 @app.post("/login", response_class=HTMLResponse)
 async def login(request: Request, username: str = Form(...), password: str = Form(...),
-                claim_number: str = Form(default=""), vin_number: str = Form(default="")):
+                claim_number: str = Form(default=""), vin_number: str = Form(default=""),
+                svg_collection: str = Form(default="")):
     global current_parser_future, current_parser_pid
 
     start_time = time.time()
+    
+    # Обрабатываем checkbox: если есть значение (любое) - значит включен, если пустое - отключен
+    svg_collection_bool = bool(svg_collection and svg_collection.lower() not in ['false', '0', ''])
+    logger.info(f"🎛️ Получен флаг сбора SVG с формы: '{svg_collection}' -> {'ВКЛЮЧЕН' if svg_collection_bool else 'ОТКЛЮЧЕН'}")
 
     # Проверяем, не запущен ли уже парсер
     with parser_lock:
@@ -319,7 +326,7 @@ async def login(request: Request, username: str = Form(...), password: str = For
             })
 
         # Запускаем парсер в отдельном процессе через пул
-        future = parser_process_pool.submit(run_parser_in_subprocess, username, password, claim_number, vin_number)
+        future = parser_process_pool.submit(run_parser_in_subprocess, username, password, claim_number, vin_number, svg_collection_bool)
         current_parser_future = future
 
         # Получаем PID процесса парсера (через _process, это внутреннее API, но работает)

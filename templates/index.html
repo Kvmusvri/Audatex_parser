@@ -28,6 +28,19 @@
                     <label for="vin_number">VIN номер:</label>
                     <input type="text" id="vin_number" name="vin_number">
                 </div>
+                
+                <!-- Переключатель сбора SVG -->
+                <div class="form-group svg-toggle-group">
+                    <label class="svg-toggle-label">
+                        <span class="svg-toggle-text">Сбор SVG файлов:</span>
+                        <div class="svg-toggle-switch">
+                            <input type="checkbox" id="svg_collection" name="svg_collection" value="true" checked>
+                            <span class="svg-slider"></span>
+                        </div>
+                        <span class="svg-status-text" id="svg-status">Включен</span>
+                    </label>
+                </div>
+                
                 <button type="submit">Войти</button>
                 <button type="button" class="stop-button" id="stop-parser-btn" style="display: block; margin-top: 10px;">Остановить парсер</button>
             </form>
@@ -76,6 +89,20 @@
             btn.textContent = 'Остановить парсер';
             // Закрываем текущую страницу и открываем главную страницу приложения
             window.open('/', '_self');
+        });
+        
+        // Обработчик переключателя сбора SVG
+        document.getElementById('svg_collection').addEventListener('change', function() {
+            const statusText = document.getElementById('svg-status');
+            if (this.checked) {
+                statusText.textContent = 'Включен';
+                statusText.classList.remove('disabled');
+                statusText.classList.add('enabled');
+            } else {
+                statusText.textContent = 'Отключен';
+                statusText.classList.remove('enabled');
+                statusText.classList.add('disabled');
+            }
         });
     </script>
 </body>

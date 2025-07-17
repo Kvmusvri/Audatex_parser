@@ -43,7 +43,7 @@ from .output_manager import create_zones_table, save_data_to_json
 from .visual_processor import (
     is_zone_file, split_svg_by_details, save_svg_sync, 
     save_main_screenshot_and_svg, extract_zones, 
-    process_zone, process_pictograms
+    process_zone, process_pictograms, ensure_zone_details_extracted
 )
 from .actions import (
     wait_for_table, click_cansel_button, click_request_type_button,
@@ -58,7 +58,8 @@ logger = logging.getLogger(__name__)
 
 
 # Основная функция
-def search_and_extract(driver, claim_number, vin_number):
+def search_and_extract(driver, claim_number, vin_number, svg_collection=True):
+    logger.info(f"🎛️ Флаг сбора SVG: {'ВКЛЮЧЕН' if svg_collection else 'ОТКЛЮЧЕН'}")
     zone_data = []
     if not wait_for_table(driver):
         return {"error": "Таблица не загрузилась"}
@@ -85,7 +86,7 @@ def search_and_extract(driver, claim_number, vin_number):
         driver.switch_to.default_content()
         return {"error": f"Не удалось переключиться на фрейм {IFRAME_ID}"}
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    main_screenshot_relative, main_svg_relative = save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, claim_number, vin_number)
+    main_screenshot_relative, main_svg_relative = save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, claim_number, vin_number, svg_collection)
     if not click_breadcrumb(driver):
         driver.switch_to.default_content()
         return {"error": "Не удалось кликнуть по breadcrumb"}
@@ -94,14 +95,19 @@ def search_and_extract(driver, claim_number, vin_number):
         driver.switch_to.default_content()
         return {"error": "Зоны не найдены"}
     for zone in zones:
-        zone_data.extend(process_zone(driver, zone, screenshot_dir, svg_dir, claim_number=claim_number, vin=vin_number))
+        zone_data.extend(process_zone(driver, zone, screenshot_dir, svg_dir, claim_number=claim_number, vin=vin_number, svg_collection=svg_collection))
     driver.switch_to.default_content()
+    
+    # ГАРАНТИРУЕМ извлечение деталей из всех зон
+    logger.info(f"🔧 Запускаем финальную проверку извлечения деталей для {len(zone_data)} зон")
+    zone_data = ensure_zone_details_extracted(zone_data, svg_dir, claim_number=claim_number, vin=vin_number, svg_collection=svg_collection)
+    
     zones_table = create_zones_table(zone_data)
     json_path = save_data_to_json(vin_number, zone_data, main_screenshot_relative, main_svg_relative, zones_table, "", data_dir, claim_number)
     return {"success": "Задача открыта", "main_screenshot_path": main_screenshot_relative, "main_svg_path": main_svg_relative, "zones_table": zones_table, "zone_data": zone_data, "vin_value": vin_number, "claim_number": claim_number}
 
 # Точка входа в парсер 
-async def login_audatex(username: str, password: str, claim_number: str, vin_number: str):
+async def login_audatex(username: str, password: str, claim_number: str, vin_number: str, svg_collection: bool = True):
     driver = None
     max_attempts = 10
     error_message = None
@@ -112,6 +118,7 @@ async def login_audatex(username: str, password: str, claim_number: str, vin_num
                 logger.error("Ни номер дела, ни VIN не введены")
                 return {"error": "Введите хотя бы номер дела или VIN"}
             logger.info(f"Попытка {attempt} из {max_attempts}: Запуск парсинга для claim_number={claim_number}, vin_number={vin_number}")
+            logger.info(f"🎛️ Режим сбора SVG: {'ВКЛЮЧЕН' if svg_collection else 'ОТКЛЮЧЕН'}")
             kill_chrome_processes()
             driver = init_browser()
             
@@ -132,7 +139,7 @@ async def login_audatex(username: str, password: str, claim_number: str, vin_num
                     raise Exception("Не удалось повторно авторизоваться")
             
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(None, lambda: search_and_extract(driver, claim_number, vin_number))
+            result = await loop.run_in_executor(None, lambda: search_and_extract(driver, claim_number, vin_number, svg_collection))
             if "success" in result:
                 cookies = driver.get_cookies()
                 with open(COOKIES_FILE, "wb") as f:

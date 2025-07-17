@@ -194,29 +194,80 @@ def open_task(driver: WebDriver) -> bool:
         return False
 
 
-@retry_on_failure(max_attempts=2, delay=0.5)
+@retry_on_failure(max_attempts=3, delay=1.0)
 def switch_to_frame_and_confirm(driver: WebDriver) -> bool:
     """
-    Быстрое переключение в iframe.
+    Надёжное переключение в iframe с дополнительными проверками.
     """
     try:
-        WebDriverWait(driver, 8).until(
+        # Ждём полной загрузки страницы
+        WebDriverWait(driver, 15).until(
+            lambda d: d.execute_script("return document.readyState === 'complete'")
+        )
+        logger.info("Страница полностью загружена")
+        
+        # Дополнительная пауза для загрузки динамического контента
+        time.sleep(2)
+        
+        # Проверяем наличие iframe в DOM
+        iframe_exists = driver.execute_script(f"""
+            return document.getElementById('{IFRAME_ID}') !== null;
+        """)
+        
+        if not iframe_exists:
+            logger.error(f"Iframe {IFRAME_ID} не найден в DOM")
+            # Выводим список всех iframe на странице для диагностики
+            iframes = driver.execute_script("""
+                var iframes = document.getElementsByTagName('iframe');
+                var result = [];
+                for (var i = 0; i < iframes.length; i++) {
+                    result.push({
+                        id: iframes[i].id || 'no-id',
+                        src: iframes[i].src || 'no-src',
+                        name: iframes[i].name || 'no-name'
+                    });
+                }
+                return result;
+            """)
+            logger.info(f"Найдены iframe на странице: {iframes}")
+            return False
+        
+        logger.info(f"Iframe {IFRAME_ID} найден в DOM, переключаемся...")
+        
+        # Переключаемся на iframe с увеличенным таймаутом
+        WebDriverWait(driver, 15).until(
             EC.frame_to_be_available_and_switch_to_it((By.ID, IFRAME_ID))
         )
-        logger.info(f"Переключено на фрейм: {IFRAME_ID}")
+        logger.info(f"✅ Успешно переключились на фрейм: {IFRAME_ID}")
+        
+        # Ждём загрузки содержимого iframe
+        time.sleep(1)
         
         try:
-            confirm_button = WebDriverWait(driver, 5).until(
+            confirm_button = WebDriverWait(driver, 8).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, ".btn.btn-confirm"))
             )
             confirm_button.click()
             logger.info("Кнопка подтверждения в фрейме нажата")
-            time.sleep(0.3)  # Уменьшено с 0.5
+            time.sleep(0.5)
         except TimeoutException:
-            logger.info("Кнопка подтверждения в фрейме не найдена")
+            logger.info("Кнопка подтверждения в фрейме не найдена (это нормально)")
+        
         return True
+        
     except TimeoutException as e:
-        logger.error(f"Ошибка переключения на фрейм {IFRAME_ID}: {str(e)}")
+        logger.error(f"❌ Ошибка переключения на фрейм {IFRAME_ID}: Таймаут ожидания")
+        # Дополнительная диагностика
+        try:
+            current_url = driver.current_url
+            page_title = driver.title
+            logger.error(f"Текущий URL: {current_url}")
+            logger.error(f"Заголовок страницы: {page_title}")
+        except Exception:
+            pass
+        return False
+    except Exception as e:
+        logger.error(f"❌ Неожиданная ошибка при переключении на фрейм {IFRAME_ID}: {str(e)}")
         return False
 
 
