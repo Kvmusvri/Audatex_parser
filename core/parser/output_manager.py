@@ -26,7 +26,7 @@ def create_zones_table(zone_data):
 
 
 # Сохраняет данные в JSON
-def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path, zones_table, all_svgs_zip, data_dir, claim_number):
+def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path, zones_table, all_svgs_zip, data_dir, claim_number, options_data=None):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     json_path = os.path.join(data_dir, f"data_{timestamp}.json")
     data = {
@@ -43,9 +43,13 @@ def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path,
         "main_screenshot_path": main_screenshot_path.replace("\\", "/") if main_screenshot_path else "",
         "main_svg_path": main_svg_path.replace("\\", "/") if main_svg_path else "",
         "zones_table": zones_table,
-        "all_svgs_zip": all_svgs_zip.replace("\\", "/") if all_svgs_zip else ""
+        "all_svgs_zip": all_svgs_zip.replace("\\", "/") if all_svgs_zip else "",
+        "options_data": options_data if options_data else {"success": False, "zones": []}
     }
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     logger.info(f"Данные сохранены в {json_path}")
+    if options_data and options_data.get("success"):
+        stats = options_data.get("statistics", {})
+        logger.info(f"💾 Опции сохранены: {stats.get('total_selected', 0)}/{stats.get('total_options', 0)} в {stats.get('total_zones', 0)} зонах")
     return json_path 

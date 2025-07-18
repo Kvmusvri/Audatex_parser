@@ -1,97 +1,127 @@
+/* Основные стили с нейтральной цветовой палитрой */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     margin: 0;
     padding: 0;
+    min-height: 100vh;
 }
 
 .container {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
 .form-wrapper {
-    background-color: white;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 400px;
+    max-width: 450px;
 }
 
 h1 {
     text-align: center;
-    color: #333;
+    color: #495057;
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 25px;
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
-    color: #333;
+    margin-bottom: 8px;
+    color: #495057;
+    font-weight: 500;
+    font-size: 14px;
 }
 
 .form-group input {
     width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 12px 16px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
     box-sizing: border-box;
+    font-size: 16px;
+    transition: border-color 0.2s ease;
+    background: #f8f9fa;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #007bff;
+    background: white;
 }
 
 button {
     width: 100%;
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-
-.history-button {
-    width: auto;
-    padding: 8px 16px;
-    margin-bottom: 20px;
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.history-button:hover {
-    background-color: #5a6268;
-}
-
-/* Стили для success.html */
-.all-zones-button {
-    display: inline-block;
     padding: 12px 20px;
-    background-color: #6c757d;
+    background: #007bff;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-size: 16px;
-    margin-bottom: 10px;
-    transition: background-color 0.3s, transform 0.1s;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+button:active {
+    background: #004085;
+}
+
+.history-button {
+    width: auto;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s ease;
+    display: block;
+    text-decoration: none;
+    text-align: center;
+}
+
+.history-button:hover {
+    background: #0056b3;
+}
+
+/* Кнопки для success.html */
+.all-zones-button {
+    display: inline-block;
+    padding: 12px 20px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    transition: background 0.2s ease;
 }
 
 .all-zones-button:hover {
-    background-color: #5a6268;
-    transform: translateY(-2px);
+    background: #5a6268;
 }
 
 .tabs {
@@ -101,21 +131,24 @@ button:hover {
 }
 
 .tab-button {
-    padding: 10px 20px;
-    background-color: #e9ecef;
+    padding: 12px 20px;
+    background: #e9ecef;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-size: 16px;
-    transition: background-color 0.3s, transform 0.1s;
+    font-weight: 500;
+    transition: background 0.2s ease;
+    color: #6c757d;
 }
 
 .tab-button:hover {
-    background-color: #dee2e6;
+    background: #dee2e6;
+    color: #495057;
 }
 
 .tab-button.active {
-    background-color: #007bff;
+    background: #007bff;
     color: white;
 }
 
@@ -147,7 +180,7 @@ button:hover {
     background-color: white;
     border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     max-height: 80vh;
     display: flex;
     gap: 20px;
@@ -181,14 +214,14 @@ button:hover {
     align-items: center;
     background-color: white;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .right-column img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 .zones-table {
@@ -204,23 +237,23 @@ button:hover {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 12px;
-    background-color: #007bff;
+    padding: 12px 16px;
+    background: #28a745;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s, transform 0.1s;
+    font-weight: 500;
+    transition: background 0.2s ease;
 }
 
 .zones-table button:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
+    background: #218838;
 }
 
 .zones-table button.active {
-    background-color: #dc3545;
+    background: #dc3545;
     font-weight: 600;
 }
 
@@ -235,23 +268,23 @@ button:hover {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 10px;
-    background-color: #28a745;
+    padding: 10px 14px;
+    background: #007bff;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s, transform 0.1s;
+    font-weight: 500;
+    transition: background 0.2s ease;
 }
 
 .detail-button:hover {
-    background-color: #218838;
-    transform: translateY(-2px);
+    background: #0056b3;
 }
 
 .detail-button.active {
-    background-color: #dc3545;
+    background: #dc3545;
 }
 
 .svg-download {
@@ -260,74 +293,110 @@ button:hover {
     justify-content: center;
     width: 28px;
     height: 28px;
-    background-color: #28a745;
+    background: #28a745;
     color: white;
-    border-radius: 4px;
+    border-radius: 6px;
     text-decoration: none;
-    font-size: 18px;
-    transition: background-color 0.3s;
+    font-size: 14px;
+    transition: background 0.2s ease;
+    position: relative;
 }
 
 .svg-download:hover {
-    background-color: #218838;
+    background: #218838;
 }
 
 .detail-svg-download {
-    margin-left: 10px;
+    margin-left: 8px;
+}
+
+.svg-download {
+    position: relative;
 }
 
 .svg-download::after {
     content: attr(title);
     position: absolute;
-    top: -35px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
+    background: #333;
     color: white;
     padding: 5px 10px;
     border-radius: 4px;
     font-size: 12px;
     white-space: nowrap;
     opacity: 0;
-    transition: opacity 0.3s;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
     pointer-events: none;
+    z-index: 1000;
+    
+    /* По умолчанию снизу по центру */
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 5px;
+}
+
+/* Для всех элементов в левой части - показываем справа */
+.left-column .svg-download::after,
+.zones-container .svg-download::after,
+.data-table .svg-download::after {
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    margin-top: 0;
+    margin-left: 5px;
+}
+
+/* Специально для кнопки "Все зоны" - tooltip слева */
+.all-zones-row .svg-download::after {
+    top: 50%;
+    right: 100%;
+    left: auto;
+    transform: translateY(-50%);
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 5px;
 }
 
 .svg-download:hover::after {
     opacity: 1;
+    visibility: visible;
 }
 
 .download-icon {
-    font-size: 18px;
+    font-size: 14px;
 }
 
 .pictogram-icon {
-    margin-left: 5px;
+    margin-left: 8px;
     font-size: 16px;
+    color: #f39c12;
 }
 
 h2 {
-    background-color: #007bff;
+    background: #007bff;
     color: white;
-    padding: 12px;
+    padding: 12px 16px;
     border-radius: 6px;
-    margin-bottom: 20px;
-    font-size: 1.5em;
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
 }
 
 .back-button {
     display: inline-block;
-    padding: 10px 20px;
-    background-color: #6c757d;
+    padding: 10px 16px;
+    background: #6c757d;
     color: white;
     text-decoration: none;
     border-radius: 6px;
     margin-bottom: 20px;
-    transition: background-color 0.3s;
+    transition: background 0.2s ease;
+    font-weight: 500;
 }
 
 .back-button:hover {
-    background-color: #5a6268;
+    background: #5a6268;
 }
 
 .history-container {
@@ -340,165 +409,124 @@ h2 {
     background-color: #f8f9fa;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .history-content {
     margin-top: 20px;
 }
 
+/* Адаптивность */
 @media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
     .form-wrapper {
         width: 100%;
         padding: 20px;
+        max-width: none;
     }
+    
     .content-wrapper {
         flex-direction: column;
     }
+    
     .left-column {
         flex-direction: column;
         min-width: 100%;
     }
+    
     .sidebar, .zones-container {
         flex: none;
         width: 100%;
+        max-height: none;
     }
+    
     .right-column {
         flex: 1;
         min-width: 100%;
     }
+    
     .image-container {
         height: auto;
         max-height: 50vh;
     }
 }
 
-.container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f4f4f9;
-}
-
-.form-wrapper {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 400px;
-}
-
-h1 {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    color: #333;
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #555;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 1rem;
-}
-
-button[type="submit"] {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    cursor: pointer;
-}
-
-button[type="submit"]:hover {
-    background-color: #0056b3;
-}
-
-.history-button {
-    display: block;
-    margin: 0 auto 1rem;
-    padding: 0.5rem 1rem;
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.history-button:hover {
-    background-color: #5a6268;
-}
-
 .error-message {
-    color: red;
+    color: #dc3545;
     text-align: center;
-    margin-top: 1rem;
+    margin-top: 15px;
+    font-weight: 500;
+    padding: 10px;
+    background: #f8d7da;
+    border-radius: 6px;
+    border: 1px solid #f5c6cb;
 }
 
-/* Новые стили для лог-контейнера */
+/* Стили для лог-контейнера */
 .log-container {
-    margin-top: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 0.5rem;
-    background-color: #f9f9f9;
+    margin-top: 20px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 15px;
+    background: #f8f9fa;
 }
 
 .log-toggle {
     width: 100%;
-    padding: 0.5rem;
-    background-color: #007bff;
+    padding: 10px 16px;
+    background: #007bff;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 16px;
+    font-weight: 500;
     text-align: center;
+    transition: background 0.2s ease;
 }
 
 .log-toggle:hover {
-    background-color: #0056b3;
+    background: #0056b3;
 }
 
 .log-content {
     max-height: 300px;
     overflow-y: auto;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 0.5rem;
-    margin-top: 0.5rem;
-    font-family: monospace;
-    font-size: 0.9rem;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 13px;
     white-space: pre-wrap;
     word-wrap: break-word;
+    line-height: 1.4;
 }
 
-
-/* Адаптивность */
+/* Дополнительная адаптивность */
 @media (max-width: 600px) {
     .form-wrapper {
-        padding: 1rem;
+        padding: 20px;
         max-width: 90%;
+        margin: 10px;
     }
 
     .log-content {
         max-height: 200px;
+        font-size: 12px;
+    }
+    
+    h1 {
+        font-size: 24px;
+    }
+    
+    button {
+        padding: 10px 16px;
+        font-size: 15px;
     }
 }
 

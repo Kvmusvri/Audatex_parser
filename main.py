@@ -368,6 +368,7 @@ async def login(request: Request, username: str = Form(...), password: str = For
         "main_screenshot_path": parser_result.get("main_screenshot_path", ""),
         "main_svg_path": parser_result.get("main_svg_path", ""),
         "all_svgs_zip": parser_result.get("all_svgs_zip", ""),
+        "options_data": parser_result.get("options_data", {"success": False, "zones": []}),
         "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
@@ -469,6 +470,7 @@ async def history_detail(request: Request, folder: str):
             "main_screenshot_path": data.get("main_screenshot_path", ""),
             "main_svg_path": data.get("main_svg_path", ""),
             "all_svgs_zip": data.get("all_svgs_zip", ""),
+            "options_data": data.get("options_data", {"success": False, "zones": []}),
             "created": datetime.fromtimestamp(file_stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
         }
 

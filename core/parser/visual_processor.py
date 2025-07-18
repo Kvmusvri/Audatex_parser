@@ -14,6 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from .constants import TIMEOUT
+from selenium.webdriver.common.action_chains import ActionChains
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +32,11 @@ def is_zone_file(filename: str) -> bool:
     logger.debug(f"🔍 is_zone_file('{filename}'): {is_zone}")
     return is_zone
 
+
 # Вспомогательные функции для разбиения SVG на детали
 def has_detail(elem, detail):
     return elem.attrib.get('data-title', '') == detail
+
 
 def prune_for_detail(root_element, detail):
     for elem in list(root_element):
@@ -227,13 +230,13 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
             safe_name = translit(safe_detail, 'ru', reversed=True).replace(" ", "_").replace("/", "_").lower()
             safe_name = re.sub(r'\.+', '', safe_name)  # Удаляем точки
 
-                        # Проверяем, содержит ли деталь несколько элементов (разделенных запятыми)
+            # Проверяем, содержит ли деталь несколько элементов (разделенных запятыми)
             max_filename_length = 180  # Безопасная длина для Windows
             
             if len(safe_name) <= max_filename_length:
                 # Обычный случай - имя не слишком длинное
                 output_path = os.path.normpath(os.path.join(output_dir, f"{safe_name}.svg"))
-                relative_base = f"/static/svgs/{claim_number}_{vin}"
+                relative_base = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}"
                 output_path_relative = f"{relative_base}/{safe_name}.svg".replace("\\", "/")
 
                 detail_data = {
@@ -286,7 +289,7 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
                             
                             group_filename = f"{group_safe_name}_group{part_num}.svg"
                             group_output_path = os.path.normpath(os.path.join(output_dir, group_filename))
-                            relative_base = f"/static/svgs/{claim_number}_{vin}"
+                            relative_base = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}"
                             group_output_path_relative = f"{relative_base}/{group_filename}".replace("\\", "/")
                             
                             detail_data = {
@@ -322,7 +325,7 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
                     
                     group_filename = f"{group_safe_name}_group{part_num}.svg"
                     group_output_path = os.path.normpath(os.path.join(output_dir, group_filename))
-                    relative_base = f"/static/svgs/{claim_number}_{vin}"
+                    relative_base = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}"
                     group_output_path_relative = f"{relative_base}/{group_filename}".replace("\\", "/")
                     
                     detail_data = {
@@ -330,7 +333,7 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
                         "svg_path": group_output_path_relative.replace("\\", "/") if svg_collection else ""
                     }
                     detail_paths.append(detail_data)
-                    logger.info(f"📝 Группа {part_num} (финальная) извлечена: '{group_title[:100]}{'...' if len(group_title) > 100 else ''}' -> {group_filename}")
+                    logger.info(f"📝 Финальная группа {part_num} извлечена: '{group_title[:100]}{'...' if len(group_title) > 100 else ''}' -> {group_filename}")
 
                     if svg_collection:
                         try:
@@ -339,7 +342,7 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
                             prune_for_detail(root, detail)  # Используем оригинальное название для фильтрации
                             os.makedirs(os.path.dirname(group_output_path), exist_ok=True)
                             tree.write(group_output_path, encoding="utf-8", xml_declaration=True)
-                            logger.info(f"✅ Группа {part_num} (финальная) сохранена: {group_output_path}")
+                            logger.info(f"✅ Финальная группа {part_num} сохранена: {group_output_path}")
                         except Exception as save_error:
                             logger.error(f"❌ Ошибка сохранения SVG для финальной группы {part_num}: {save_error}")
                             detail_data["svg_path"] = ""
@@ -579,6 +582,7 @@ svg * {{
                     logger.info(f"✅ SVG сохранён: {path}")
                 else:
                     logger.info(f"🎛️ Сбор SVG отключен, пропускаем сохранение: {path}")
+                detail_paths = []
         else:
             # Пиктограмма - обрабатываем как раньше
             if svg_collection:
@@ -587,7 +591,8 @@ svg * {{
                     f.write(svg_bytes)
                 logger.info(f"✅ SVG пиктограммы сохранён: {path}")
             else:
-                logger.info(f"📝 Пиктограмма обработана без сохранения SVG: {path}")
+                logger.info(f"🎛️ Сбор SVG отключен, пропускаем сохранение пиктограммы: {path}")
+            detail_paths = []
 
         return True, path, detail_paths
     except Exception as e:
@@ -597,9 +602,9 @@ svg * {{
 # Сохраняет основной скриншот и SVG
 def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, claim_number, vin, svg_collection=True):
     main_screenshot_path = os.path.join(screenshot_dir, f"main_screenshot.png")
-    main_screenshot_relative = f"/static/screenshots/{claim_number}_{vin}/main_screenshot.png"
+    main_screenshot_relative = f"/static/screenshots/{claim_number.replace('/', '_')}_{vin}/main_screenshot.png"
     main_svg_path = os.path.join(svg_dir, f"main.svg")
-    main_svg_relative = f"/static/svgs/{claim_number}_{vin}/main.svg"
+    main_svg_relative = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}/main.svg"
 
     # Проверяем наличие SVG на странице
     try:
@@ -608,17 +613,65 @@ def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, cla
         )
         time.sleep(0.5)
         svg = driver.find_element(By.TAG_NAME, "svg")
+        
+        # УБИРАЕМ HOVER ЭФФЕКТЫ перед скриншотом
+        logger.debug("🖱️ Убираем hover эффекты перед созданием main_screenshot")
+        
+        # Перемещаем курсор мыши в нейтральное место (левый верхний угол страницы)
+        try:
+            driver.execute_script("document.body.style.cursor = 'none';")  # Скрываем курсор
+            # Перемещаем мышь в безопасное место (левый верхний угол)
+            actions = ActionChains(driver)
+            actions.move_to_element_with_offset(driver.find_element(By.TAG_NAME, "body"), 0, 0)
+            actions.perform()
+            
+            # Ждем исчезновения всех tooltips и hover эффектов
+            time.sleep(1)
+            
+            # Дополнительно убираем все активные элементы через JavaScript
+            driver.execute_script("""
+                // Убираем focus с всех элементов
+                if (document.activeElement) {
+                    document.activeElement.blur();
+                }
+                
+                // Убираем все hover состояния
+                const hoverElements = document.querySelectorAll(':hover');
+                hoverElements.forEach(el => {
+                    el.style.pointerEvents = 'none';
+                    setTimeout(() => {
+                        el.style.pointerEvents = '';
+                    }, 100);
+                });
+                
+                // Скрываем все возможные tooltips
+                const tooltips = document.querySelectorAll('[role="tooltip"], .tooltip, .popover');
+                tooltips.forEach(tooltip => {
+                    tooltip.style.display = 'none';
+                });
+            """)
+            
+            # Ещё одна небольшая пауза для стабилизации
+            time.sleep(0.5)
+            
+        except Exception as hover_error:
+            logger.warning(f"⚠️ Не удалось полностью убрать hover эффекты: {hover_error}")
+            time.sleep(0.5)  # Минимальная пауза в любом случае
+        
         os.makedirs(os.path.dirname(main_screenshot_path), exist_ok=True)
         svg.screenshot(main_screenshot_path)
         logger.info(f"Основной скриншот сохранён: {main_screenshot_path}")
         
-        # Сохраняем SVG только если включен сбор SVG
-        if svg_collection:
-            success, _, _ = save_svg_sync(driver, svg, main_svg_path, claim_number=claim_number, vin=vin, svg_collection=svg_collection)
+        # Восстанавливаем курсор
+        try:
+            driver.execute_script("document.body.style.cursor = '';")
+        except:
+            pass
+        
+        # Main SVG всегда сохраняем (это основной чертеж)
+        success, _, _ = save_svg_sync(driver, svg, main_svg_path, claim_number=claim_number, vin=vin, svg_collection=True)
         if not success:
             logger.warning("Не удалось сохранить основной SVG")
-        else:
-            logger.info("Сбор SVG отключен, пропускаем сохранение основного SVG")
             main_svg_relative = ""
             
         return main_screenshot_relative.replace("\\", "/"), main_svg_relative.replace("\\", "/")
@@ -665,6 +718,7 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
         return zone_data
 
     logger.debug(f"Обработка зоны: {zone}")
+    logger.debug(f"🔍 DEBUG process_zone начало: claim_number='{claim_number}', vin='{vin}'")
 
     for attempt in range(max_retries):
         try:
@@ -690,10 +744,10 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
                                'ru', reversed=True).replace(" ", "_").replace("/", "_").lower().replace("'", "")
     safe_zone_title = re.sub(r'\.+', '', safe_zone_title)
     zone_screenshot_path = os.path.join(screenshot_dir, f"zone_{safe_zone_title}.png")
-    zone_screenshot_relative = f"/static/screenshots/{claim_number}_{vin}/zone_{safe_zone_title}.png".replace(
+    zone_screenshot_relative = f"/static/screenshots/{claim_number.replace('/', '_')}_{vin}/zone_{safe_zone_title}.png".replace(
         "\\", "/")
     zone_svg_path = os.path.join(svg_dir, f"zone_{safe_zone_title}.svg")
-    zone_svg_relative = f"/static/svgs/{claim_number}_{vin}/zone_{safe_zone_title}.svg".replace("\\", "/")
+    zone_svg_relative = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}/zone_{safe_zone_title}.svg".replace("\\", "/")
 
     # Проверяем наличие пиктограмм с надежными стратегиями ожидания
     try:
@@ -708,15 +762,16 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
         for attempt in range(3):
             try:
                 main_element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "main"))
-        )
+                    EC.presence_of_element_located((By.TAG_NAME, "main"))
+                )
                 break
             except TimeoutException:
                 if attempt < 2:
-                    logger.warning(f"Попытка {attempt + 1}: main элемент не найден, повторяем...")
-                    time.sleep(1)
+                    logger.warning(f"Попытка {attempt + 1}: main не найден, ждем...")
+                    time.sleep(2)
                 else:
-                    raise
+                    logger.error("Не удалось найти main элемент после нескольких попыток")
+                    break
         
         if not main_element:
             raise TimeoutException("Main элемент не найден после 3 попыток")
@@ -817,7 +872,8 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
                 logger.info(f"Заглушка для зоны {zone['title']}: скриншот не создан")
 
             # Собираем данные пиктограмм, передаем zone_screenshot_relative
-            zone_data = process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries, zone_screenshot_relative, claim_number=claim_number, vin="", svg_collection=svg_collection)
+            logger.debug(f"🔍 DEBUG process_zone перед вызовом process_pictograms: claim_number='{claim_number}', vin='{vin}'")
+            zone_data = process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries, zone_screenshot_relative, claim_number=claim_number, vin=vin, svg_collection=svg_collection)
 
             # Второй клик для возврата к меню зон
             WebDriverWait(driver, 10).until(
@@ -1053,6 +1109,7 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
     pictogram_data = []
     try:
         logger.info(f"🎨 Начинаем сбор пиктограмм для зоны {zone['title']}")
+        logger.debug(f"🔍 DEBUG process_pictograms: claim_number='{claim_number}', vin='{vin}'")
         
         # Этап 1: Подтверждаем готовность документа
         WebDriverWait(driver, 15).until(ensure_document_ready)
@@ -1182,7 +1239,7 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
                             WebDriverWait(driver, 8).until(
                                 lambda d: svg.is_displayed() and 
                                 d.execute_script("return arguments[0].querySelectorAll('path, rect, circle, g').length > 0", svg)
-                            )
+                        )
                         except TimeoutException:
                             logger.warning(f"SVG не готов для работы '{work_name1}' в секции '{section_name}', пропускаем")
                             continue
@@ -1196,7 +1253,8 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
                         safe_section_name = re.sub(r'\.+', '', safe_section_name)
                         svg_filename = f"{safe_section_name}_{safe_work_name1}" + (f"_{safe_work_name2}" if work_name2 else "") + ".svg"
                         work_svg_path = os.path.join(svg_dir, svg_filename)
-                        work_svg_relative = f"/static/svgs/{claim_number}_{vin}/{svg_filename}".replace("\\", "/")
+                        work_svg_relative = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}/{svg_filename}".replace("\\", "/")
+                        logger.debug(f"🔍 DEBUG: claim_number='{claim_number}', vin='{vin}', work_svg_relative='{work_svg_relative}'")
 
                         # Сохраняем SVG только если включен сбор SVG
                         if svg_collection:

@@ -163,18 +163,28 @@ def search_in_table(driver: WebDriver, search_value: str, search_type: str) -> b
 @retry_on_failure(max_attempts=2, delay=0.5)
 def click_more_icon(driver: WebDriver) -> bool:
     """
-    Быстрое нажатие иконки "Еще".
+    Быстрое нажатие иконки "Еще". Пробует селекторы для исходящих и открытых дел.
     """
-    try:
-        more_icon = WebDriverWait(driver, 8).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, MORE_ICON_SELECTOR))
-        )
-        more_icon.click()
-        logger.info("Клик по иконке 'ещё'")
-        return True
-    except TimeoutException as e:
-        logger.error(f"Ошибка клика по иконке 'ещё': {str(e)}")
-        return False
+    # Селекторы для разных типов таблиц
+    selectors = [
+        MORE_ICON_SELECTOR,  # Исходящие дела
+        MORE_ICON_SELECTOR.replace("worklistgrid_custom_sent", "worklistgrid_custom_open")  # Открытые дела
+    ]
+    
+    for i, selector in enumerate(selectors):
+        try:
+            more_icon = WebDriverWait(driver, 4).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+            )
+            more_icon.click()
+            table_type = "исходящих" if i == 0 else "открытых"
+            logger.info(f"Клик по иконке 'ещё' в таблице {table_type} дел")
+            return True
+        except TimeoutException:
+            continue
+    
+    logger.error("Ошибка клика по иконке 'ещё': не найдена ни в одной таблице")
+    return False
 
 
 @retry_on_failure(max_attempts=2, delay=0.5)

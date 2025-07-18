@@ -2,8 +2,9 @@ body {
     font-family: 'Segoe UI', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f5f7fa;
-    color: #333;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #495057;
+    min-height: 100vh;
 }
 
 .container {
@@ -12,21 +13,30 @@ body {
     align-items: center;
     min-height: 100vh;
     width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .form-wrapper {
     width: 100%;
     max-width: 2200px;
     background-color: white;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     text-align: left;
 }
 
-.all-zones-button {
-    display: inline-flex;
+/* Стили для зоны "Все зоны" */
+.all-zones-row {
+    display: flex;
     align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.all-zones-button {
+    flex: 1;
     padding: 12px 20px;
     background-color: #6c757d;
     color: white;
@@ -34,13 +44,12 @@ body {
     border-radius: 6px;
     cursor: pointer;
     font-size: 16px;
-    margin-bottom: 10px;
-    transition: background-color 0.3s, transform 0.1s;
+    font-weight: 600;
+    transition: background-color 0.2s;
 }
 
 .all-zones-button:hover {
     background-color: #5a6268;
-    transform: translateY(-2px);
 }
 
 .tabs {
@@ -56,7 +65,8 @@ body {
     border-radius: 6px;
     cursor: pointer;
     font-size: 16px;
-    transition: background-color 0.3s, transform 0.1s;
+    transition: background-color 0.2s;
+    color: #6c757d;
 }
 
 .tab-button:hover {
@@ -92,36 +102,30 @@ body {
 
 .left-column {
     flex: 1;
-    min-width: 1000px;
+    min-width: 400px;
     background-color: white;
     border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    max-height: 80vh;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-height: 60vh; /* Уменьшил с 80vh до 60vh */
     display: flex;
     gap: 20px;
 }
 
 .sidebar {
-    width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.wide-sidebar {
-    width: 600px;
-    max-height: 80vh;
+    flex: 1;
+    max-height: 60vh; /* Уменьшил с 80vh до 60vh */
     overflow-y: auto;
 }
 
 .zones-container {
-    width: 100%;
-    max-height: 80vh;
+    flex: 1;
+    max-height: 60vh; /* Уменьшил с 80vh до 60vh */
     overflow-y: auto;
 }
 
 .right-column {
-    flex: 1;
+    flex: 2;
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -130,21 +134,20 @@ body {
 .image-container {
     position: relative;
     width: 100%;
-    height: 80vh;
+    height: 60vh; /* Уменьшил с 80vh до 60vh */
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: white;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .right-column img {
     max-width: 100%;
     max-height: 100%;
-    width: auto;
-    height: auto;
-    border-radius: 4px;
+    object-fit: contain;
+    border-radius: 6px;
 }
 
 .zones-table {
@@ -162,25 +165,27 @@ body {
 }
 
 .zones-table button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     flex: 1;
-    padding: 12px 20px;
-    background-color: #007bff;
+    padding: 12px 16px;
+    background: #28a745;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 16px;
-    text-align: left;
-    transition: background-color 0.3s, transform 0.1s;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s ease;
 }
 
 .zones-table button:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
+    background: #218838;
 }
 
 .zones-table button.active {
-    background-color: #dc3545;
+    background: #dc3545;
     font-weight: 600;
 }
 
@@ -190,120 +195,141 @@ body {
     gap: 8px;
 }
 
-.detail-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
 .detail-button {
-    flex: 1;
-    padding: 10px;
-    background-color: #28a745;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 14px;
+    background: #007bff;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    text-align: left;
-    transition: background-color 0.3s, transform 0.1s;
+    font-weight: 500;
+    transition: background 0.2s ease;
 }
 
 .detail-button:hover {
-    background-color: #218838;
-    transform: translateY(-2px);
+    background: #0056b3;
 }
 
 .detail-button.active {
-    border: 2px solid #dc3545;
+    background: #dc3545;
 }
 
 .svg-download {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    background-color: #28a745;
+    width: 28px;
+    height: 28px;
+    background: #28a745;
     color: white;
-    border-radius: 4px;
+    border-radius: 6px;
     text-decoration: none;
-    font-size: 16px;
-    line-height: 24px;
-    transition: background-color 0.3s, transform 0.1s;
+    font-size: 14px;
+    transition: background 0.2s ease;
+    position: relative;
 }
 
 .svg-download:hover {
-    background-color: #218838;
-    transform: scale(1.1);
+    background: #218838;
 }
 
 .detail-svg-download {
-    margin-right: 10px;
+    margin-left: 8px;
+}
+
+/* Умные tooltip - не выходят за границы */
+.svg-download {
+    position: relative;
 }
 
 .svg-download::after {
     content: attr(title);
     position: absolute;
-    top: -35px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
+    background: #333;
     color: white;
     padding: 5px 10px;
     border-radius: 4px;
     font-size: 12px;
     white-space: nowrap;
     opacity: 0;
-    transition: opacity 0.3s;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
     pointer-events: none;
+    z-index: 1000;
+    
+    /* По умолчанию снизу по центру */
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 5px;
+}
+
+/* Для всех элементов в левой части - показываем справа */
+.left-column .svg-download::after,
+.zones-container .svg-download::after,
+.data-table .svg-download::after {
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    margin-top: 0;
+    margin-left: 5px;
+}
+
+/* Специально для кнопки "Все зоны" - tooltip слева */
+.all-zones-row .svg-download::after {
+    top: 50%;
+    right: 100%;
+    left: auto;
+    transform: translateY(-50%);
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 5px;
 }
 
 .svg-download:hover::after {
     opacity: 1;
+    visibility: visible;
 }
 
 .download-icon {
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .pictogram-icon {
-    margin-left: 5px;
+    margin-left: 8px;
     font-size: 16px;
-}
-
-h1, h2, h3 {
-    color: #333;
-}
-
-h1 {
-    font-size: 2.2em;
-    color: #007bff;
-    margin-bottom: 20px;
+    color: #f39c12;
 }
 
 h2 {
-    background-color: #007bff;
+    background: #007bff;
     color: white;
-    padding: 12px;
+    padding: 12px 16px;
     border-radius: 6px;
-    margin-bottom: 20px;
-    font-size: 1.5em;
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
 }
 
 .back-button {
     display: inline-block;
-    padding: 10px 20px;
-    background-color: #6c757d;
+    padding: 10px 16px;
+    background: #6c757d;
     color: white;
     text-decoration: none;
     border-radius: 6px;
     margin-bottom: 20px;
-    transition: background-color 0.3s;
+    transition: background 0.2s ease;
+    font-weight: 500;
 }
 
 .back-button:hover {
-    background-color: #5a6268;
+    background: #5a6268;
 }
 
 .history-container {
@@ -316,40 +342,37 @@ h2 {
     background-color: #f8f9fa;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    display: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.history-record.active {
-    display: block;
+.history-content {
+    margin-top: 20px;
 }
 
 .history-buttons {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 10px;
     margin-bottom: 20px;
 }
 
 .history-button {
-    padding: 10px;
-    background-color: #007bff;
+    padding: 12px 16px;
+    background: #007bff;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    text-align: center;
-    transition: background-color 0.3s, transform 0.1s;
+    transition: background 0.2s ease;
 }
 
 .history-button:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
+    background: #0056b3;
 }
 
 .history-button.active {
-    background-color: #dc3545;
+    background: #dc3545;
 }
 
 .search-container {
@@ -358,43 +381,53 @@ h2 {
 
 .search-container input {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
     font-size: 16px;
+    transition: border-color 0.2s ease;
+    background: #f8f9fa;
 }
 
-.history-content {
-    margin-top: 20px;
+.search-container input:focus {
+    outline: none;
+    border-color: #007bff;
+    background: white;
 }
 
+/* Адаптивность */
 @media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
     .form-wrapper {
-        width: 100%;
         padding: 20px;
     }
+    
     .content-wrapper {
         flex-direction: column;
     }
+    
     .left-column {
         flex-direction: column;
         min-width: 100%;
+        max-height: none;
     }
+    
     .sidebar, .zones-container {
+        flex: none;
         width: 100%;
+        max-height: none;
     }
-    .wide-sidebar {
-        width: 100%;
-    }
+    
     .right-column {
         flex: 1;
         min-width: 100%;
     }
+    
     .image-container {
         height: auto;
-        max-height: 60vh;
-    }
-    .history-buttons {
-        grid-template-columns: 1fr;
+        max-height: 50vh;
     }
 }

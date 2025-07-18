@@ -45,6 +45,7 @@ from .visual_processor import (
     save_main_screenshot_and_svg, extract_zones, 
     process_zone, process_pictograms, ensure_zone_details_extracted
 )
+from .option_processor import process_vehicle_options
 from .actions import (
     wait_for_table, click_cansel_button, click_request_type_button,
     search_in_table, click_more_icon, open_task, 
@@ -77,8 +78,13 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True):
     logger.info(f"Текущий URL: {current_url}")
     claim_number, vin_number = extract_vin_and_claim_number(driver, current_url)
     screenshot_dir, svg_dir, data_dir = create_folders(claim_number, vin_number)
+    
+    # Формируем URL страницы повреждений для повторного использования
     base_url = current_url.split('step')[0][:-1] + '&step=Damage+capturing'
-    logger.info(f"Переход на URL повреждений: {base_url}")
+    logger.info(f"Сформирован URL повреждений: {base_url}")
+    
+    # Переходим на страницу повреждений для main screenshot
+    logger.info(f"Переход на URL повреждений для main screenshot: {base_url}")
     driver.get(base_url)
     WebDriverWait(driver, 8).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
     time.sleep(0.5)
@@ -87,6 +93,32 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True):
         return {"error": f"Не удалось переключиться на фрейм {IFRAME_ID}"}
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     main_screenshot_relative, main_svg_relative = save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, claim_number, vin_number, svg_collection)
+    
+    # Исправляем проблему с None при ошибке скриншота
+    if main_screenshot_relative is None:
+        main_screenshot_relative = ""
+        logger.warning("⚠️ Основной скриншот не был сохранен, устанавливаем пустой путь")
+    if main_svg_relative is None:
+        main_svg_relative = ""
+        logger.warning("⚠️ Основной SVG не был сохранен, устанавливаем пустой путь")
+    
+    # Выходим из фрейма для сбора опций
+    driver.switch_to.default_content()
+    
+    # СНАЧАЛА СОБИРАЕМ ОПЦИИ АВТОМОБИЛЯ (до обработки зон)
+    logger.info("🚗 ЭТАП 1: Сбор опций автомобиля")
+    options_result = process_vehicle_options(driver, claim_number, vin_number)
+    
+    # ВОЗВРАЩАЕМСЯ К СТРАНИЦЕ ПОВРЕЖДЕНИЙ ДЛЯ СБОРА SVG
+    logger.info("🔄 Возвращаемся к странице повреждений для сбора SVG")
+    logger.info(f"Переход на URL повреждений для SVG: {base_url}")
+    driver.get(base_url)
+    WebDriverWait(driver, 8).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
+    time.sleep(0.5)
+    if not switch_to_frame_and_confirm(driver):
+        driver.switch_to.default_content()
+        return {"error": f"Не удалось переключиться на фрейм {IFRAME_ID} для SVG"}
+    
     if not click_breadcrumb(driver):
         driver.switch_to.default_content()
         return {"error": "Не удалось кликнуть по breadcrumb"}
@@ -94,6 +126,9 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True):
     if not zones:
         driver.switch_to.default_content()
         return {"error": "Зоны не найдены"}
+    
+    # ЗАТЕМ ОБРАБАТЫВАЕМ ЗОНЫ И SVG
+    logger.info("🎨 ЭТАП 2: Обработка зон и SVG")
     for zone in zones:
         zone_data.extend(process_zone(driver, zone, screenshot_dir, svg_dir, claim_number=claim_number, vin=vin_number, svg_collection=svg_collection))
     driver.switch_to.default_content()
@@ -103,8 +138,8 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True):
     zone_data = ensure_zone_details_extracted(zone_data, svg_dir, claim_number=claim_number, vin=vin_number, svg_collection=svg_collection)
     
     zones_table = create_zones_table(zone_data)
-    json_path = save_data_to_json(vin_number, zone_data, main_screenshot_relative, main_svg_relative, zones_table, "", data_dir, claim_number)
-    return {"success": "Задача открыта", "main_screenshot_path": main_screenshot_relative, "main_svg_path": main_svg_relative, "zones_table": zones_table, "zone_data": zone_data, "vin_value": vin_number, "claim_number": claim_number}
+    json_path = save_data_to_json(vin_number, zone_data, main_screenshot_relative, main_svg_relative, zones_table, "", data_dir, claim_number, options_result)
+    return {"success": "Задача открыта", "main_screenshot_path": main_screenshot_relative, "main_svg_path": main_svg_relative, "zones_table": zones_table, "zone_data": zone_data, "options_data": options_result, "vin_value": vin_number, "claim_number": claim_number}
 
 # Точка входа в парсер 
 async def login_audatex(username: str, password: str, claim_number: str, vin_number: str, svg_collection: bool = True):
