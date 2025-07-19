@@ -526,77 +526,86 @@ svg * {{
         logger.info(f"🔍 Анализ файла: {path}")
         logger.info(f"🔍 should_split_details: {should_split_details}")
         
-        if should_split_details:
-            filename = os.path.basename(path)
-            is_zone = is_zone_file(filename)
-            logger.info(f"🔍 Имя файла: {filename}")
-            logger.info(f"🔍 is_zone_file: {is_zone}")
-            
-            if is_zone:
-                logger.info(f"🎯 ЗОНА ОБНАРУЖЕНА: {filename} - ГАРАНТИРУЕМ обработку деталей!")
-                
-                if svg_collection:
-                    # Режим полного сохранения: сохраняем основной SVG + разбиваем + сохраняем детали
-                    os.makedirs(os.path.dirname(path), exist_ok=True)
-                    with open(path, 'wb') as f:
-                        f.write(svg_bytes)
-                    logger.info(f"✅ SVG зоны сохранён: {path}")
-                    
-                    logger.info(f"🔧 Запускаем разбиение зоны {filename} с сохранением деталей")
-                    detail_paths = split_svg_by_details(path, os.path.dirname(path), claim_number=claim_number, vin=vin, svg_collection=svg_collection)
-                    logger.info(f"🎯 Разбиение завершено: получено {len(detail_paths)} деталей")
-                else:
-                    # Режим только данных: НЕ сохраняем основной SVG, но ОБЯЗАТЕЛЬНО извлекаем детали
-                    logger.info(f"🎛️ Сбор SVG отключен, но ГАРАНТИРУЕМ извлечение данных о деталях зоны: {path}")
-                    
-                    # Создаем временный файл для извлечения данных о деталях
-                    with tempfile.NamedTemporaryFile(mode='wb', suffix='.svg', delete=False) as temp_file:
-                        temp_file.write(svg_bytes)
-                        temp_path = temp_file.name
-                    
-                    try:
-                        logger.info(f"🔧 Запускаем разбиение зоны {filename} БЕЗ сохранения файлов (только данные)")
-                        detail_paths = split_svg_by_details(temp_path, os.path.dirname(path), claim_number=claim_number, vin=vin, svg_collection=svg_collection)
-                        logger.info(f"🎯 Извлечение данных завершено: получено {len(detail_paths)} деталей")
-                        
-                        if len(detail_paths) == 0:
-                            logger.error(f"❌ КРИТИЧЕСКАЯ ПРОБЛЕМА: Не удалось извлечь детали из зоны {filename}!")
-                            logger.error(f"❌ Проверьте содержимое временного файла: {temp_path}")
-                            # НЕ удаляем временный файл для отладки
-                            logger.error(f"❌ Временный файл сохранён для анализа: {temp_path}")
-                        else:
-                            # Удаляем временный файл только при успехе
-                            os.unlink(temp_path)
-                    except Exception as detail_error:
-                        logger.error(f"❌ Ошибка при извлечении деталей из зоны {filename}: {detail_error}")
-                        # Сохраняем временный файл для отладки
-                        logger.error(f"❌ Временный файл сохранён для анализа: {temp_path}")
-                        detail_paths = []
-            else:
-                # Не zone файл - обрабатываем как обычно
-                logger.debug(f"📄 Файл {filename} не является зоной")
-                if svg_collection:
-                    os.makedirs(os.path.dirname(path), exist_ok=True)
-                    with open(path, 'wb') as f:
-                        f.write(svg_bytes)
-                    logger.info(f"✅ SVG сохранён: {path}")
-                else:
-                    logger.info(f"🎛️ Сбор SVG отключен, пропускаем сохранение: {path}")
-                detail_paths = []
-        else:
-            # Пиктограмма - обрабатываем как раньше
-            if svg_collection:
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                with open(path, 'wb') as f:
-                    f.write(svg_bytes)
-                logger.info(f"✅ SVG пиктограммы сохранён: {path}")
-            else:
-                logger.info(f"🎛️ Сбор SVG отключен, пропускаем сохранение пиктограммы: {path}")
-            detail_paths = []
+        try:
+            if should_split_details:
+                filename = os.path.basename(path)
+                is_zone = is_zone_file(filename)
+                logger.info(f"🔍 Имя файла: {filename}")
+                logger.info(f"🔍 is_zone_file: {is_zone}")
 
-        return True, path, detail_paths
+                if is_zone:
+                    logger.info(f"🎯 ЗОНА ОБНАРУЖЕНА: {filename} - ГАРАНТИРУЕМ обработку деталей!")
+
+                    if svg_collection:
+                        # Режим полного сохранения: сохраняем основной SVG + разбиваем + сохраняем детали
+                        os.makedirs(os.path.dirname(path), exist_ok=True)
+                        with open(path, 'wb') as f:
+                            f.write(svg_bytes)
+                        logger.info(f"✅ SVG зоны сохранён: {path}")
+
+                        logger.info(f"🔧 Запускаем разбиение зоны {filename} с сохранением деталей")
+                        detail_paths = split_svg_by_details(
+                            path, os.path.dirname(path),
+                            claim_number=claim_number, vin=vin, svg_collection=svg_collection
+                        )
+                        logger.info(f"🎯 Разбиение завершено: получено {len(detail_paths)} деталей")
+                    else:
+                        # Режим только данных: НЕ сохраняем основной SVG, но ОБЯЗАТЕЛЬНО извлекаем детали
+                        logger.info(f"🎛️ Сбор SVG отключен, но ГАРАНТИРУЕМ извлечение данных о деталях зоны: {path}")
+
+                        # Создаем временный файл для извлечения данных о деталях
+                        with tempfile.NamedTemporaryFile(mode='wb', suffix='.svg', delete=False) as temp_file:
+                            temp_file.write(svg_bytes)
+                            temp_path = temp_file.name
+
+                        try:
+                            logger.info(f"🔧 Запускаем разбиение зоны {filename} БЕЗ сохранения файлов (только данные)")
+                            detail_paths = split_svg_by_details(
+                                temp_path, os.path.dirname(path),
+                                claim_number=claim_number, vin=vin, svg_collection=svg_collection
+                            )
+                            logger.info(f"🎯 Извлечение данных завершено: получено {len(detail_paths)} деталей")
+
+                            if len(detail_paths) == 0:
+                                logger.error(f"❌ КРИТИЧЕСКАЯ ПРОБЛЕМА: Не удалось извлечь детали из зоны {filename}!")
+                                logger.error(f"❌ Проверьте содержимое временного файла: {temp_path}")
+                                # НЕ удаляем временный файл для отладки
+                                logger.error(f"❌ Временный файл сохранён для анализа: {temp_path}")
+                            else:
+                                # Удаляем временный файл только при успехе
+                                os.unlink(temp_path)
+                        except Exception as detail_error:
+                            logger.error(f"❌ Ошибка при извлечении деталей из зоны {filename}: {detail_error}")
+                            # Сохраняем временный файл для отладки
+                            logger.error(f"❌ Временный файл сохранён для анализа: {temp_path}")
+                else:
+                    # Не zone файл - обрабатываем как обычно
+                    logger.debug(f"📄 Файл {filename} не является зоной")
+                    if svg_collection:
+                        os.makedirs(os.path.dirname(path), exist_ok=True)
+                        with open(path, 'wb') as f:
+                            f.write(svg_bytes)
+                        logger.info(f"✅ SVG сохранён: {path}")
+                    else:
+                        logger.info(f"🎛️ Сбор SVG отключен, пропускаем сохранение: {path}")
+                    detail_paths = []
+            else:
+                # Пиктограмма - обрабатываем как раньше
+                if svg_collection:
+                    os.makedirs(os.path.dirname(path), exist_ok=True)
+                    with open(path, 'wb') as f:
+                        f.write(svg_bytes)
+                    logger.info(f"✅ SVG пиктограммы сохранён: {path}")
+                else:
+                    logger.info(f"🎛️ Сбор SVG отключен, пропускаем сохранение пиктограммы: {path}")
+                detail_paths = []
+
+            return True, path, detail_paths
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении SVG: {e}")
+            return False, None, []
     except Exception as e:
-        logger.error(f"Ошибка при сохранении SVG: {e}")
+        logger.error(f"Ошибка при обработке SVG: {e}")
         return False, None, []
 
 # Сохраняет основной скриншот и SVG
@@ -762,8 +771,8 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
         for attempt in range(3):
             try:
                 main_element = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "main"))
-                )
+            EC.presence_of_element_located((By.TAG_NAME, "main"))
+        )
                 break
             except TimeoutException:
                 if attempt < 2:
@@ -1019,27 +1028,30 @@ def ensure_zone_details_extracted(zone_data, svg_dir, claim_number="", vin="", s
     ГАРАНТИРУЕТ что все зоны имеют извлеченные детали.
     """
     logger.info(f"🔧 Проверяем полноту извлечения деталей для {len(zone_data)} зон")
-    
+
     zones_fixed = 0
     for zone in zone_data:
         if zone.get("has_pictograms", False):
             # Пиктограммы не нуждаются в проверке деталей
             continue
-        
+
         zone_title = zone.get("title", "")
         current_details = zone.get("details", [])
-        
+
         if len(current_details) == 0:
             logger.warning(f"⚠️ КРИТИЧЕСКОЕ: Зона '{zone_title}' не имеет деталей - ПРИНУДИТЕЛЬНОЕ исправление")
-            
+
             # Ищем SVG файл зоны несколькими способами
             zone_svg_path = None
-            
+
             # Способ 1: стандартный поиск по имени
-            safe_zone_title = translit(re.sub(r'[^\w\s-]', '', zone_title).strip(), 'ru', reversed=True).replace(" ", "_").replace("/", "_").lower().replace("'", "")
+            safe_zone_title = translit(
+                re.sub(r'[^\w\s-]', '', zone_title).strip(),
+                'ru', reversed=True
+            ).replace(" ", "_").replace("/", "_").lower().replace("'", "")
             safe_zone_title = re.sub(r'\.+', '', safe_zone_title)
             candidate_path = os.path.join(svg_dir, f"zone_{safe_zone_title}.svg")
-            
+
             if os.path.exists(candidate_path):
                 zone_svg_path = candidate_path
                 logger.info(f"✅ Найден SVG файл зоны (способ 1): {zone_svg_path}")
@@ -1050,33 +1062,38 @@ def ensure_zone_details_extracted(zone_data, svg_dir, claim_number="", vin="", s
                     all_files = [f for f in os.listdir(svg_dir) if f.endswith('.svg')]
                     zone_files = [f for f in all_files if is_zone_file(f)]
                     logger.info(f"🔍 Найдено файлов зон: {len(zone_files)} из {len(all_files)} SVG файлов")
-                    
+
                     if zone_files:
                         # Берем первый найденный файл зоны
                         zone_svg_path = os.path.join(svg_dir, zone_files[0])
                         logger.warning(f"⚠️ Использую первый доступный файл зоны: {zone_svg_path}")
-                        
+
                         # Логируем все найденные файлы зон для отладки
                         logger.info(f"🔍 Все файлы зон в директории:")
                         for i, zf in enumerate(zone_files, 1):
                             logger.info(f"  {i}. {zf}")
                 else:
                     logger.error(f"❌ Директория SVG не существует: {svg_dir}")
-            
+
             if zone_svg_path and os.path.exists(zone_svg_path):
                 logger.info(f"🎯 ПРИНУДИТЕЛЬНО извлекаем детали из: {zone_svg_path}")
                 try:
                     # Логируем размер файла для диагностики
                     file_size = os.path.getsize(zone_svg_path)
                     logger.info(f"📊 Размер файла зоны: {file_size} байт")
-                    
-                    extracted_details = split_svg_by_details(zone_svg_path, svg_dir, claim_number=claim_number, vin=vin, svg_collection=svg_collection)
-                    
+
+                    extracted_details = split_svg_by_details(
+                        zone_svg_path, svg_dir,
+                        claim_number=claim_number,
+                        vin=vin,
+                        svg_collection=svg_collection
+                    )
+
                     if extracted_details and len(extracted_details) > 0:
                         zone["details"] = extracted_details
                         zones_fixed += 1
                         logger.info(f"✅ УСПЕХ: Зона '{zone_title}' исправлена: добавлено {len(extracted_details)} деталей")
-                        
+
                         # Логируем первые несколько деталей для подтверждения
                         for i, detail in enumerate(extracted_details[:3], 1):
                             logger.info(f"  {i}. '{detail['title']}'")
@@ -1096,8 +1113,11 @@ def ensure_zone_details_extracted(zone_data, svg_dir, claim_number="", vin="", s
                 if os.path.exists(svg_dir):
                     files = os.listdir(svg_dir)
                     logger.error(f"❌ Файлы в директории: {files[:10]}{'...' if len(files) > 10 else ''}")
-    
-    logger.info(f"🎯 ФИНАЛЬНЫЙ РЕЗУЛЬТАТ дозаполнения: исправлено {zones_fixed} зон из {len([z for z in zone_data if not z.get('has_pictograms', False)])}")
+
+    logger.info(
+        f"🎯 ФИНАЛЬНЫЙ РЕЗУЛЬТАТ дозаполнения: исправлено {zones_fixed} зон из "
+        f"{len([z for z in zone_data if not z.get('has_pictograms', False)])}"
+    )
     return zone_data
 
 # Обрабатывает пиктограммы в зоне
@@ -1119,8 +1139,8 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
         for attempt in range(max_retries + 1):
             try:
                 main = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "main"))
-                )
+            EC.presence_of_element_located((By.TAG_NAME, "main"))
+        )
                 if main.is_displayed():
                     break
                 else:
@@ -1259,22 +1279,15 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
                         # Сохраняем SVG только если включен сбор SVG
                         if svg_collection:
                             success, saved_path, _ = save_svg_sync(driver, svg, work_svg_path, claim_number=claim_number, vin=vin, svg_collection=svg_collection)
-                            if success:
-                                logger.info(f"SVG пиктограммы сохранён: {work_svg_path}")
-                                works.append({
-                                    "work_name1": work_name1,
-                                    "work_name2": work_name2,
-                                    "svg_path": work_svg_relative
-                                })
-                            else:
-                                logger.warning(f"Не удалось сохранить SVG для работы '{work_name1}' в секции '{section_name}'")
-                                works.append({
-                                    "work_name1": work_name1,
-                                    "work_name2": work_name2,
-                                    "svg_path": ""
-                                })
+                        if success:
+                            logger.info(f"SVG пиктограммы сохранён: {work_svg_path}")
+                            works.append({
+                                "work_name1": work_name1,
+                                "work_name2": work_name2,
+                                "svg_path": work_svg_relative
+                            })
                         else:
-                            logger.info(f"Сбор SVG отключен, пропускаем сохранение SVG для работы '{work_name1}' в секции '{section_name}'")
+                            logger.warning(f"Не удалось сохранить SVG для работы '{work_name1}' в секции '{section_name}'")
                             works.append({
                                 "work_name1": work_name1,
                                 "work_name2": work_name2,

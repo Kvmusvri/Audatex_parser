@@ -2,26 +2,60 @@
 import logging
 import os
 import time
+import shutil
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 from .constants import SCREENSHOT_DIR, SVG_DIR, DATA_DIR, TIMEOUT, CLAIM_NUMBER_SELECTOR, VIN_SELECTOR
+from .actions import get_vin_status
 
 logger = logging.getLogger(__name__)
 
 
-# Создаёт папки для сохранения данных
+def safe_remove_directory(path):
+    """
+    Безопасно удаляет директорию и все её содержимое кроссплатформенно
+    """
+    try:
+        if os.path.exists(path):
+            logger.info(f"🗑️ Удаляем существующую папку: {path}")
+            shutil.rmtree(path)
+            logger.info(f"✅ Папка успешно удалена: {path}")
+        return True
+    except PermissionError as e:
+        logger.error(f"❌ Ошибка прав доступа при удалении {path}: {e}")
+        return False
+    except OSError as e:
+        logger.error(f"❌ Ошибка ОС при удалении {path}: {e}")
+        return False
+    except Exception as e:
+        logger.error(f"❌ Неожиданная ошибка при удалении {path}: {e}")
+        return False
+
+
+# Создаёт папки для сохранения данных с перезаписью существующих
 def create_folders(claim_number, vin):
     # Заменяем / на _ чтобы избежать создания подпапок
     safe_claim_number = claim_number.replace("/", "_")
     folder_name = f"{safe_claim_number}_{vin}"
+    
     screenshot_dir = os.path.join(SCREENSHOT_DIR, folder_name)
     svg_dir = os.path.join(SVG_DIR, folder_name)
     data_dir = os.path.join(DATA_DIR, folder_name)
+    
+    # Удаляем существующие папки если они есть
+    safe_remove_directory(screenshot_dir)
+    safe_remove_directory(svg_dir)
+    safe_remove_directory(data_dir)
+    
+    # Создаем новые папки
+    logger.info(f"📁 Создаем папки для: {folder_name}")
     os.makedirs(screenshot_dir, exist_ok=True)
     os.makedirs(svg_dir, exist_ok=True)
     os.makedirs(data_dir, exist_ok=True)
+    
+    logger.info(f"✅ Папки успешно созданы: screenshots={screenshot_dir}, svg={svg_dir}, data={data_dir}")
     return screenshot_dir, svg_dir, data_dir
 
 
@@ -88,4 +122,9 @@ def extract_vin_and_claim_number(driver, current_url):
             raise Exception(error_msg)
     
     logger.info(f"✅ Все поля успешно извлечены: claim_number='{result.get('claim_number', '')}', vin='{result.get('vin', '')}'")
-    return result['claim_number'], result['vin'] 
+    
+    # Получаем статус VIN кнопок сразу после извлечения VIN
+    vin_status = get_vin_status(driver)
+    logger.info(f"📊 VIN статус определен: {vin_status}")
+    
+    return result['claim_number'], result['vin'], vin_status 

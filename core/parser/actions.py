@@ -336,3 +336,59 @@ def find_claim_data(driver: WebDriver, claim_number: Optional[str] = None,
             return {"success": True}
         logger.info(f"Данные не найдены в разделе {section}")
     return {"error": "Данные не найдены ни в одном разделе"} 
+
+
+@retry_on_failure(max_attempts=3, delay=1.0)
+def get_vin_status(driver: WebDriver) -> str:
+    """
+    Определяет активный статус VIN кнопок.
+    
+    Returns:
+        str: "VIN", "VIN лайт" или "Нет"
+    """
+    logger.info("🔍 Определяем статус VIN кнопок...")
+    
+    try:
+        vin_query_id = "root.task.basicClaimData.vehicle.vehicleIdentification.VINQuery-VINQueryButton"
+        vin_lite_id = "root.task.basicClaimData.vehicle.vehicleIdentification.VINQuery-vinDecoderButton"
+        
+        # Ищем кнопки с небольшим ожиданием
+        wait = WebDriverWait(driver, 5)
+        
+        vin_query_enabled = False
+        vin_lite_enabled = False
+        
+        try:
+            vin_query_button = wait.until(EC.presence_of_element_located((By.ID, vin_query_id)))
+            vin_query_enabled = vin_query_button.is_enabled()
+            logger.info(f"📋 VIN Запрос: {'активна' if vin_query_enabled else 'неактивна'}")
+        except TimeoutException:
+            logger.warning("❌ Кнопка VIN Запрос не найдена")
+        
+        try:
+            vin_lite_button = driver.find_element(By.ID, vin_lite_id)
+            vin_lite_enabled = vin_lite_button.is_enabled()
+            logger.info(f"📋 VIN Лайт: {'активна' if vin_lite_enabled else 'неактивна'}")
+        except NoSuchElementException:
+            logger.warning("❌ Кнопка VIN Лайт не найдена")
+        
+        # Определяем статус
+        if vin_query_enabled and not vin_lite_enabled:
+            result = "VIN"
+            logger.info("✅ Статус: VIN Запрос активен")
+        elif vin_lite_enabled and not vin_query_enabled:
+            result = "VIN лайт"
+            logger.info("✅ Статус: VIN Лайт активен")
+        elif vin_query_enabled and vin_lite_enabled:
+            # Если обе активны, проверяем визуально какая выбрана (оранжевая)
+            result = "VIN"  # По умолчанию VIN Запрос
+            logger.info("✅ Статус: Обе активны, выбран VIN Запрос")
+        else:
+            result = "Нет"
+            logger.info("❌ Статус: Ни одна кнопка не активна")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка при определении VIN статуса: {e}")
+        return "Нет" 

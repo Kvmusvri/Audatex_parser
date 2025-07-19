@@ -69,6 +69,15 @@
             </div>
             {% else %}
             <h1 class="vin-header">{{ vin_value }}</h1>
+            
+            <!-- VIN Статус -->
+            <div class="vin-status-field">
+                <span class="vin-status-label">VIN статус:</span>
+                <span class="vin-status-value vin-status-{{ vin_status.lower().replace(' ', '-') if vin_status else 'нет' }}">
+                    {{ vin_status or 'Нет' }}
+                </span>
+            </div>
+            
             <div class="tabs">
                 <button class="tab-button active" data-tab="results">Результаты</button>
                 <button class="tab-button" onclick="window.location.href='/history'">История</button>

@@ -76,7 +76,7 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True):
     time.sleep(0.5)
     current_url = driver.current_url
     logger.info(f"Текущий URL: {current_url}")
-    claim_number, vin_number = extract_vin_and_claim_number(driver, current_url)
+    claim_number, vin_number, vin_status = extract_vin_and_claim_number(driver, current_url)
     screenshot_dir, svg_dir, data_dir = create_folders(claim_number, vin_number)
     
     # Формируем URL страницы повреждений для повторного использования
@@ -138,7 +138,7 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True):
     zone_data = ensure_zone_details_extracted(zone_data, svg_dir, claim_number=claim_number, vin=vin_number, svg_collection=svg_collection)
     
     zones_table = create_zones_table(zone_data)
-    json_path = save_data_to_json(vin_number, zone_data, main_screenshot_relative, main_svg_relative, zones_table, "", data_dir, claim_number, options_result)
+    json_path = save_data_to_json(vin_number, zone_data, main_screenshot_relative, main_svg_relative, zones_table, "", data_dir, claim_number, options_result, vin_status)
     return {"success": "Задача открыта", "main_screenshot_path": main_screenshot_relative, "main_svg_path": main_svg_relative, "zones_table": zones_table, "zone_data": zone_data, "options_data": options_result, "vin_value": vin_number, "claim_number": claim_number}
 
 # Точка входа в парсер 

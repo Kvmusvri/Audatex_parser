@@ -475,6 +475,93 @@ def extract_predefined_options_from_container(content_container):
     return options, errors
 
 
+def extract_regular_options_from_container(content_container):
+    """Специальная функция для извлечения опций из regular-options секции"""
+    options = []
+    errors = []
+    
+    try:
+        logger.info("🔧 Проверяем наличие regular-options секции...")
+        
+        # Ищем контейнер regular-options
+        regular_options_container = None
+        regular_selectors = [
+            "#regular-options",
+            "div#regular-options",
+            "div[class*='regular-options']"
+        ]
+        
+        for container_selector in regular_selectors:
+            try:
+                containers = content_container.find_elements(By.CSS_SELECTOR, container_selector)
+                if containers:
+                    regular_options_container = containers[0]
+                    logger.info(f"🎯 Найден контейнер regular-options через: {container_selector}")
+                    break
+            except:
+                continue
+        
+        if not regular_options_container:
+            logger.debug("ℹ️ Контейнер regular-options не найден")
+            return options, errors
+        
+        # Ищем все элементы с классом isolated-model-option-in-group
+        isolated_elements = regular_options_container.find_elements(By.CSS_SELECTOR, "div.isolated-model-option-in-group")
+        logger.info(f"🔍 Найдено {len(isolated_elements)} элементов isolated-model-option-in-group")
+        
+        # Если не найдено, ищем по другим селекторам
+        if not isolated_elements:
+            isolated_elements = regular_options_container.find_elements(By.XPATH, ".//*[contains(@class, 'isolated-model-option-in-group')]")
+            logger.info(f"🔍 Найдено {len(isolated_elements)} элементов через XPath")
+        
+        # Если все еще не найдено, ищем по id начинающимся с 's-'
+        if not isolated_elements:
+            isolated_elements = regular_options_container.find_elements(By.XPATH, ".//*[starts-with(@id, 's-')]")
+            logger.info(f"🔍 Найдено {len(isolated_elements)} элементов с id начинающимся с 's-'")
+        
+        if not isolated_elements:
+            logger.warning("⚠️ Не найдено элементов опций в regular-options")
+            return options, errors
+        
+        logger.info(f"🔧 Обрабатываем {len(isolated_elements)} элементов regular-options")
+        
+        # Логируем первые несколько элементов для диагностики
+        logger.info(f"📊 Первые элементы regular-options:")
+        for i, elem in enumerate(isolated_elements[:3]):
+            elem_class = elem.get_attribute("class") or ""
+            elem_id = elem.get_attribute("id") or ""
+            elem_text = elem.text.strip()[:50] if elem.text else ""
+            logger.info(f"    {i+1}. class='{elem_class}' id='{elem_id}' text='{elem_text}'")
+        
+        # Обрабатываем каждый элемент
+        for i, element in enumerate(isolated_elements):
+            # Человеческая пауза при обработке regular опций
+            batch_processing_pause(i, len(isolated_elements), "regular опций")
+            
+            try:
+                option_data, element_errors = extract_option_from_element(element, "regular")
+                errors.extend(element_errors)
+                
+                if option_data:
+                    options.append(option_data)
+                    logger.debug(f"✅ Regular опция {i+1}: {option_data.get('title', 'БЕЗ НАЗВАНИЯ')}")
+                
+            except Exception as e:
+                error_msg = f"Regular опция {i+1}: {e}"
+                logger.warning(f"⚠️ {error_msg}")
+                errors.append(error_msg)
+                continue
+        
+        logger.info(f"✅ Извлечено {len(options)} regular опций, ошибок: {len(errors)}")
+        
+    except Exception as e:
+        error_msg = f"Критическая ошибка извлечения regular опций: {e}"
+        logger.error(f"❌ {error_msg}")
+        errors.append(error_msg)
+    
+    return options, errors
+
+
 def find_all_option_elements_in_container(content_container):
     """Универсально находит все возможные элементы опций в контейнере"""
     option_elements = []
@@ -487,7 +574,24 @@ def find_all_option_elements_in_container(content_container):
             "div.model-option",
             "div[class*='model-option']",
             "div[class*='option']",
-            "*[class*='model-option']"
+            "*[class*='model-option']",
+            # Добавляем селекторы для isolated-model-option-in-group
+            "div.isolated-model-option-in-group",
+            "div[class*='isolated-model-option-in-group']",
+            "*[class*='isolated-model-option-in-group']",
+            # Добавляем селекторы для всех возможных типов опций
+            "div[id^='s-']",
+            "div[data-value]",
+            "div[data-parent]",
+            # Добавляем селекторы для элементов с model-option-description
+            "div:has(span.model-option-description)",
+            "div:has(span[class*='option-description'])",
+            # Добавляем селекторы для элементов в model-option-group
+            "div.model-option-group div[class*='model-option']",
+            "div.model-option-group div[class*='option']",
+            # Добавляем селекторы для элементов в model-option-sub-group-content
+            "div.model-option-sub-group-content div[class*='model-option']",
+            "div.model-option-sub-group-content div[class*='option']"
         ]
         
         for selector in option_selectors:
@@ -528,6 +632,18 @@ def find_all_option_elements_in_container(content_container):
                 model_like = content_container.find_elements(By.XPATH, ".//*[contains(@class, 'model')]")
                 logger.warning(f"    📊 Элементов с 'model' в классе: {len(model_like)}")
                 
+                # Ищем элементы с class содержащим 'isolated'
+                isolated_like = content_container.find_elements(By.XPATH, ".//*[contains(@class, 'isolated')]")
+                logger.warning(f"    📊 Элементов с 'isolated' в классе: {len(isolated_like)}")
+                
+                # Ищем элементы с id начинающимся с 's-'
+                s_id_elements = content_container.find_elements(By.XPATH, ".//*[starts-with(@id, 's-')]")
+                logger.warning(f"    📊 Элементов с id начинающимся с 's-': {len(s_id_elements)}")
+                
+                # Ищем элементы с data-value
+                data_value_elements = content_container.find_elements(By.XPATH, ".//*[@data-value]")
+                logger.warning(f"    📊 Элементов с data-value: {len(data_value_elements)}")
+                
                 # Показываем первые несколько div элементов
                 logger.warning("    📊 Первые 5 div элементов:")
                 for i, div in enumerate(all_divs[:5]):
@@ -536,6 +652,15 @@ def find_all_option_elements_in_container(content_container):
                     div_text = div.text.strip()[:50] if div.text else ""
                     logger.warning(f"        {i+1}. class='{div_class}' id='{div_id}' text='{div_text}'")
                     
+                # Показываем элементы с isolated в классе
+                if isolated_like:
+                    logger.warning("    📊 Элементы с 'isolated' в классе:")
+                    for i, elem in enumerate(isolated_like[:3]):
+                        elem_class = elem.get_attribute("class") or ""
+                        elem_id = elem.get_attribute("id") or ""
+                        elem_text = elem.text.strip()[:50] if elem.text else ""
+                        logger.warning(f"        {i+1}. class='{elem_class}' id='{elem_id}' text='{elem_text}'")
+                        
             except Exception as diag_error:
                 logger.warning(f"⚠️ Ошибка диагностики: {diag_error}")
         
@@ -561,7 +686,14 @@ def extract_option_from_element(option_element, section_suffix=""):
             "span.model-option-description",
             "span[class*='option-description']", 
             "span[class*='description']",
-            "*[class*='description']"
+            "*[class*='description']",
+            # Добавляем селекторы для isolated-model-option-in-group
+            "span.mo-white-space",
+            "span[class*='white-space']",
+            # Добавляем селекторы для всех возможных текстовых элементов
+            "span",
+            "div",
+            "label"
         ]
         
         for text_selector in text_selectors:
@@ -588,6 +720,9 @@ def extract_option_from_element(option_element, section_suffix=""):
         
         if option_text:
             code, title = parse_option_code_title(option_text)
+            
+            # Логируем результат парсинга для диагностики
+            logger.debug(f"🔍 Парсинг: '{option_text}' -> код='{code}', название='{title}'")
             
             # Проверяем что у нас есть либо код либо осмысленное название
             if not code and not title:
@@ -710,6 +845,9 @@ def extract_options_without_sections(content_container):
         
         valid_count = 0
         for i, option_element in enumerate(option_elements):
+            # Человеческая пауза при массовой обработке опций
+            batch_processing_pause(i, len(option_elements), "опций")
+            
             option_data, option_errors = extract_option_from_element(option_element)
             errors.extend(option_errors)
             
@@ -746,10 +884,16 @@ def extract_zone_options_universal(driver, zone):
             return [], [error_msg], [f"КРИТИЧЕСКАЯ ОШИБКА: {error_msg}"]
         
         logger.info(f"✅ Кликаем по зоне '{zone['title']}'...")
-        zone['element'].click()
-        logger.debug(f"✅ Клик по зоне '{zone['title']}' выполнен")
+        
+        # Человеческий клик с паузами и движением мыши
+        human_click(driver, zone['element'], f"зону '{zone['title']}'")
+        logger.debug(f"✅ Человеческий клик по зоне '{zone['title']}' выполнен")
         
         logger.info(f"🔄 Ожидаем загрузку контента для зоны '{zone['title']}'...")
+        
+        # Имитируем человеческое ожидание загрузки
+        reading_pause()
+        
         content_container = wait_for_content_loaded(driver)
         logger.info(f"✅ Контент загружен для зоны '{zone['title']}'")
         
@@ -835,7 +979,7 @@ def extract_zone_options_universal(driver, zone):
         else:
             # Ищем опции без секций (только если секции не найдены)
             logger.info(f"🔧 Ищем опции без секций в зоне '{zone['title']}'...")
-            regular_options, regular_errors = extract_options_without_sections(content_container)
+            regular_options, regular_errors = extract_regular_options_from_container(content_container)
             all_errors.extend(regular_errors)
             options.extend(regular_options)
             processing_notes.append("Обработано как зона без секций")
@@ -1069,7 +1213,11 @@ def collect_all_options_extended(driver):
         logger.error("❌ Не найдены зоны опций")
         return []
     
-    for zone in zones:
+    for i, zone in enumerate(zones):
+        # Пауза между переходами к разным зонам
+        if i > 0:  # Не делаем паузу перед первой зоной
+            section_transition_pause()
+            
         zone_options, zone_errors, processing_notes = extract_zone_options_universal(driver, zone)
         
         zone_data = {
@@ -1101,7 +1249,8 @@ def collect_all_options_extended(driver):
             if len(zone_errors) > 3:
                 logger.warning(f"        • ... и еще {len(zone_errors) - 3} ошибок")
         
-        time.sleep(0.3)
+        # Быстрая пауза между зонами
+        fast_human_pause()
     
     total_zones = len(all_zones_data)
     total_options = sum(zone["total_options"] for zone in all_zones_data)
@@ -1130,7 +1279,11 @@ def collect_all_options(driver):
     
     all_zones_data = []
     
-    for zone in zones:
+    for i, zone in enumerate(zones):
+        # Пауза между переходами к разным зонам
+        if i > 0:  # Не делаем паузу перед первой зоной
+            section_transition_pause()
+            
         zone_options, zone_errors, processing_notes = extract_zone_options_universal(driver, zone)
         
         zone_data = {
@@ -1143,7 +1296,9 @@ def collect_all_options(driver):
         
         all_zones_data.append(zone_data)
         logger.info(f"📊 Зона '{zone['title']}': {zone_data['selected_count']}/{zone_data['total_options']} опций выбрано")
-        time.sleep(0.2)
+        
+        # Быстрая пауза между зонами
+        fast_human_pause()
     
     logger.info(f"🎯 СБОР ОПЦИЙ ЗАВЕРШЕН: обработано {len(all_zones_data)} зон")
     return all_zones_data

@@ -466,12 +466,61 @@
         .section-header.active .section-info {
             color: #007bff;
         }
+
+        /* Стили для VIN статуса */
+        .vin-status-field {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .vin-status-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+        
+        .vin-status-value {
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .vin-status-vin {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .vin-status-vin-лайт {
+            background: #cce6ff;
+            color: #004085;
+        }
+        
+        .vin-status-нет {
+            background: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="form-wrapper">
             <h1>{{ record.vin_value or record.folder }} ({{ record.created }})</h1>
+            
+            <!-- VIN Статус -->
+            <div class="vin-status-field">
+                <span class="vin-status-label">VIN статус:</span>
+                <span class="vin-status-value vin-status-{{ record.vin_status.lower().replace(' ', '-') if record.vin_status else 'нет' }}">
+                    {{ record.vin_status or 'Нет' }}
+                </span>
+            </div>
+            
             <a href="/history" class="back-button">Назад к истории</a>
             
             <!-- Система вкладок -->
@@ -483,27 +532,27 @@
                 
                 <!-- Содержимое вкладки SVG -->
                 <div id="tab-svg" class="tab-content active">
-                    <div class="content-wrapper">
-                        <div class="left-column">
+            <div class="content-wrapper">
+                <div class="left-column">
                             <!-- Поменяли местами: сначала Зоны -->
-                            <div class="zones-container">
-                                <h2>Зоны</h2>
+                    <div class="zones-container">
+                        <h2>Зоны</h2>
                                 <!-- Добавил кнопку скачивания для "Все зоны" -->
                                 <div class="all-zones-row">
                                     <button class="all-zones-button" data-record="1">Все зоны</button>
                                     <a href="{{ record.main_svg_path }}" download class="svg-download" title="Скачать основной SVG">
-                                        <span class="download-icon">⬇</span>
-                                    </a>
-                                </div>
+                                <span class="download-icon">⬇</span>
+                            </a>
+                        </div>
                                 <div class="data-table">
-                                    {% for zone in record.zone_data %}
+                            {% for zone in record.zone_data %}
                                     <div class="table-section">
                                         <div class="item-row">
-                                            {% if not zone.graphics_not_available and zone.svg_path %}
-                                            <a href="{{ zone.svg_path }}" download class="svg-download" title="Скачать SVG">
-                                                <span class="download-icon">⬇</span>
-                                            </a>
-                                            {% endif %}
+                                {% if not zone.graphics_not_available and zone.svg_path %}
+                                <a href="{{ zone.svg_path }}" download class="svg-download" title="Скачать SVG">
+                                    <span class="download-icon">⬇</span>
+                                </a>
+                                {% endif %}
                                             <button class="item-button zone-button" data-zone-title="{{ zone.title }}" data-record="1">
                                                 {{ zone.title }}
                                                 {% if zone.has_pictograms %}
@@ -511,10 +560,10 @@
                                                 {% endif %}
                                             </button>
                                         </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
                             </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                             
                             <!-- Теперь Детали и пиктограммы -->
                             <div class="sidebar wide-sidebar">
@@ -523,14 +572,14 @@
                                     <div id="details-list" class="details-list"></div>
                                 </div>
                             </div>
-                        </div>
+                </div>
                         
-                        <div class="right-column">
-                            <div class="image-container">
-                                <div class="screenshot-container">
-                                    <img id="main-screenshot" src="{{ record.main_screenshot_path }}" alt="Скриншот зон">
-                                </div>
-                            </div>
+                <div class="right-column">
+                    <div class="image-container">
+                        <div class="screenshot-container">
+                            <img id="main-screenshot" src="{{ record.main_screenshot_path }}" alt="Скриншот зон">
+                        </div>
+                    </div>
                         </div>
                     </div>
                 </div>
@@ -676,7 +725,7 @@
 
         if (allZonesButton) {
             allZonesButton.addEventListener('click', () => {
-                zoneButtons.forEach(btn => btn.classList.remove('active'));
+            zoneButtons.forEach(btn => btn.classList.remove('active'));
                 if (detailsList) {
                     detailsList.querySelectorAll('.item-button').forEach(btn => btn.classList.remove('active'));
                     detailsList.innerHTML = '<div class="no-selection-message">Выберите зону для просмотра деталей</div>';
@@ -711,8 +760,8 @@
                             detailSection.innerHTML = `
                                 <div class="item-row">
                                     <a href="${detail.svg_path}" download class="svg-download" title="Скачать SVG">
-                                        <span class="download-icon">⬇</span>
-                                    </a>
+                                    <span class="download-icon">⬇</span>
+                                </a>
                                     <button class="item-button" data-detail-title="${detail.title}">${detail.title}</button>
                                 </div>
                             `;
@@ -733,14 +782,14 @@
                         zone.pictograms.forEach(pictogram => {
                             if (pictogram.works && pictogram.works.length > 0) {
                                 pictogram.works.forEach(work => {
-                                    const workTitle = work.work_name2 ? `${work.work_name1} (${work.work_name2})` : work.work_name1;
+                                const workTitle = work.work_name2 ? `${work.work_name1} (${work.work_name2})` : work.work_name1;
                                     const pictogramSection = document.createElement('div');
                                     pictogramSection.className = 'table-section';
                                     pictogramSection.innerHTML = `
                                         <div class="item-row">
                                             <a href="${work.svg_path}" download class="svg-download" title="Скачать SVG">
-                                                <span class="download-icon">⬇</span>
-                                            </a>
+                                        <span class="download-icon">⬇</span>
+                                    </a>
                                             <button class="item-button" data-detail-title="${workTitle}">${workTitle}</button>
                                         </div>
                                     `;
@@ -748,14 +797,14 @@
                                     workButton.addEventListener('click', () => {
                                         detailsList.querySelectorAll('.item-button').forEach(btn => btn.classList.remove('active'));
                                         workButton.classList.add('active');
-                                        const workSvgPath = work.svg_path || zone.screenshot_path;
+                                    const workSvgPath = work.svg_path || zone.screenshot_path;
                                         mainScreenshot.src = workSvgPath;
                                     });
                                     detailsList.appendChild(pictogramSection);
                                 });
                             }
                         });
-                    }
+                        }
 
                     if (!hasContent) {
                         detailsList.innerHTML = '<div class="no-selection-message">Нет деталей для данной зоны</div>';

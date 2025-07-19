@@ -395,6 +395,52 @@ h2 {
     background: white;
 }
 
+/* Стили для VIN статуса */
+.vin-status-field {
+    background: #f8f9fa;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border-left: 4px solid #007bff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.vin-status-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 15px;
+}
+
+.vin-status-value {
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 25px;
+    font-size: 14px;
+    min-width: 80px;
+    text-align: center;
+}
+
+.vin-status-vin {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.vin-status-vin-лайт {
+    background: #cce6ff;
+    color: #004085;
+    border: 1px solid #99ccff;
+}
+
+.vin-status-нет {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f1b2b5;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     .container {
@@ -429,5 +475,17 @@ h2 {
     .image-container {
         height: auto;
         max-height: 50vh;
+    }
+    
+    .vin-status-field {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .vin-status-value {
+        align-self: flex-end;
     }
 }
