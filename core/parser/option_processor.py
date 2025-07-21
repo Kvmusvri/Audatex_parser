@@ -34,12 +34,28 @@ def wait_for_element_clickable(driver, selector, timeout=OPTION_TIMEOUT):
 
 
 def wait_for_content_loaded(driver, timeout=SECTION_TIMEOUT):
-    """Ждет загрузки контента опций"""
-    wait = WebDriverWait(driver, timeout, poll_frequency=OPTION_POLL_INTERVAL,
-                        ignored_exceptions=[NoSuchElementException])
-    return wait.until(
-        lambda d: d.find_element(By.CSS_SELECTOR, "#model-options-section-content")
-    )
+    """Ждет загрузки контента опций с увеличенным таймаутом"""
+    try:
+        # Увеличиваем таймаут для гарантированной загрузки
+        extended_timeout = max(timeout, 15)  # Минимум 15 секунд
+        wait = WebDriverWait(driver, extended_timeout, poll_frequency=0.5,
+                            ignored_exceptions=[NoSuchElementException])
+        
+        content_element = wait.until(
+            lambda d: d.find_element(By.CSS_SELECTOR, "#model-options-section-content")
+        )
+        
+        # Дополнительная проверка, что контент действительно загружен
+        time.sleep(0.5)  # Небольшая пауза для стабилизации
+        
+        return content_element
+        
+    except TimeoutException:
+        logger.error("❌ Таймаут ожидания загрузки контента опций")
+        raise
+    except Exception as e:
+        logger.error(f"❌ Ошибка при ожидании загрузки контента: {e}")
+        raise
 
 
 def navigate_to_options(driver):
@@ -535,8 +551,6 @@ def extract_regular_options_from_container(content_container):
         
         # Обрабатываем каждый элемент
         for i, element in enumerate(isolated_elements):
-            # Человеческая пауза при обработке regular опций
-            batch_processing_pause(i, len(isolated_elements), "regular опций")
             
             try:
                 option_data, element_errors = extract_option_from_element(element, "regular")
@@ -845,8 +859,6 @@ def extract_options_without_sections(content_container):
         
         valid_count = 0
         for i, option_element in enumerate(option_elements):
-            # Человеческая пауза при массовой обработке опций
-            batch_processing_pause(i, len(option_elements), "опций")
             
             option_data, option_errors = extract_option_from_element(option_element)
             errors.extend(option_errors)
@@ -885,17 +897,42 @@ def extract_zone_options_universal(driver, zone):
         
         logger.info(f"✅ Кликаем по зоне '{zone['title']}'...")
         
-        # Человеческий клик с паузами и движением мыши
-        human_click(driver, zone['element'], f"зону '{zone['title']}'")
-        logger.debug(f"✅ Человеческий клик по зоне '{zone['title']}' выполнен")
+        # Надежный клик по элементу с обработкой ошибок
+        try:
+            # Сначала пробуем обычный клик
+            zone['element'].click()
+            logger.debug(f"✅ Обычный клик по зоне '{zone['title']}' выполнен")
+        except Exception as click_error:
+            logger.warning(f"⚠️ Обычный клик не сработал, пробуем JavaScript клик: {click_error}")
+            try:
+                # Если обычный клик не сработал, используем JavaScript
+                driver.execute_script("arguments[0].click();", zone['element'])
+                logger.debug(f"✅ JavaScript клик по зоне '{zone['title']}' выполнен")
+            except Exception as js_error:
+                logger.error(f"❌ Не удалось кликнуть по зоне '{zone['title']}': {js_error}")
+                return [], [f"Не удалось кликнуть по зоне: {js_error}"], ["Ошибка клика"]
         
         logger.info(f"🔄 Ожидаем загрузку контента для зоны '{zone['title']}'...")
         
-        # Имитируем человеческое ожидание загрузки
-        reading_pause()
+        # Увеличенная пауза для гарантированной загрузки
+        time.sleep(1.0)
         
         content_container = wait_for_content_loaded(driver)
         logger.info(f"✅ Контент загружен для зоны '{zone['title']}'")
+        
+        # Дополнительная проверка, что контент действительно содержит данные
+        try:
+            container_text = content_container.text.strip()
+            if not container_text:
+                logger.warning(f"⚠️ Зона '{zone['title']}': контейнер пустой, пробуем еще раз...")
+                time.sleep(2.0)  # Ждем еще 2 секунды
+                content_container = wait_for_content_loaded(driver)
+                container_text = content_container.text.strip()
+                if not container_text:
+                    logger.error(f"❌ Зона '{zone['title']}': контейнер остается пустым после повторной попытки")
+                    return [], [f"Контейнер зоны '{zone['title']}' пустой"], ["Пустой контейнер"]
+        except Exception as check_error:
+            logger.warning(f"⚠️ Ошибка проверки контента зоны '{zone['title']}': {check_error}")
         
         # Логируем основную информацию о контейнере
         try:
@@ -1216,7 +1253,7 @@ def collect_all_options_extended(driver):
     for i, zone in enumerate(zones):
         # Пауза между переходами к разным зонам
         if i > 0:  # Не делаем паузу перед первой зоной
-            section_transition_pause()
+            time.sleep(1.0)
             
         zone_options, zone_errors, processing_notes = extract_zone_options_universal(driver, zone)
         
@@ -1249,8 +1286,8 @@ def collect_all_options_extended(driver):
             if len(zone_errors) > 3:
                 logger.warning(f"        • ... и еще {len(zone_errors) - 3} ошибок")
         
-        # Быстрая пауза между зонами
-        fast_human_pause()
+        # Увеличенная пауза между зонами для стабильности
+        time.sleep(1.0)
     
     total_zones = len(all_zones_data)
     total_options = sum(zone["total_options"] for zone in all_zones_data)
@@ -1282,7 +1319,7 @@ def collect_all_options(driver):
     for i, zone in enumerate(zones):
         # Пауза между переходами к разным зонам
         if i > 0:  # Не делаем паузу перед первой зоной
-            section_transition_pause()
+            time.sleep(1.0)
             
         zone_options, zone_errors, processing_notes = extract_zone_options_universal(driver, zone)
         
@@ -1297,8 +1334,8 @@ def collect_all_options(driver):
         all_zones_data.append(zone_data)
         logger.info(f"📊 Зона '{zone['title']}': {zone_data['selected_count']}/{zone_data['total_options']} опций выбрано")
         
-        # Быстрая пауза между зонами
-        fast_human_pause()
+        # Увеличенная пауза между зонами для стабильности
+        time.sleep(1.0)
     
     logger.info(f"🎯 СБОР ОПЦИЙ ЗАВЕРШЕН: обработано {len(all_zones_data)} зон")
     return all_zones_data
