@@ -231,7 +231,12 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
             safe_name = re.sub(r'\.+', '', safe_name)  # Удаляем точки
 
             # Проверяем, содержит ли деталь несколько элементов (разделенных запятыми)
-            max_filename_length = 180  # Безопасная длина для Windows
+            # Определяем максимальную длину имени файла в зависимости от ОС
+            import platform
+            if platform.system() == "Windows":
+                max_filename_length = 180  # Безопасная длина для Windows
+            else:
+                max_filename_length = 255  # Безопасная длина для Linux/Unix систем
             
             if len(safe_name) <= max_filename_length:
                 # Обычный случай - имя не слишком длинное
