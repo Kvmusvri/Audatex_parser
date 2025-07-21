@@ -75,76 +75,70 @@ button:hover {
     background-color: #5a6268;
 }
 
+/* Унифицированные стили для кнопки остановки парсера */
 .stop-button {
-    background: linear-gradient(135deg, #ff3019 0%, #cf0404 100%);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    margin: 20px 0 10px 0;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
     width: 100%;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 12px 0;
+    margin-top: 15px;
+    background: #ff4e50; /* Fallback для браузеров без поддержки градиентов */
+    background: -webkit-linear-gradient(90deg, #ff4e50 0%, #f44336 50%, #b71c1c 100%);
+    background: -moz-linear-gradient(90deg, #ff4e50 0%, #f44336 50%, #b71c1c 100%);
+    background: -o-linear-gradient(90deg, #ff4e50 0%, #f44336 50%, #b71c1c 100%);
+    background: linear-gradient(90deg, #ff4e50 0%, #f44336 50%, #b71c1c 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(255, 76, 76, 0.15);
+    position: relative;
+    overflow: hidden;
+    -webkit-transition: background 0.3s ease, box-shadow 0.3s ease, -webkit-transform 0.2s ease;
+    -moz-transition: background 0.3s ease, box-shadow 0.3s ease, -moz-transform 0.2s ease;
+    -o-transition: background 0.3s ease, box-shadow 0.3s ease, -o-transform 0.2s ease;
+    transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
     display: block;
 }
 
 .stop-button:hover {
-    background: linear-gradient(135deg, #cf0404 0%, #ff3019 100%);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    background: #ff3333;
+    background: -webkit-linear-gradient(90deg, #ff3333 0%, #b30000 100%);
+    background: -moz-linear-gradient(90deg, #ff3333 0%, #b30000 100%);
+    background: -o-linear-gradient(90deg, #ff3333 0%, #b30000 100%);
+    background: linear-gradient(90deg, #ff3333 0%, #b30000 100%);
+    box-shadow: 0 6px 16px rgba(255, 76, 76, 0.25);
+    -webkit-transform: translateY(-2px);
+    -moz-transform: translateY(-2px);
+    -ms-transform: translateY(-2px);
+    -o-transform: translateY(-2px);
     transform: translateY(-2px);
 }
 
 .stop-button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Добавим в конец файла */
-
-.stop-button {
-    background: linear-gradient(to bottom, #ff4d4d, #cc0000);
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 30px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    margin-top: 15px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    transition: all 0.3s ease;
-    display: none; /* Скрыта по умолчанию */
-    width: 100%;
-    position: relative;
-    overflow: hidden;
-}
-
-.stop-button:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: 0.5s;
-}
-
-.stop-button:hover {
-    background: linear-gradient(to bottom, #ff3333, #b30000);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-    transform: translateY(-2px);
-}
-
-.stop-button:hover:before {
-    left: 100%;
-}
-
-.stop-button:active {
+    background: #b30000;
+    background: -webkit-linear-gradient(90deg, #b30000 0%, #ff3333 100%);
+    background: -moz-linear-gradient(90deg, #b30000 0%, #ff3333 100%);
+    background: -o-linear-gradient(90deg, #b30000 0%, #ff3333 100%);
+    background: linear-gradient(90deg, #b30000 0%, #ff3333 100%);
+    box-shadow: 0 2px 6px rgba(255, 76, 76, 0.18);
+    -webkit-transform: translateY(1px);
+    -moz-transform: translateY(1px);
+    -ms-transform: translateY(1px);
+    -o-transform: translateY(1px);
     transform: translateY(1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.stop-button:disabled {
+    background: #cccccc;
+    background: -webkit-linear-gradient(90deg, #cccccc 0%, #999999 100%);
+    background: -moz-linear-gradient(90deg, #cccccc 0%, #999999 100%);
+    background: -o-linear-gradient(90deg, #cccccc 0%, #999999 100%);
+    background: linear-gradient(90deg, #cccccc 0%, #999999 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    opacity: 0.7;
 }
 
 .notification {
@@ -171,34 +165,6 @@ button:hover {
 .hidden {
     display: none;
 }
-.stop-button {
-    width: 100%;
-    padding: 12px 0;
-    margin-top: 15px;
-    background: linear-gradient(90deg, #ff4e50 0%, #f44336 50%, #b71c1c 100%);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(255, 76, 76, 0.15);
-    position: relative;
-    overflow: hidden;
-    transition: background 0.3s, box-shadow 0.3s, transform 0.2s;
-}
-
-.stop-button:hover {
-    background: linear-gradient(90deg, #ff3333 0%, #b30000 100%);
-    box-shadow: 0 6px 16px rgba(255, 76, 76, 0.25);
-    transform: translateY(-2px) scale(1.03);
-}
-
-.stop-button:active {
-    background: linear-gradient(90deg, #b30000 0%, #ff3333 100%);
-    box-shadow: 0 2px 6px rgba(255, 76, 76, 0.18);
-    transform: translateY(1px) scale(0.98);
-}
 
 @media (max-width: 768px) {
     .form-wrapper {
@@ -211,9 +177,17 @@ button:hover {
 .svg-toggle-group {
     margin-bottom: 20px;
     padding: 15px;
+    background: #f8f9fa;
+    background: -webkit-linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: -moz-linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: -o-linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: 10px;
     border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    -o-transition: all 0.3s ease;
 }
 
 .svg-toggle-label {
@@ -251,7 +225,14 @@ button:hover {
     left: 0;
     right: 0;
     bottom: 0;
+    background: #dc3545; /* Fallback для браузеров без поддержки градиентов */
+    background: -webkit-linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    background: -moz-linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    background: -o-linear-gradient(135deg, #dc3545 0%, #c82333 100%);
     background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    -webkit-transition: all 0.4s ease;
+    -moz-transition: all 0.4s ease;
+    -o-transition: all 0.4s ease;
     transition: all 0.4s ease;
     border-radius: 30px;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
@@ -264,17 +245,32 @@ button:hover {
     width: 22px;
     left: 4px;
     bottom: 4px;
+    background: #ffffff;
+    background: -webkit-linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    background: -moz-linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    background: -o-linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    -webkit-transition: all 0.4s ease;
+    -moz-transition: all 0.4s ease;
+    -o-transition: all 0.4s ease;
     transition: all 0.4s ease;
     border-radius: 50%;
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 input:checked + .svg-slider {
+    background: #28a745;
+    background: -webkit-linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: -moz-linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: -o-linear-gradient(135deg, #28a745 0%, #20c997 100%);
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 }
 
 input:checked + .svg-slider:before {
+    -webkit-transform: translateX(30px);
+    -moz-transform: translateX(30px);
+    -ms-transform: translateX(30px);
+    -o-transform: translateX(30px);
     transform: translateX(30px);
 }
 
@@ -285,16 +281,27 @@ input:checked + .svg-slider:before {
     text-align: center;
     padding: 5px 10px;
     border-radius: 15px;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    -o-transition: all 0.3s ease;
     transition: all 0.3s ease;
 }
 
 .svg-status-text.enabled {
+    background: #d4edda;
+    background: -webkit-linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    background: -moz-linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    background: -o-linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
     background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
     color: #155724;
     border: 1px solid #c3e6cb;
 }
 
 .svg-status-text.disabled {
+    background: #f8d7da;
+    background: -webkit-linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    background: -moz-linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    background: -o-linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
     background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
     color: #721c24;
     border: 1px solid #f5c6cb;
@@ -302,10 +309,17 @@ input:checked + .svg-slider:before {
 
 /* Анимация при наведении */
 .svg-toggle-group:hover {
+    background: #e9ecef;
+    background: -webkit-linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    background: -moz-linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    background: -o-linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
     background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    -webkit-transform: translateY(-1px);
+    -moz-transform: translateY(-1px);
+    -ms-transform: translateY(-1px);
+    -o-transform: translateY(-1px);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
 }
 
 .svg-toggle-switch:hover .svg-slider {

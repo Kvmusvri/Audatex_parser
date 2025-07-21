@@ -42,9 +42,9 @@
                 </div>
                 
                 <button type="submit">Войти</button>
-                <button type="button" class="stop-button" id="stop-parser-btn" style="display: block; margin-top: 10px;">Остановить парсер</button>
+                <button type="button" class="stop-button" id="stop-parser-btn">Остановить парсер</button>
             </form>
-            <div id="stop-parser-notification" class="notification" style="display:none;"></div>
+            <div id="stop-parser-notification" class="notification hidden"></div>
         </div>
     </div>
     <script>
@@ -77,13 +77,13 @@
                     notif.textContent = data.message || 'Ошибка при остановке парсера.';
                     notif.className = 'notification error';
                 }
-                notif.style.display = 'block';
+                notif.classList.remove('hidden');
             } catch (e) {
                 console.error('Ошибка при обращении к /stop_parser:', e);
                 const notif = document.getElementById('stop-parser-notification');
                 notif.textContent = 'Ошибка соединения с сервером.';
                 notif.className = 'notification error';
-                notif.style.display = 'block';
+                notif.classList.remove('hidden');
             }
             btn.disabled = false;
             btn.textContent = 'Остановить парсер';
