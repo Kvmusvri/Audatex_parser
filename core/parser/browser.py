@@ -47,7 +47,7 @@ def init_browser():
         options.add_argument(
             f"user-agent=Mozilla/5.0 ({'Windows NT 10.0; Win64; x64' if system == 'Windows' else 'X11; Linux x86_64'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.7151.122 Safari/537.36"
         )
-        # options.add_argument('--headless=new')  # Включаем headless-режим
+        options.add_argument('--headless=new')  # Включаем headless-режим
         options.add_argument('--no-sandbox')    # Для стабильной работы на Ubuntu
         options.add_argument('--disable-dev-shm-usage')  # Для избежания проблем с памятью
 
