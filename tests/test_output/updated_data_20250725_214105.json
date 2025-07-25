@@ -1,0 +1,3212 @@
+{
+  "vin_value": "LB37852D6RS125970",
+  "vin_status": "Нет",
+  "zone_data": [
+    {
+      "title": "Кузов передняя наружная часть",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_kuzov_perednjaja_naruzhnaja_chast.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_perednjaja_naruzhnaja_chast.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "0323 БОЛТ Л,0324 БОЛТ ПР,0320 КРОНШТ С ПР БАМПЕР П,0319 КРОНШТ СР Л БАМПЕР П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0323_bolt_l0324_bolt_pr0320_kronsht_s_pr_bamper_p0319_kronsht_sr_l_bamper_p.svg"
+        },
+        {
+          "title": "0505 БОЛТ,0503 КРЕПЛ РУЧКИ ГИБК ТЯГ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0505_bolt0503_krepl_ruchki_gibk_tjag.svg"
+        },
+        {
+          "title": "K3 - Хромированная отделка,separator,0662 ДЕК ПОЛОСА БАМП П ПР,0661 ДЕК ПОЛОСА БАМП П Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/k3_-_hromirovannaja_otdelkaseparator0662_dek_polosa_bamp_p_pr0661_dek_polosa_bamp_p_l.svg"
+        },
+        {
+          "title": "1392 РЕШЁТКА ОБТЕКАТЕЛЯ,1394 ГАЙКА,1395 БОЛТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1392_reshetka_obtekatelja1394_gajka1395_bolt.svg"
+        },
+        {
+          "title": "M6 - Ходовая камера кругового обзора,separator,0394 БОЛТ,0393 КРЕПЛЕНИЕ КАМЕРЫ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/m6_-_hodovaja_kamera_krugovogo_obzoraseparator0394_bolt0393_kreplenie_kamery.svg"
+        },
+        {
+          "title": "0431 ЭМБЛ НА РЕШ РАД-РА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0431_embl_na_resh_rad-ra.svg"
+        },
+        {
+          "title": "K3 - Хромированная отделка,separator,0655 ОБЛИЦ ПР-ТУМ ФОН Л,0656 ОБЛИЦ ПР-ТУМ ФОН ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/k3_-_hromirovannaja_otdelkaseparator0655_oblits_pr-tum_fon_l0656_oblits_pr-tum_fon_pr.svg"
+        },
+        {
+          "title": "0842 ПОДКРЫЛОК П ПР,0843 БОЛТ Л,0841 ПОДКРЫЛОК П Л,0848 ЗАЖИМ КРЕПЛЕНИЯ ПР,0846 ГАЙКА ПР,0847 ЗАЖИМ КРЕПЛЕНИЯ Л,0844 БОЛТ ПР,0845 ГАЙКА Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0842_podkrylok_p_pr0843_bolt_l0841_podkrylok_p_l0848_zazhim_kreplenija_pr0846_gajka_pr0847_zazhim_kreplenija_l0844_bolt_pr0845_gajka_l.svg"
+        },
+        {
+          "title": "0313 НАКЛАДКА БАМПЕРА ПЕР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0313_nakladka_bampera_per.svg"
+        },
+        {
+          "title": "0750 НАКЛАДК В КРЫЛО П ПР,0749 НАКЛАДКА В КРЫЛО П Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0750_nakladk_v_krylo_p_pr0749_nakladka_v_krylo_p_l.svg"
+        },
+        {
+          "title": "1457 ЩЁТКА С/ОЧИСТ П Л,1458 ЩЁТКА С/ОЧИСТ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1457_schetka_sochist_p_l1458_schetka_sochist_p_pr.svg"
+        },
+        {
+          "title": "M7 - Система помощи при парковке спереди/сзади/сбоку,M8 - система парковки автоматическая,M9 - Система мотиторинга непросматриваемых зон (BLIS),separator,0378 УЛЬ-ЗВУК ДТЧ БОК ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/m7_-_sistema_pomoschi_pri_parkovke_sperediszadisboku,m8_-_sistema_parkovki_avtomaticheskaja,m9_-_sistema_motitoringa_neprosmatrivaemyh_zon_blis,separator,0378_ul'-zvuk_dtch_bok_pr_group1.svg"
+        },
+        {
+          "title": "0377 УЛЬ-ЗВУК ДТЧ БОК Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0377_ul'-zvuk_dtch_bok_l_group2.svg"
+        },
+        {
+          "title": "Q9 - Адаптивный круиз-контроль,separator,0395 РАДАРН ДАТЧИК П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/q9_-_adaptivnyj_kruiz-kontrol'separator0395_radarn_datchik_p.svg"
+        },
+        {
+          "title": "1421 ЗАЩ МОЛД Л ЛОБ СТЕКЛ,1422 ЗАЩ МОЛД ПР ЛОБ СТЕК",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1421_zasch_mold_l_lob_stekl1422_zasch_mold_pr_lob_stek.svg"
+        },
+        {
+          "title": "0307 КРПЛ ВТ ДАТЧ П Л,0308 КРПЛ ВТ ДАТЧ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0307_krpl_vt_datch_p_l0308_krpl_vt_datch_p_pr.svg"
+        },
+        {
+          "title": "0342 БОЛТ,0340 КРОНШ КРЕП БАМПЕРА П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0342_bolt0340_kronsh_krep_bampera_p.svg"
+        },
+        {
+          "title": "I4 - ФАРА динамич эффект,separator,0563 БОЛТ Л,0564 БОЛТ ПР,0561 ФАРА Л,0562 ФАРА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/i4_-_fara_dinamich_effektseparator0563_bolt_l0564_bolt_pr0561_fara_l0562_fara_pr.svg"
+        },
+        {
+          "title": "1397 УПЛОТ ОБТЕКАТЕЛЯ ПЕР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1397_uplot_obtekatelja_per.svg"
+        },
+        {
+          "title": "Q9 - Адаптивный круиз-контроль,separator,0398 КРЕПЛ РАДАРН ДАТЧ П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/q9_-_adaptivnyj_kruiz-kontrol'separator0398_krepl_radarn_datch_p.svg"
+        },
+        {
+          "title": "9679 АНТЕННА П KEYLESS,9680 БОЛТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9679_antenna_p_keyless9680_bolt.svg"
+        },
+        {
+          "title": "1459 ОБЛ РЫЧ СТ-ОЧИСТИТ Л,1460 ОБЛ РЫЧ СТ-ОЧИСТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1459_obl_rych_st-ochistit_l1460_obl_rych_st-ochist_pr.svg"
+        },
+        {
+          "title": "1399 УПЛОТ ОБТЕКАТЕЛЯ ЗДН",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1399_uplot_obtekatelja_zdn.svg"
+        },
+        {
+          "title": "0288 ГАЙКА,0299 ГАЙКА,0287 ОБЛИЦ НИЖ БАМПЕР ПЕР,0295 КЛИПСОВОЕ КРЕПЛЕНИЕ,0309 БОЛТ,0305 ГАЙКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0288_gajka0299_gajka0287_oblits_nizh_bamper_per0295_klipsovoe_kreplenie0309_bolt0305_gajka.svg"
+        },
+        {
+          "title": "0285 РЕШЁТКА Н БАМПЕРА П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0285_reshetka_n_bampera_p.svg"
+        },
+        {
+          "title": "0772 ИЗОЛЯЦИЯ КРЫЛА П ПР,0771 ИЗОЛЯЦИЯ КРЫЛА П Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0772_izoljatsija_kryla_p_pr0771_izoljatsija_kryla_p_l.svg"
+        },
+        {
+          "title": "0501 ТРОСИК КАПОТА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0501_trosik_kapota.svg"
+        },
+        {
+          "title": "0662 ДЕК ПОЛОСА БАМП П ПР,0661 ДЕК ПОЛОСА БАМП П Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0662_dek_polosa_bamp_p_pr0661_dek_polosa_bamp_p_l.svg"
+        },
+        {
+          "title": "1445 ФОРС ОМЫВАТЕЛЯ П Л,1446 ФОРС СТ-ОМЫВ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1445_fors_omyvatelja_p_l1446_fors_st-omyv_p_pr.svg"
+        },
+        {
+          "title": "0518 БОЛТ ПР,0516 КРЕП АМОРТ КАПОТА ПР,0517 БОЛТ Л,0515 КРЕП АМОРТ КАПОТА Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0518_bolt_pr0516_krep_amort_kapota_pr0517_bolt_l0515_krep_amort_kapota_l.svg"
+        },
+        {
+          "title": "0500 РУЧ КРЮК ПРЕДОХ УСТР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0500_ruch_krjuk_predoh_ustr.svg"
+        },
+        {
+          "title": "0886 ЗАЖИМ КРЕПЛЕНИЯ ПР,0884 МОЛДИНГ КРЫЛА П ПР,0885 ЗАЖИМ КРЕПЛЕНИЯ Л,0883 МОЛДИНГ КРЫЛА П Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0886_zazhim_kreplenija_pr0884_molding_kryla_p_pr0885_zazhim_kreplenija_l0883_molding_kryla_p_l.svg"
+        },
+        {
+          "title": "0341 АБСОРБЕР БАМПЕРА П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0341_absorber_bampera_p.svg"
+        },
+        {
+          "title": "0754 БОЛТ ПР,0741 КРЫЛО П Л,0752 ГАЙКА ПР,0742 КРЫЛО П ПР,0753 БОЛТ Л,0751 ГАЙКА Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0754_bolt_pr0741_krylo_p_l0752_gajka_pr0742_krylo_p_pr0753_bolt_l0751_gajka_l.svg"
+        },
+        {
+          "title": "0770 КРЕПЛ В КРЫЛА П ПР,0769 КРЕПЛ В КРЫЛА П Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0770_krepl_v_kryla_p_pr0769_krepl_v_kryla_p_l.svg"
+        },
+        {
+          "title": "0489 ОГРАНИЧИТЕЛЬ ХОДА Л спереди,0490 ОГРАНИЧИТЕЛЬ ХОДА ПР спереди",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0489_ogranichitel'_hoda_l_speredi0490_ogranichitel'_hoda_pr_speredi.svg"
+        },
+        {
+          "title": "0372 УЛ-ЗВ ДАТЧИК ВНУТ ПР,0371 УЗ ДАТЧИК ВНУТ Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0372_ul-zv_datchik_vnut_pr0371_uz_datchik_vnut_l.svg"
+        },
+        {
+          "title": "0321 КРОНШТ Л БАМЕПЕР П,0322 КРОНШТ ПР БАМЕПЕР П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0321_kronsht_l_bameper_p0322_kronsht_pr_bameper_p.svg"
+        },
+        {
+          "title": "1401 ЛОБОВОЕ СТЕКЛО",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1401_lobovoe_steklo.svg"
+        },
+        {
+          "title": "0259 БОЛТ,0258 РАМКА НОМЕРН ЗАНКА П,0260 РАМКА НОМЕРН ЗАНКА П неоригинальная деталь",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0259_bolt0258_ramka_nomern_zanka_p0260_ramka_nomern_zanka_p_neoriginal'naja_detal'.svg"
+        },
+        {
+          "title": "0293 ИЗОЛЯЦИОННАЯ ПЕНА П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0293_izoljatsionnaja_pena_p.svg"
+        },
+        {
+          "title": "0760 ЭКРАН П АРКИ КОЛ ПР,0759 ЭКРАН П АРКИ КОЛ Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0760_ekran_p_arki_kol_pr0759_ekran_p_arki_kol_l.svg"
+        },
+        {
+          "title": "0471 КАПОТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0471_kapot.svg"
+        },
+        {
+          "title": "1451 КРЫШКА БАЧОК л,1452 КРЫШКА БАЧОК пр",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1451_kryshka_bachok_l1452_kryshka_bachok_pr.svg"
+        },
+        {
+          "title": "0494 БОЛТ,0492 ЗАМОК КАПОТА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0494_bolt0492_zamok_kapota.svg"
+        },
+        {
+          "title": "0350 ГАЙКА,0351 БОЛТ,0283 БАМПЕР П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0350_gajka0351_bolt0283_bamper_p.svg"
+        },
+        {
+          "title": "0651 КРЕПЛ ВШ ДАТЧ П Л,0652 КРЕПЛ ВШ ДАТЧ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0651_krepl_vsh_datch_p_l0652_krepl_vsh_datch_p_pr.svg"
+        },
+        {
+          "title": "0479 ГАЗОВ АМОРТ Л КАПОТ,0480 ГАЗОВ АМОРТ ПР КАПОТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0479_gazov_amort_l_kapot0480_gazov_amort_pr_kapot.svg"
+        },
+        {
+          "title": "1447 ДРЕН ТРУБА ВОД РАД л,1448 ДРЕН ТРУБА ВОД РАД пр",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1447_dren_truba_vod_rad_l1448_dren_truba_vod_rad_pr.svg"
+        },
+        {
+          "title": "0291 КРЫШ Н БАМПЕРА П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0291_krysh_n_bampera_p.svg"
+        },
+        {
+          "title": "1433 ПАНЕЛЬ В/ОТВОД КОРОБ,1435 ГАЙКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1433_panel'_votvod_korob1435_gajka.svg"
+        },
+        {
+          "title": "1423 ЗАЩ ПЛАНКА А-СТОЙК Л,1424 ЗАЩ ПЛАНК А-СТОЙК ПР,1425 СЛЕПАЯ ЗАКЛЕПКА Л,1426 СЛЕПАЯ ЗАКЛЕПКА ПР,1427 СКОБА Л,1428 СКОБА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1423_zasch_planka_a-stojk_l1424_zasch_plank_a-stojk_pr1425_slepaja_zaklepka_l1426_slepaja_zaklepka_pr1427_skoba_l1428_skoba_pr.svg"
+        },
+        {
+          "title": "0640 РЕШЕТ НАР ПР БАМП П,0639 РЕШЕТ НАР Л БАМПЕР П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0640_reshet_nar_pr_bamp_p0639_reshet_nar_l_bamper_p.svg"
+        },
+        {
+          "title": "1453 РЫЧАГ СТ-ОЧИСТ П Л,1454 РЫЧАГ СТ-ОЧИСТ П ПР,1455 ГАЙКА Л,1456 ГАЙКА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1453_rychag_st-ochist_p_l1454_rychag_st-ochist_p_pr1455_gajka_l1456_gajka_pr.svg"
+        },
+        {
+          "title": "0767 ЗАЩИТА ВШ ЗЕРК Л,0768 ЗАЩИТА ВШ ЗЕРК ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0767_zaschita_vsh_zerk_l0768_zaschita_vsh_zerk_pr.svg"
+        },
+        {
+          "title": "0563 БОЛТ Л,0564 БОЛТ ПР,0561 ФАРА Л,0562 ФАРА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0563_bolt_l0564_bolt_pr0561_fara_l0562_fara_pr.svg"
+        },
+        {
+          "title": "M4 - Активная система удержания полосы движения,M6 - Ходовая камера кругового обзора,separator,0391 КАМЕРА ДВИЖЕНИЯ П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/m4_-_aktivnaja_sistema_uderzhanija_polosy_dvizhenijam6_-_hodovaja_kamera_krugovogo_obzoraseparator0391_kamera_dvizhenija_p.svg"
+        },
+        {
+          "title": "0655 ОБЛИЦ ПР-ТУМ ФОН Л,0656 ОБЛИЦ ПР-ТУМ ФОН ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0655_oblits_pr-tum_fon_l0656_oblits_pr-tum_fon_pr.svg"
+        },
+        {
+          "title": "0413 БОЛТ,0414 БОЛТ,0410 РЕШЁТКА РАДИАТОРА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0413_bolt0414_bolt0410_reshetka_radiatora.svg"
+        },
+        {
+          "title": "M7 - Система помощи при парковке спереди/сзади/сбоку,M8 - система парковки автоматическая,M9 - Система мотиторинга непросматриваемых зон (BLIS),separator",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/m7_-_sistema_pomoschi_pri_parkovke_sperediszadisboku,m8_-_sistema_parkovki_avtomaticheskaja,m9_-_sistema_motitoringa_neprosmatrivaemyh_zon_blis,separator_group1.svg"
+        },
+        {
+          "title": "0383 КРЕПЛ ДТЧ БОКОВ П Л спереди,0384 КРЕПЛ ДТЧ БОКОВ П ПР спереди",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0383_krepl_dtch_bokov_p_l_speredi,0384_krepl_dtch_bokov_p_pr_speredi_group2.svg"
+        },
+        {
+          "title": "0374 УЗ ДАТЧИК НАР ПР,0373 УЗ ДАТЧИК НАР Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0374_uz_datchik_nar_pr0373_uz_datchik_nar_l.svg"
+        },
+        {
+          "title": "0524 УПЛОТНЕНИЕ КРЫШКИ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0524_uplotnenie_kryshki.svg"
+        },
+        {
+          "title": "0477 ГАЙКА Л,0478 ГАЙКА ПР,0475 БОЛТ Л,0476 БОЛТ ПР,0473 ШАРНИР Л КАПОТА,0474 ШАРНИР ПР КАПОТА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0477_gajka_l0478_gajka_pr0475_bolt_l0476_bolt_pr0473_sharnir_l_kapota0474_sharnir_pr_kapota.svg"
+        },
+        {
+          "title": "0257 НОМЕРНОЙ ЗНАК П,0261 БОЛТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0257_nomernoj_znak_p0261_bolt.svg"
+        },
+        {
+          "title": "0482 КЛИПСОВОЕ КРЕПЛЕНИЕ,0481 Ш/ИЗОЛЯЦИЯ КАПОТА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0482_klipsovoe_kreplenie0481_shizoljatsija_kapota.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Кузов средняя наружная часть",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_kuzov_srednjaja_naruzhnaja_chast.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_srednjaja_naruzhnaja_chast.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "2075 СТОЙК С КРЫЛОМ П Л внизу,2076 СТОЙК С КРЫЛОМ П Л внизу",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2075_stojk_s_krylom_p_l_vnizu2076_stojk_s_krylom_p_l_vnizu.svg"
+        },
+        {
+          "title": "2372 УПЛ ВНУ ПАНОРАМН ЛЮК",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2372_upl_vnu_panoramn_ljuk.svg"
+        },
+        {
+          "title": "2351 КРЫША",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2351_krysha.svg"
+        },
+        {
+          "title": "2467 РЕЛИНГ КРЫШИ Л,2468 РЕЛИНГ КРЫШИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2467_reling_kryshi_l2468_reling_kryshi_pr.svg"
+        },
+        {
+          "title": "2063 УПЛОТНИТЕЛЬ З Л,2064 УПЛОТНИТЕЛЬ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2063_uplotnitel'_z_l2064_uplotnitel'_z_pr.svg"
+        },
+        {
+          "title": "2364 УПЛ СТЕКЛ ЛЮК КРЫШИ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2364_upl_stekl_ljuk_kryshi.svg"
+        },
+        {
+          "title": "2069 БОКОВАЯ РАМА Л,2070 БОКОВАЯ РАМА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2069_bokovaja_rama_l2070_bokovaja_rama_pr.svg"
+        },
+        {
+          "title": "2377 ВЕТРООТРАЖАТ КРЫШИ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2377_vetrootrazhat_kryshi.svg"
+        },
+        {
+          "title": "0735 АНТЕННА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/0735_antenna.svg"
+        },
+        {
+          "title": "2366 СТЕКЛО ПАНОР КРЫШ ЗД",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2366_steklo_panor_krysh_zd.svg"
+        },
+        {
+          "title": "2071 СТОЙК С КРЫЛОМ П Л верх,2072 СТОЙК С КРЫЛОМ П ПР верх",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2071_stojk_s_krylom_p_l_verh2072_stojk_s_krylom_p_pr_verh.svg"
+        },
+        {
+          "title": "2361 СТЕКЛ ПАНОР КРЫШИ П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2361_stekl_panor_kryshi_p.svg"
+        },
+        {
+          "title": "2073 КРЕПЛ КРЫЛА Л,2074 КРЕПЛ КРЫЛА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2073_krepl_kryla_l2074_krepl_kryla_pr.svg"
+        },
+        {
+          "title": "1777 УПЛОТНИТЕЛЬ П Л,1778 УПЛОТНИТЕЛЬ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1777_uplotnitel'_p_l1778_uplotnitel'_p_pr.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Кузов, задняя наружная часть",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_kuzov_zadnjaja_naruzhnaja_chast.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_zadnjaja_naruzhnaja_chast.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "2937 ОГРАНИЧИТЕЛЬ ХОДА Л сзади,2938 ОГРАНИЧИТЕЛЬ ХОДА ПР сзади",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2937_ogranichitel'_hoda_l_szadi2938_ogranichitel'_hoda_pr_szadi.svg"
+        },
+        {
+          "title": "4913 ОБЛИЦОВКА В КРЫШКА З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4913_oblitsovka_v_kryshka_z.svg"
+        },
+        {
+          "title": "3785 ВЕНТИЛ ОТДУШИНА З Л,3786 ВЕНТИЛ ОТДУШИНА З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3785_ventil_otdushina_z_l3786_ventil_otdushina_z_pr.svg"
+        },
+        {
+          "title": "2944 УПЛ КРЫШКИ БАГАЖНИКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2944_upl_kryshki_bagazhnika.svg"
+        },
+        {
+          "title": "3007 ШАРНИР З Л,3008 ШАРНИР З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3007_sharnir_z_l3008_sharnir_z_pr.svg"
+        },
+        {
+          "title": "2991 ЗАМОК КРЫШКИ ЗАДН",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2991_zamok_kryshki_zadn.svg"
+        },
+        {
+          "title": "2683 УЛЬТРАЗВ ДТЧ З НАР Л,2684 УЛЬТРАЗВ ДТЧ З НР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2683_ul'trazv_dtch_z_nar_l2684_ul'trazv_dtch_z_nr_pr.svg"
+        },
+        {
+          "title": "2703 РАМКА НОМЕРН ЗНАКА З неоригинальная деталь,2706 РАМКА НОМЕРН ЗНАКА З,2713 БОЛТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2703_ramka_nomern_znaka_z_neoriginal'naja_detal'2706_ramka_nomern_znaka_z2713_bolt.svg"
+        },
+        {
+          "title": "2589 КРЕПЛ ПОРУЧЕНЬ З Л,2590 КРЕПЛ ПОРУЧЕНЬ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2589_krepl_poruchen'_z_l2590_krepl_poruchen'_z_pr.svg"
+        },
+        {
+          "title": "2997 ГАЗОНАП АМОРТИЗ З Л,2998 ГАЗОНАП АМОРТИЗ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2997_gazonap_amortiz_z_l2998_gazonap_amortiz_z_pr.svg"
+        },
+        {
+          "title": "3001 КРЕП АМОРТ Л  КР БАГ,3002 КРЕП АМОР ПР  КР БАГ,3003 БОЛТ Л,3004 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3001_krep_amort_l__kr_bag3002_krep_amor_pr__kr_bag3003_bolt_l3004_bolt_pr.svg"
+        },
+        {
+          "title": "3280 ФОНАРЬ З СР В СБОРЕ,3291 ГАЙКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3280_fonar'_z_sr_v_sbore3291_gajka.svg"
+        },
+        {
+          "title": "4907 ОБЛИЦ КРЫШКИ БАГ Н",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4907_oblits_kryshki_bag_n.svg"
+        },
+        {
+          "title": "2973 ЗАКРЫВ ПАНЕЛЬ З,2975 БОЛТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2973_zakryv_panel'_z2975_bolt.svg"
+        },
+        {
+          "title": "3803 БОКОВ СТЕКЛО  З Л,3804 БОКОВ СТЕКЛО  З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3803_bokov_steklo__z_l3804_bokov_steklo__z_pr.svg"
+        },
+        {
+          "title": "2611 НАКЛАД Л БАМПЕРА З,2612 НАКЛАДКА ПР БАМПЕР З,2613 БОЛТ Л,2614 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2611_naklad_l_bampera_z2612_nakladka_pr_bamper_z2613_bolt_l2614_bolt_pr.svg"
+        },
+        {
+          "title": "2977 ЗАМОК КРЫШКИ БАГАЖН,2983 БОЛТ,2985 БОЛТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2977_zamok_kryshki_bagazhn2983_bolt2985_bolt.svg"
+        },
+        {
+          "title": "2715 КРЕПЛЕНИЕ ЗДН ПАНЕЛИ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2715_kreplenie_zdn_paneli.svg"
+        },
+        {
+          "title": "3014 ЭМБЛЕМА З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3014_emblema_z.svg"
+        },
+        {
+          "title": "3227 ЩЁТКА С/ОЧИСТ З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3227_schetka_sochist_z.svg"
+        },
+        {
+          "title": "2621 КРОН НАР БАМП З Л,2622 КРОН НАР БАМП З ПР,2625 ГАЙКА Л,2626 ГАЙКА ПР,2627 БОЛТ Л,2628 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2621_kron_nar_bamp_z_l2622_kron_nar_bamp_z_pr2625_gajka_l2626_gajka_pr2627_bolt_l2628_bolt_pr.svg"
+        },
+        {
+          "title": "2637 РАДАРН ДАТЧИК З Л,2638 РАДАРН ДАТЧИК З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2637_radarn_datchik_z_l2638_radarn_datchik_z_pr.svg"
+        },
+        {
+          "title": "3413 ФОНАРЬ З Л с лампочкой,3414 ФОНАРЬ З ПР с лампочкой,3415 БОЛТ Л,3416 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3413_fonar'_z_l_s_lampochkoj3414_fonar'_z_pr_s_lampochkoj3415_bolt_l3416_bolt_pr.svg"
+        },
+        {
+          "title": "3049 СПОЙЛЕР КРЫШИ Л,3050 СПОЙЛЕР КРЫШИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3049_spojler_kryshi_l3050_spojler_kryshi_pr.svg"
+        },
+        {
+          "title": "2608 НАКЛАДКА Н БАМПЕРА З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2608_nakladka_n_bampera_z.svg"
+        },
+        {
+          "title": "3311 НАКЛ КРЫШ БАГ НАР Л,3312 НАКЛ КРЫШ БАГ НАР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3311_nakl_krysh_bag_nar_l3312_nakl_krysh_bag_nar_pr.svg"
+        },
+        {
+          "title": "2935 КОЛПАК",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2935_kolpak.svg"
+        },
+        {
+          "title": "2702 НОМЕРНОЙ ЗНАК З,2714 БОЛТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2702_nomernoj_znak_z2714_bolt.svg"
+        },
+        {
+          "title": "3357 ФОНАРЬ НОМЕР ЗНАК Л с лампочкой,3358 ФОНАРЬ НОМЕР ЗНАК ПР с лампочкой",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3357_fonar'_nomer_znak_l_s_lampochkoj3358_fonar'_nomer_znak_pr_s_lampochkoj.svg"
+        },
+        {
+          "title": "2681 УЛЬТРАЗВ ДТЧ З ВНУ Л,2682 УЛЬТРАЗВ ДТЧ З ВН ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2681_ul'trazv_dtch_z_vnu_l2682_ul'trazv_dtch_z_vn_pr.svg"
+        },
+        {
+          "title": "2581 БАМПЕР З,2585 БОЛТ,2587 ГАЙКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2581_bamper_z2585_bolt2587_gajka.svg"
+        },
+        {
+          "title": "3191 ДОПОЛН СТОП-СИГНАЛ с лампочкой,3193 ГАЙКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3191_dopoln_stop-signal_s_lampochkoj3193_gajka.svg"
+        },
+        {
+          "title": "2649 АНТЕННА З KEYLESS,2650 БОЛТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2649_antenna_z_keyless2650_bolt.svg"
+        },
+        {
+          "title": "2959 КОЖУХ Л КРЫШКА БАГ,2960 КОЖУХ ПР КРЫШКА БАГ,2961 БОЛТ Л,2962 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2959_kozhuh_l_kryshka_bag2960_kozhuh_pr_kryshka_bag2961_bolt_l2962_bolt_pr.svg"
+        },
+        {
+          "title": "2999 ЗАЩ КОЖ КРЕП АМОРТ Л,3000 ЗАЩ КОЖ КР АМОРТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2999_zasch_kozh_krep_amort_l3000_zasch_kozh_kr_amort_pr.svg"
+        },
+        {
+          "title": "2789 КРЕПЛ ДАТЧ З НАР Л,2790 КРЕПЛ ДАТЧ З НАР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2789_krepl_datch_z_nar_l2790_krepl_datch_z_nar_pr.svg"
+        },
+        {
+          "title": "M5 - Система предупреждения о грозящем столкновении,M7 - Система помощи при парковке спереди/сзади/сбоку,M8 - система парковки автоматическая",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/m5_-_sistema_preduprezhdenija_o_grozjaschem_stolknovenii,m7_-_sistema_pomoschi_pri_parkovke_sperediszadisboku,m8_-_sistema_parkovki_avtomaticheskaja_group1.svg"
+        },
+        {
+          "title": "M9 - Система мотиторинга непросматриваемых зон (BLIS),separator,2685 УЛЬ-ЗВУК ДТЧ БОК Л,2686 УЛЬ-ЗВУК ДТЧ БОК ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/m9_-_sistema_motitoringa_neprosmatrivaemyh_zon_blis,separator,2685_ul'-zvuk_dtch_bok_l,2686_ul'-zvuk_dtch_bok_pr_group2.svg"
+        },
+        {
+          "title": "M5 - Система предупреждения о грозящем столкновении,M7 - Система помощи при парковке спереди/сзади/сбоку,M8 - система парковки автоматическая",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/m5_-_sistema_preduprezhdenija_o_grozjaschem_stolknovenii,m7_-_sistema_pomoschi_pri_parkovke_sperediszadisboku,m8_-_sistema_parkovki_avtomaticheskaja_group1.svg"
+        },
+        {
+          "title": "M9 - Система мотиторинга непросматриваемых зон (BLIS),separator,2791 КРПЛ ДАТЧ БОК З Л сзади,2792 КРПЛ ДАТЧ БОК З ПР сзади",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/m9_-_sistema_motitoringa_neprosmatrivaemyh_zon_blis,separator,2791_krpl_datch_bok_z_l_szadi,2792_krpl_datch_bok_z_pr_szadi_group2.svg"
+        },
+        {
+          "title": "2939 КРЕП ПАН ФОНАРЯ З Л,2940 КРЕП ПАН ФОНАРЯ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2939_krep_pan_fonarja_z_l2940_krep_pan_fonarja_z_pr.svg"
+        },
+        {
+          "title": "3683 ПОДКРЫЛОК З Л,3684 ПОДКРЫЛОК З ПР,3685 ГАЙКА Л,3686 ГАЙКА ПР,3687 БОЛТ Л,3688 БОЛТ ПР,3689 БОЛТ Л,3690 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3683_podkrylok_z_l3684_podkrylok_z_pr3685_gajka_l3686_gajka_pr3687_bolt_l3688_bolt_pr3689_bolt_l3690_bolt_pr.svg"
+        },
+        {
+          "title": "3309 НАКЛ КРЫШ БАГ ВНУ Л,3310 НАКЛ КРЫШ БАГ ВНУ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3309_nakl_krysh_bag_vnu_l3310_nakl_krysh_bag_vnu_pr.svg"
+        },
+        {
+          "title": "4911 ОБЛИЦ Л КРЫШК БАГ З,4912 ОБЛИЦ ПР КРЫШ БАГ З,4915 ГАЙКА Л,4916 ГАЙКА ПР,4917 БОЛТ Л,4918 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4911_oblits_l_kryshk_bag_z4912_oblits_pr_krysh_bag_z4915_gajka_l4916_gajka_pr4917_bolt_l4918_bolt_pr.svg"
+        },
+        {
+          "title": "2953 ШАРНИР Л КРЫШКИ БАГ,2954 ШАРНИР ПР КРЫШКИ БАГ,2955 ГАЙКА Л,2956 ГАЙКА ПР,2957 БОЛТ Л,2958 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2953_sharnir_l_kryshki_bag2954_sharnir_pr_kryshki_bag2955_gajka_l2956_gajka_pr2957_bolt_l2958_bolt_pr.svg"
+        },
+        {
+          "title": "3225 РЫЧ СТ-ОЧ СТЕКЛА З,3229 ДЕМПФЕР-ОТБОЙНИК",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3225_rych_st-och_stekla_z3229_dempfer-otbojnik.svg"
+        },
+        {
+          "title": "2980 НАЖ КНОПКА КРЫШ БАГ,2981 ВЫКЛ ДВЕРЬ ЗАДКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2980_nazh_knopka_krysh_bag2981_vykl_dver'_zadka.svg"
+        },
+        {
+          "title": "2711 ЩИТОК ЗАДКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2711_schitok_zadka.svg"
+        },
+        {
+          "title": "2604 КРЫШКА БУКС СКОБЫ З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2604_kryshka_buks_skoby_z.svg"
+        },
+        {
+          "title": "2640 БАЛКА БАМПЕРА З,2642 ГАЙКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2640_balka_bampera_z2642_gajka.svg"
+        },
+        {
+          "title": "3013 ОБОЗНАЧЕНИЕ МОДЕЛИ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3013_oboznachenie_modeli.svg"
+        },
+        {
+          "title": "3281 ФОНАРЬ З НАР Л с лампочкой,3282 ФОНАРЬ З НАР ПР с лампочкой,3283 ЗАЖИМ КРЕПЛЕНИЯ Л,3284 ЗАЖИМ КРЕПЛЕНИЯ ПР,3285 ЗАЖИМ КРЕПЛЕНИЯ Л,3286 ЗАЖИМ КРЕПЛЕНИЯ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3281_fonar'_z_nar_l_s_lampochkoj,3282_fonar'_z_nar_pr_s_lampochkoj,3283_zazhim_kreplenija_l,3284_zazhim_kreplenija_pr,3285_zazhim_kreplenija_l,3286_zazhim_kreplenija_pr_group1.svg"
+        },
+        {
+          "title": "3287 ЗАЖИМ КРЕПЛЕНИЯ Л,3288 ЗАЖИМ КРЕПЛЕНИЯ ПР,3289 БОЛТ Л,3290 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3287_zazhim_kreplenija_l,3288_zazhim_kreplenija_pr,3289_bolt_l,3290_bolt_pr_group2.svg"
+        },
+        {
+          "title": "2931 КРЫШКА БАГАЖНИКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2931_kryshka_bagazhnika.svg"
+        },
+        {
+          "title": "2787 КРЕПЛ ДАТЧ З ВНУ Л,2788 КРЕПЛ ДАТЧ З ВНУ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2787_krepl_datch_z_vnu_l2788_krepl_datch_z_vnu_pr.svg"
+        },
+        {
+          "title": "3221 ЭЛ-ДВИГ СТ-ОЧИСТ З,3222 ГАЙКА,3223 БОЛТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3221_el-dvig_st-ochist_z3222_gajka3223_bolt.svg"
+        },
+        {
+          "title": "M6 - Ходовая камера кругового обзора,separator,2978 КАМЕРА ДВИЖЕНИЯ З/Х",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/m6_-_hodovaja_kamera_krugovogo_obzoraseparator2978_kamera_dvizhenija_zh.svg"
+        },
+        {
+          "title": "3671 МОЛДИН П КРЫЛА З Л,3672 МОЛДИН П КРЫЛ З ПР,3677 БОЛТ Л,3678 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3671_moldin_p_kryla_z_l3672_moldin_p_kryl_z_pr3677_bolt_l3678_bolt_pr.svg"
+        },
+        {
+          "title": "3673 МОЛД ЗДН КРЫЛА З Л,3674 МОЛ ЗДН КРЫЛА З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3673_mold_zdn_kryla_z_l3674_mol_zdn_kryla_z_pr.svg"
+        },
+        {
+          "title": "2635 КРЕП РАДАРН ДТЧ З Л,2636 КРЕП РАДАРН ДТЧ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2635_krep_radarn_dtch_z_l2636_krep_radarn_dtch_z_pr.svg"
+        },
+        {
+          "title": "2963 КОЛПАК ДВЕР ЗАДКА Л,2964 КОЛПАК ДВЕР ЗАДКА ПР,2965 БОЛТ Л,2966 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2963_kolpak_dver_zadka_l2964_kolpak_dver_zadka_pr2965_bolt_l2966_bolt_pr.svg"
+        },
+        {
+          "title": "2619 КРЕПЛ ВНУ БАМП З Л,2620 КРЕП ВНУ БАМП З ПР,2629 ГАЙКА Л,2630 ГАЙКА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2619_krepl_vnu_bamp_z_l2620_krep_vnu_bamp_z_pr2629_gajka_l2630_gajka_pr.svg"
+        },
+        {
+          "title": "3045 СПОЙЛЕР КРЫШИ,3047 ГАЙКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3045_spojler_kryshi3047_gajka.svg"
+        },
+        {
+          "title": "2610 НАКЛАДКА БАМПЕРА З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2610_nakladka_bampera_z.svg"
+        },
+        {
+          "title": "3151 СТЕКЛО ЗАДНЕЕ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3151_steklo_zadnee.svg"
+        },
+        {
+          "title": "2941 КАНАЛ КРЫШ БАГАЖ Л,2942 КАНАЛ КРЫШ БАГАЖ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2941_kanal_krysh_bagazh_l2942_kanal_krysh_bagazh_pr.svg"
+        },
+        {
+          "title": "3019 НАДПИСЬ \"AWD\"",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3019_nadpis'_awd.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Кузов передняя внутренняя часть",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_kuzov_perednjaja_vnutrennjaja_chast.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_perednjaja_vnutrennjaja_chast.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "1263 ДЕРЖАТЕЛЬ П РАДИАТОР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1263_derzhatel'_p_radiator.svg"
+        },
+        {
+          "title": "1323 ПОПЕРЕЧ МОТОРН ЩИТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1323_poperech_motorn_schit.svg"
+        },
+        {
+          "title": "8784 ОБЛ З МОТОРНЫЙ ОТСЕК",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/8784_obl_z_motornyj_otsek.svg"
+        },
+        {
+          "title": "1267 КРЕПЛЕНИЕ ФАРЫ ВН Л,1268 КРЕПЛЕНИЕ ФАРЫ ВН ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1267_kreplenie_fary_vn_l1268_kreplenie_fary_vn_pr.svg"
+        },
+        {
+          "title": "1265 КРЕПЛ Л РАМЫ РАДИАТ,1266 КРЕПЛ ПР РАМЫ РАДИАТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1265_krepl_l_ramy_radiat1266_krepl_pr_ramy_radiat.svg"
+        },
+        {
+          "title": "2277 КРОНШТЕЙН Л,2278 КРОНШТЕЙН ПР,2283 ДЕРЖАТЕЛЬ ОПОРА З Л,2284 ДЕРЖАТЕЛЬ ОПОРА З ПР,2285 ДЕРЖАТЕЛЬ СР Л,2286 ДЕРЖАТЕЛЬ СР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2277_kronshtejn_l2278_kronshtejn_pr2283_derzhatel'_opora_z_l2284_derzhatel'_opora_z_pr2285_derzhatel'_sr_l2286_derzhatel'_sr_pr.svg"
+        },
+        {
+          "title": "9633 ПОДСТАВКА АКБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9633_podstavka_akb.svg"
+        },
+        {
+          "title": "1450 СТ-ОМЫВАТЕЛЬ В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1450_st-omyvatel'_v_sb.svg"
+        },
+        {
+          "title": "9629 АКБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9629_akb.svg"
+        },
+        {
+          "title": "1437 НАСОС ЧИСТ СР-ВА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1437_nasos_chist_sr-va.svg"
+        },
+        {
+          "title": "1321 МОТОРНЫЙ ЩИТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1321_motornyj_schit.svg"
+        },
+        {
+          "title": "8780 ЗАЩИТА ДНИЩА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/8780_zaschita_dnischa.svg"
+        },
+        {
+          "title": "4605 ДАТЧИК НПБ П Л,4606 ДАТЧИК НПБ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4605_datchik_npb_p_l4606_datchik_npb_p_pr.svg"
+        },
+        {
+          "title": "1319 М-ЩИТ ВЕРХНЯЯ ЧАСТЬ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1319_m-schit_verhnjaja_chast'.svg"
+        },
+        {
+          "title": "8785 ОБЛИЦ Л МОТОРН ОТСЕК,8786 ЭКРАН ПР МОТ ОТСЕКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/8785_oblits_l_motorn_otsek8786_ekran_pr_mot_otseka.svg"
+        },
+        {
+          "title": "1203 ЛОНЖЕРОН П Л,1204 ЛОНЖЕРОН П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1203_lonzheron_p_l1204_lonzheron_p_pr.svg"
+        },
+        {
+          "title": "1327 ИЗОЛЯЦИЯ МОТ ЩИТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1327_izoljatsija_mot_schit.svg"
+        },
+        {
+          "title": "2279 КРОНШТ ОПОРЫ Л,2280 КРОНШТЕЙН ОПОРЫ ПР,2281 ДЕРЖАТЕЛЬ Л ОПОРА Л,2282 ДЕРЖАТЕЛЬ ПР ОПОР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2279_kronsht_opory_l2280_kronshtejn_opory_pr2281_derzhatel'_l_opora_l2282_derzhatel'_pr_opor_pr.svg"
+        },
+        {
+          "title": "1324 ОБЛИЦ НАР МОТОРН ЩИТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1324_oblits_nar_motorn_schit.svg"
+        },
+        {
+          "title": "8783 КОЖУХ П МОТ ОТСЕК",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/8783_kozhuh_p_mot_otsek.svg"
+        },
+        {
+          "title": "1443 КРЫШКА БАЧКА СТ-ОМЫВ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1443_kryshka_bachka_st-omyv.svg"
+        },
+        {
+          "title": "2275 ОПОРА А-СТОЙКИ Л,2276 ОПОРА А-СТОЙКИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2275_opora_a-stojki_l2276_opora_a-stojki_pr.svg"
+        },
+        {
+          "title": "1201 ЛОНЖЕРОН АРКИ КОЛ Л,1202 ЛОНЖЕРОН АРКИ  ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1201_lonzheron_arki_kol_l1202_lonzheron_arki__pr.svg"
+        },
+        {
+          "title": "1438 БАЧОК СТ-ОМЫВАТЕЛЯ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1438_bachok_st-omyvatelja.svg"
+        },
+        {
+          "title": "9632 ЗАЩИТН КОЛПАК АКБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9632_zaschitn_kolpak_akb.svg"
+        },
+        {
+          "title": "9644 НИЗК-ТОН ЗВУК СИГНАЛ,9645 ВЫС-ТОН ЗВУК СИГНАЛ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9644_nizk-ton_zvuk_signal9645_vys-ton_zvuk_signal.svg"
+        },
+        {
+          "title": "1322 ОБЛИЦ МОТ ЩИТ ВНУ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1322_oblits_mot_schit_vnu.svg"
+        },
+        {
+          "title": "1333 КРЕПЛЕНИЕ АКБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1333_kreplenie_akb.svg"
+        },
+        {
+          "title": "1439 ТРУБКА БАЧОК СТ-ОМЫВ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1439_trubka_bachok_st-omyv.svg"
+        },
+        {
+          "title": "1261 РАМКА РАДИАТОРА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1261_ramka_radiatora.svg"
+        },
+        {
+          "title": "1325 ОБЛИЦ В/ОТВОДН КОРОБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1325_oblits_votvodn_korob.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Кузов средняя внутренняя часть",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_kuzov_srednjaja_vnutrennjaja_chast.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_srednjaja_vnutrennjaja_chast.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "2352 ПОПЕРЕЧИНА КРЫШИ З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2352_poperechina_kryshi_z.svg"
+        },
+        {
+          "title": "4979 КРПЛ ПОРУЧНЯ КРШ З Л,4980 КРПЛ ПОРУЧН КРШ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4979_krpl_poruchnja_krsh_z_l4980_krpl_poruchn_krsh_z_pr.svg"
+        },
+        {
+          "title": "4974 ПОРУЧЕНЬ П ПР КРЫШИ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4974_poruchen'_p_pr_kryshi.svg"
+        },
+        {
+          "title": "4955 ПЛАФОН П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4955_plafon_p.svg"
+        },
+        {
+          "title": "4978 КРЕП ПОРУЧНЯ КРШ ППР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4978_krep_poruchnja_krsh_ppr.svg"
+        },
+        {
+          "title": "4613 ДТЧ БОКОВОЙ НПБ Л,4614 ДТЧ БОКОВОЙ НПБ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4613_dtch_bokovoj_npb_l4614_dtch_bokovoj_npb_pr.svg"
+        },
+        {
+          "title": "2143 УСИЛ П ПАНЕЛИ ПОЛА Л,2144 УСИЛИТ П ПАН ПОЛА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2143_usil_p_paneli_pola_l2144_usilit_p_pan_pola_pr.svg"
+        },
+        {
+          "title": "2375 ЭЛ-ДВ СДВИЖН ЛЮК П Основной,2376 ЭЛ-ДВ СДВИЖН ЛЮК З Солнцезащитная шторка",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2375_el-dv_sdvizhn_ljuk_p_osnovnoj2376_el-dv_sdvizhn_ljuk_z_solntsezaschitnaja_shtorka.svg"
+        },
+        {
+          "title": "4958 ФОНАРЬ КРЫШИ СР П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4958_fonar'_kryshi_sr_p.svg"
+        },
+        {
+          "title": "4963 МИКРОФОН П Л,4964 МИКРОФОН П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4963_mikrofon_p_l4964_mikrofon_p_pr.svg"
+        },
+        {
+          "title": "4938 КРЫШКА З ДАТЧ ДОЖДЯ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4938_kryshka_z_datch_dozhdja.svg"
+        },
+        {
+          "title": "4967 УСИЛИТЕЛЬ АНТЕННЫ,4969 УСИЛИТЕЛЬ РАДИО",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4967_usilitel'_antenny4969_usilitel'_radio.svg"
+        },
+        {
+          "title": "4951 ОБЛИЦ В-СТОЙКИ В Л,4952 ОБЛИЦ В-СТОЙКИ В ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4951_oblits_v-stojki_v_l4952_oblits_v-stojki_v_pr.svg"
+        },
+        {
+          "title": "4960 ФОНАРЬ БАГАЖН",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4960_fonar'_bagazhn.svg"
+        },
+        {
+          "title": "4627 ГОЛОВНАЯ НПБ П Л,4628 ГОЛОВНАЯ НПБ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4627_golovnaja_npb_p_l4628_golovnaja_npb_p_pr.svg"
+        },
+        {
+          "title": "4933 СОЛНЦЕЗАЩ КОЗЫРЕК Л,4934 СОЛНЦЕЗАЩ КОЗЫРЕК ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4933_solntsezasch_kozyrek_l4934_solntsezasch_kozyrek_pr.svg"
+        },
+        {
+          "title": "4939 ОБЛИЦ Н А-СТОЙКИ Л,4940 ОБЛИЦ Н А-СТОЙКИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4939_oblits_n_a-stojki_l4940_oblits_n_a-stojki_pr.svg"
+        },
+        {
+          "title": "4957 ОБЛИЦОВКА КРЫШИ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4957_oblitsovka_kryshi.svg"
+        },
+        {
+          "title": "4941 ОБЛ В А-СТОЙКИ Л,4942 ОБЛ В А-СТОЙКИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4941_obl_v_a-stojki_l4942_obl_v_a-stojki_pr.svg"
+        },
+        {
+          "title": "4975 ПОРУЧЕНЬ З Л КРЫШИ,4976 ПОРУЧЕНЬ З ПР КРЫШИ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4975_poruchen'_z_l_kryshi4976_poruchen'_z_pr_kryshi.svg"
+        },
+        {
+          "title": "K2 - завод Wanhong,separator,2362 СОЛНЦЕЗАЩИТН ШТОРКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/k2_-_zavod_wanhongseparator2362_solntsezaschitn_shtorka.svg"
+        },
+        {
+          "title": "4937 КРЫШКА П ДАТЧ ДОЖДЯ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4937_kryshka_p_datch_dozhdja.svg"
+        },
+        {
+          "title": "2271 A-СТОЙКА Л,2272 А-СТОЙКА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2271_a-stojka_l2272_a-stojka_pr.svg"
+        },
+        {
+          "title": "4935 КРЕПЛ С-ЗАЩ КОЗ Л,4936 КРЕПЛ С-ЗАЩ КОЗ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4935_krepl_s-zasch_koz_l4936_krepl_s-zasch_koz_pr.svg"
+        },
+        {
+          "title": "Q9 - Адаптивный круиз-контроль,separator,0401 КАМЕРА ВЕТРОВ СТЕКЛА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/q9_-_adaptivnyj_kruiz-kontrol'separator0401_kamera_vetrov_stekla.svg"
+        },
+        {
+          "title": "2350 ПОПЕРЕЧИНА КРЫШИ П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2350_poperechina_kryshi_p.svg"
+        },
+        {
+          "title": "2145 УСИЛ З Л ПАНЕЛЬ ПОЛА,2146 УСИЛ З ПР ПАНЕЛЬ ПОЛ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2145_usil_z_l_panel'_pola2146_usil_z_pr_panel'_pol.svg"
+        },
+        {
+          "title": "4965 МИКРОФОН Л,4966 МИКРОФОН ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4965_mikrofon_l4966_mikrofon_pr.svg"
+        },
+        {
+          "title": "4875 ОБЛИЦОВ Ц ПОЛА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4875_oblitsov_ts_pola.svg"
+        },
+        {
+          "title": "2199 НАКЛ ПОРОГА З Л ВНУ,2200 НАКЛ ПОРОГА З ПР ВНУ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2199_nakl_poroga_z_l_vnu2200_nakl_poroga_z_pr_vnu.svg"
+        },
+        {
+          "title": "4961 ФОНАРЬ КРЫШ Л СР ВНУ,4962 ФОНАРЬ КРЫШ ПР СР ВН",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4961_fonar'_krysh_l_sr_vnu4962_fonar'_krysh_pr_sr_vn.svg"
+        },
+        {
+          "title": "2141 УСИЛИТ ПОРОГА ВНУ Л,2142 УСИЛИТ ПОРОГА ВНУ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2141_usilit_poroga_vnu_l2142_usilit_poroga_vnu_pr.svg"
+        },
+        {
+          "title": "2273 УСИЛ В-СТОЙКИ Л,2274 УСИЛ В-СТОЙКИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2273_usil_v-stojki_l2274_usil_v-stojki_pr.svg"
+        },
+        {
+          "title": "4931 САЛОННОЕ ЗЕРКАЛО",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4931_salonnoe_zerkalo.svg"
+        },
+        {
+          "title": "4959 МИКРОФОН",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4959_mikrofon.svg"
+        },
+        {
+          "title": "4251 ПАНЕЛЬ ПОЛА П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4251_panel'_pola_p.svg"
+        },
+        {
+          "title": "2139 УСИЛ П Н ПОРОГ Л,2140 УСИЛ П Н ПОРОГ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2139_usil_p_n_porog_l2140_usil_p_n_porog_pr.svg"
+        },
+        {
+          "title": "2275 ОПОРА А-СТОЙКИ Л,2276 ОПОРА А-СТОЙКИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2275_opora_a-stojki_l2276_opora_a-stojki_pr.svg"
+        },
+        {
+          "title": "4949 ОБЛИЦ В-СТОЙКИ Н Л,4950 ОБЛИЦ В-СТОЙКА Н ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4949_oblits_v-stojki_n_l4950_oblits_v-stojka_n_pr.svg"
+        },
+        {
+          "title": "2269 УСИЛИТ А-СТОЙКИ Л,2270 УСИЛИТ А-СТОЙКИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2269_usilit_a-stojki_l2270_usilit_a-stojki_pr.svg"
+        },
+        {
+          "title": "4873 НАСТИЛ ПОЛА П Л,4874 НАСТИЛ ПОЛА П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4873_nastil_pola_p_l4874_nastil_pola_p_pr.svg"
+        },
+        {
+          "title": "4877 ЗАЩИТА Л ПАНЕЛИ ПОЛА,4878 ЗАЩ ПР ПАНЕЛИ ПОЛА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4877_zaschita_l_paneli_pola4878_zasch_pr_paneli_pola.svg"
+        },
+        {
+          "title": "1463 ДАТЧИК ДОЖДЯ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1463_datchik_dozhdja.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Кузов, задняя внутренняя часть",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_kuzov_zadnjaja_vnutrennjaja_chast.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_zadnjaja_vnutrennjaja_chast.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "4121 ШУМОИЗОЛ БАГАЖНИКА л,4122 ШУМОИЗОЛ БАГАЖНИКА пр",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4121_shumoizol_bagazhnika_l4122_shumoizol_bagazhnika_pr.svg"
+        },
+        {
+          "title": "4165 НАКЛАДКА К/АРКИ З Л,4166 НАКЛАДКА К/АРКИ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4165_nakladka_karki_z_l4166_nakladka_karki_z_pr.svg"
+        },
+        {
+          "title": "3900 ПОЛ БАГАЖНИКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3900_pol_bagazhnika.svg"
+        },
+        {
+          "title": "3902 ПРОМЕЖУТОЧНЫЙ ПОЛ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3902_promezhutochnyj_pol.svg"
+        },
+        {
+          "title": "4167 ОБЛ Л АРКИ КОЛ З,4168 ОБЛ ПР НИШИ КОЛ З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4167_obl_l_arki_kol_z4168_obl_pr_nishi_kol_z.svg"
+        },
+        {
+          "title": "4880 КОВРИК БАГАЖНИКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4880_kovrik_bagazhnika.svg"
+        },
+        {
+          "title": "4163 КОЛЕСН АРКА З ВНУ Л,4164 КОЛЕС АРКА З ВНУ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4163_kolesn_arka_z_vnu_l4164_koles_arka_z_vnu_pr.svg"
+        },
+        {
+          "title": "3941 ОПОРА С",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3941_opora_s.svg"
+        },
+        {
+          "title": "4991 ОБЛ С-СТОЙКИ ВЕР Л,4992 ОБЛ С-СТОЙКИ ВЕР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4991_obl_s-stojki_ver_l4992_obl_s-stojki_ver_pr.svg"
+        },
+        {
+          "title": "4161 КОЛЕСН НИША З Л,4162 КОЛЕСН НИША З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4161_kolesn_nisha_z_l4162_kolesn_nisha_z_pr.svg"
+        },
+        {
+          "title": "3937 ПОПЕРЕЧ ПРОМЕЖУТ ПОЛ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3937_poperech_promezhut_pol.svg"
+        },
+        {
+          "title": "3921 КРЕП Л ПОЛ БАГАЖНИКА,3922 КРЕП ПР ПОЛ БАГАЖНИК",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3921_krep_l_pol_bagazhnika3922_krep_pr_pol_bagazhnik.svg"
+        },
+        {
+          "title": "3943 ПОПЕРЕЧИНА БАГАЖН",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3943_poperechina_bagazhn.svg"
+        },
+        {
+          "title": "3905 УСИЛИТ ПОЛА БАГАЖН Л,3906 УСИЛ ПОЛА БАГАЖН ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3905_usilit_pola_bagazhn_l3906_usil_pola_bagazhn_pr.svg"
+        },
+        {
+          "title": "4985 ОБЛ ЩИТКА ЗАДКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4985_obl_schitka_zadka.svg"
+        },
+        {
+          "title": "3991 ЛОНЖЕРОН З Л,3992 ЛОНЖЕРОН З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3991_lonzheron_z_l3992_lonzheron_z_pr.svg"
+        },
+        {
+          "title": "4987 КРПЛ C-СТОЙКИ ВТ Л,4988 КРПЛ C-СТОЙКИ ВТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4987_krpl_c-stojki_vt_l4988_krpl_c-stojki_vt_pr.svg"
+        },
+        {
+          "title": "4111 УСИЛ С-СТОЙКИ Л,4112 УСИЛ С-СТОЙКИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4111_usil_s-stojki_l4112_usil_s-stojki_pr.svg"
+        },
+        {
+          "title": "4982 НАСТИЛ ПОЛ БАГАЖНИКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4982_nastil_pol_bagazhnika.svg"
+        },
+        {
+          "title": "3938 УСИЛИТ ПОЛ БАГАЖНИКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3938_usilit_pol_bagazhnika.svg"
+        },
+        {
+          "title": "3915 ЯЩИК Д/ИНСТРУМЕНТОВ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3915_jaschik_dinstrumentov.svg"
+        },
+        {
+          "title": "4109 C-СТОЙКА  Л,4110 C-СТОЙКА  ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4109_c-stojka__l4110_c-stojka__pr.svg"
+        },
+        {
+          "title": "4852 КРЫШКА БАГАЖНИКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4852_kryshka_bagazhnika.svg"
+        },
+        {
+          "title": "5039 ОГНЕТУШИТЕЛЬ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/5039_ognetushitel'.svg"
+        },
+        {
+          "title": "4989 ОБЛИЦ С-СТОЙКИ Н Л,4990 ОБЛИЦ С-СТОЙКИ  Н ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4989_oblits_s-stojki_n_l4990_oblits_s-stojki__n_pr.svg"
+        },
+        {
+          "title": "4995 ОТСЕК ПОЛА БАГАЖНИКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4995_otsek_pola_bagazhnika.svg"
+        },
+        {
+          "title": "3939 ПОПЕР ПРОМЕЖУТ ПОЛ П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/3939_poper_promezhut_pol_p.svg"
+        },
+        {
+          "title": "4997 ОПОРА ОБЛИЦОВКИ Л,4998 ОПОРА ОБЛИЦОВКИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4997_opora_oblitsovki_l4998_opora_oblitsovki_pr.svg"
+        },
+        {
+          "title": "4854 ШУМОИЗОЛЯЦИЯ БАГАЖН",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4854_shumoizoljatsija_bagazhn.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Передние двери",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_perednie_dveri.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_perednie_dveri.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "1605 МОЛД РАМЫ ОКНА П Л,1606 МОЛД РАМЫ ОКНА П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1605_mold_ramy_okna_p_l1606_mold_ramy_okna_p_pr.svg"
+        },
+        {
+          "title": "1737 ЗЕРКАЛО НАР Л,1738 ЗЕРКАЛО НАР ПР,1743 БОЛТ Л,1744 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1737_zerkalo_nar_l1738_zerkalo_nar_pr1743_bolt_l1744_bolt_pr.svg"
+        },
+        {
+          "title": "1593 ГИБК ТЯГА ВТ ДВР П Л,1594 ГИБК ТЯГА ВТ ДВР ППР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1593_gibk_tjaga_vt_dvr_p_l1594_gibk_tjaga_vt_dvr_ppr.svg"
+        },
+        {
+          "title": "1723 ЗАЩ ПЛЕНКА ДВЕРЬ П Л сзади,1724 ЗАЩ ПЛЕНК ДВЕРЬ П ПР сзади",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1723_zasch_plenka_dver'_p_l_szadi1724_zasch_plenk_dver'_p_pr_szadi.svg"
+        },
+        {
+          "title": "1751 КРЫШКА НАР ЗЕРК Л,1752 КРЫШКА НАР ЗЕРК ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1751_kryshka_nar_zerk_l1752_kryshka_nar_zerk_pr.svg"
+        },
+        {
+          "title": "1547 СТЕК-ПОДЪЁМН П Л,1548 СТЕК-ПОДЪЁМН П ПР,1549 БОЛТ Л,1550 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1547_stek-pod'emn_p_l1548_stek-pod'emn_p_pr1549_bolt_l1550_bolt_pr.svg"
+        },
+        {
+          "title": "1713 ОБЛИЦОВКА ДВЕРИ П Л,1714 ОБЛИЦОВКА ДВЕРИ П ПР,1719 ЗАЖИМ КРЕПЛЕНИЯ Л,1720 ЗАЖИМ КРЕПЛЕНИЯ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1713_oblitsovka_dveri_p_l1714_oblitsovka_dveri_p_pr1719_zazhim_kreplenija_l1720_zazhim_kreplenija_pr.svg"
+        },
+        {
+          "title": "1519 СТЕКЛО ДВЕРИ П Л,1520 СТЕКЛО ДВЕРИ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1519_steklo_dveri_p_l1520_steklo_dveri_p_pr.svg"
+        },
+        {
+          "title": "1741 СТЕКЛО ЗЕРКАЛА НАР Л,1742 СТЕКЛ ЗЕРКАЛА НАР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1741_steklo_zerkala_nar_l1742_stekl_zerkala_nar_pr.svg"
+        },
+        {
+          "title": "1671 УПЛ СТЕКЛА ВНУ П Л,1672 УПЛ СТЕКЛА ВНУ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1671_upl_stekla_vnu_p_l1672_upl_stekla_vnu_p_pr.svg"
+        },
+        {
+          "title": "1717 ЗАЩ ПЛЕНКА ДВЕРИ Л,1718 ЗАЩ ПЛЕНКА ДВЕРИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1717_zasch_plenka_dveri_l1718_zasch_plenka_dveri_pr.svg"
+        },
+        {
+          "title": "1571 РУЧКА ВНУ ДВЕРИ П Л,1572 РУЧКА ВНУ ДВЕРЬ П ПР,1573 БОЛТ Л,1574 БОЛТ ПР,1589 ГАЙКА Л,1590 ГАЙКА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1571_ruchka_vnu_dveri_p_l1572_ruchka_vnu_dver'_p_pr1573_bolt_l1574_bolt_pr1589_gajka_l1590_gajka_pr.svg"
+        },
+        {
+          "title": "1661 МОЛД ОКНА ДВ П Л,1662 МОЛД ОКНА ДВ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1661_mold_okna_dv_p_l1662_mold_okna_dv_p_pr.svg"
+        },
+        {
+          "title": "1481 ДВЕРЬ П Л,1482 ДВЕРЬ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1481_dver'_p_l1482_dver'_p_pr.svg"
+        },
+        {
+          "title": "1581 ЗАПОРН СКОБА П Л,1582 ЗАПОРН СКОБА П ПР,1583 БОЛТ Л,1584 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1581_zaporn_skoba_p_l1582_zaporn_skoba_p_pr1583_bolt_l1584_bolt_pr.svg"
+        },
+        {
+          "title": "1591 ОБЛ ВНУ РУЧКА ДВ П Л,1592 ОБЛ ВНУ РУЧК ДВ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1591_obl_vnu_ruchka_dv_p_l1592_obl_vnu_ruchk_dv_p_pr.svg"
+        },
+        {
+          "title": "1566 НАКЛАДКА РУЧКИ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1566_nakladka_ruchki_p_pr.svg"
+        },
+        {
+          "title": "1563 РУЧКА ДВЕРИ П Л,1564 РУЧКА ДВЕРИ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1563_ruchka_dveri_p_l1564_ruchka_dveri_p_pr.svg"
+        },
+        {
+          "title": "1509 УПЛОТН ДВЕРИ П Л,1510 УПЛОТН ДВЕРИ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1509_uplotn_dveri_p_l1510_uplotn_dveri_p_pr.svg"
+        },
+        {
+          "title": "1681 ПЛАНКА Н ДВЕРИ П Л,1682 ПЛАНКА Н ДВЕРИ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1681_planka_n_dveri_p_l1682_planka_n_dveri_p_pr.svg"
+        },
+        {
+          "title": "1749 БОК ПОВОРОТНИК П Л,1750 БОК ПОВОРОТНИК П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1749_bok_povorotnik_p_l1750_bok_povorotnik_p_pr.svg"
+        },
+        {
+          "title": "1495 ШАРНИР Н ДВЕРЬ П Л,1496 ШАРНИР Н ДВЕРЬ П ПР,1499 БОЛТ Л,1500 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1495_sharnir_n_dver'_p_l1496_sharnir_n_dver'_p_pr1499_bolt_l1500_bolt_pr.svg"
+        },
+        {
+          "title": "1577 ЗАМОК ДВЕРИ П Л,1578 ЗАМОК ДВЕРИ П ПР,1579 БОЛТ Л,1580 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1577_zamok_dveri_p_l1578_zamok_dveri_p_pr1579_bolt_l1580_bolt_pr.svg"
+        },
+        {
+          "title": "1685 УПЛ ДЕК ПЛН ДВЕР П Л,1686 УПЛ ДЕК ПЛН ДВР П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1685_upl_dek_pln_dver_p_l1686_upl_dek_pln_dvr_p_pr.svg"
+        },
+        {
+          "title": "1567 ОПОРНАЯ ПАНЕЛЬ П Л,1568 ОПОРНАЯ ПАНЕЛЬ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1567_opornaja_panel'_p_l1568_opornaja_panel'_p_pr.svg"
+        },
+        {
+          "title": "1731 ДЕК НАКЛ ВНУТР ДВ Л спереди,1732 ДЕК НАКЛ ВНУТР ДВ ПР спереди",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1731_dek_nakl_vnutr_dv_l_speredi1732_dek_nakl_vnutr_dv_pr_speredi.svg"
+        },
+        {
+          "title": "1515 КОЛПАК ВИНТА Л верх,1516 КОЛПАК ВИНТА ПР верх",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1515_kolpak_vinta_l_verh1516_kolpak_vinta_pr_verh.svg"
+        },
+        {
+          "title": "1745 КАМЕРА ВШ ЗЕРКАЛ З Л,1746 КАМЕРА ВШ ЗЕРК З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1745_kamera_vsh_zerkal_z_l1746_kamera_vsh_zerk_z_pr.svg"
+        },
+        {
+          "title": "1585 ТЯГИ РУЧКИ НАР П Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1585_tjagi_ruchki_nar_p_l.svg"
+        },
+        {
+          "title": "1575 ФИКСАТОР Л,1576 ФИКСАТОР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1575_fiksator_l1576_fiksator_pr.svg"
+        },
+        {
+          "title": "1747 ДИНАМИК ВЫС ТОН Л спереди,1748 ДИНАМИК ВЫС ТОН ПР спереди",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1747_dinamik_vys_ton_l_speredi1748_dinamik_vys_ton_pr_speredi.svg"
+        },
+        {
+          "title": "7512 КЛЮЧ С Д/У,7513 КЛЮЧ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7512_kljuch_s_du7513_kljuch.svg"
+        },
+        {
+          "title": "1597 АНТЕННА П Л KEYLESS",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1597_antenna_p_l_keyless.svg"
+        },
+        {
+          "title": "1739 КОРП ЗЕРКАЛА НАР Л,1740 КОРП ЗЕРКАЛА НАР ПР,1753 БОЛТ Л,1754 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1739_korp_zerkala_nar_l1740_korp_zerkala_nar_pr1753_bolt_l1754_bolt_pr.svg"
+        },
+        {
+          "title": "1697 ПОЛОСКА З ДВЕРЬ П Л,1698 ПОЛОСКА З ДВЕРЬ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1697_poloska_z_dver'_p_l1698_poloska_z_dver'_p_pr.svg"
+        },
+        {
+          "title": "1595 ГИБК ТЯГА ВШ ДВЕР Л спереди,1596 ГИБК ТЯГА ВШ ДВЕР ПР спереди",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1595_gibk_tjaga_vsh_dver_l_speredi1596_gibk_tjaga_vsh_dver_pr_speredi.svg"
+        },
+        {
+          "title": "1517 КОЛПАК ВИНТА Л внизу,1518 КОЛПАК ВИНТА ПР внизу",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1517_kolpak_vinta_l_vnizu1518_kolpak_vinta_pr_vnizu.svg"
+        },
+        {
+          "title": "1505 ОГР ХОДА ДВЕРИ П Л,1506 ОГР ХОДА ДВЕРИ П ПР,1511 БОЛТ Л,1512 БОЛТ ПР,1513 ГАЙКА Л,1514 ГАЙКА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1505_ogr_hoda_dveri_p_l1506_ogr_hoda_dveri_p_pr1511_bolt_l1512_bolt_pr1513_gajka_l1514_gajka_pr.svg"
+        },
+        {
+          "title": "1487 ШАРНИР В ДВЕРЬ П Л,1488 ШАРНИР В ДВЕРЬ П ПР,1491 БОЛТ Л,1492 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1487_sharnir_v_dver'_p_l1488_sharnir_v_dver'_p_pr1491_bolt_l1492_bolt_pr.svg"
+        },
+        {
+          "title": "1715 ВОЗДУХОВОД Л,1716 ВОЗДУХОВОД ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1715_vozduhovod_l1716_vozduhovod_pr.svg"
+        },
+        {
+          "title": "1735 НАКЛ ПЕРЕКЛ СТ/П П Л,1736 НАКЛ ПЕРЕКЛ СТ/П П П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1735_nakl_perekl_stp_p_l1736_nakl_perekl_stp_p_p.svg"
+        },
+        {
+          "title": "1707 ДИНАМИК ДВЕРЬ П Л,1708 ДИНАМИК ДВЕРЬ П ПР,1709 БОЛТ Л,1710 БОЛТ ПР,1711 СЛЕПАЯ ЗАКЛЕПКА Л,1712 СЛЕПАЯ ЗАКЛЕПКА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1707_dinamik_dver'_p_l1708_dinamik_dver'_p_pr1709_bolt_l1710_bolt_pr1711_slepaja_zaklepka_l1712_slepaja_zaklepka_pr.svg"
+        },
+        {
+          "title": "1483 ОГРАНИЧИТЕЛЬ ХОДА Л дверь,1484 ОГРАНИЧИТЕЛЬ ХОДА ПР дверь",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1483_ogranichitel'_hoda_l_dver'1484_ogranichitel'_hoda_pr_dver'.svg"
+        },
+        {
+          "title": "1497 КРОНШТ ШАРНИР ПЕР Л внизу,1498 КРОНШТ ШАРНИР ПЕР ПР внизу,1501 БОЛТ Л,1502 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1497_kronsht_sharnir_per_l_vnizu1498_kronsht_sharnir_per_pr_vnizu1501_bolt_l1502_bolt_pr.svg"
+        },
+        {
+          "title": "1699 ПОЛОСКА В ДВЕРИ П Л,1700 ПОЛОСКА В ДВЕРИ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1699_poloska_v_dveri_p_l1700_poloska_v_dveri_p_pr.svg"
+        },
+        {
+          "title": "1489 КРОНШТ ШАРНИР ПЕР Л верх,1490 КРОНШТ ШАРНИР ПЕР ПР верх,1493 БОЛТ Л,1494 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1489_kronsht_sharnir_per_l_verh1490_kronsht_sharnir_per_pr_verh1493_bolt_l1494_bolt_pr.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Задние двери",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_zadnie_dveri.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_zadnie_dveri.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "1759 НАПРАВЛ СТЕКЛА З Л,1760 НАПРАВЛ СТЕКЛА З ПР,1761 БОЛТ Л,1762 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1759_napravl_stekla_z_l1760_napravl_stekla_z_pr1761_bolt_l1762_bolt_pr.svg"
+        },
+        {
+          "title": "1935 НАКЛ ПЕР С/ПОДЪ З Л,1936 НАКЛ ПЕР С/ПОДЪ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1935_nakl_per_spod'_z_l1936_nakl_per_spod'_z_pr.svg"
+        },
+        {
+          "title": "1817 УПЛ ПЛН П ПОДКР З Л,1818 УПЛ ПЛН П ПОДКР З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1817_upl_pln_p_podkr_z_l1818_upl_pln_p_podkr_z_pr.svg"
+        },
+        {
+          "title": "1903 АНТЕННА З KEYL Л,1904 АНТЕННА З KEYL Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1903_antenna_z_keyl_l1904_antenna_z_keyl_l.svg"
+        },
+        {
+          "title": "2005 МОЛД РАМЫ ОКНА З Л,2006 МОЛД РАМЫ ОКНА З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2005_mold_ramy_okna_z_l2006_mold_ramy_okna_z_pr.svg"
+        },
+        {
+          "title": "1877 ЗАМОК ДВЕРИ З Л,1878 ЗАМОК ДВЕРИ З ПР,1879 БОЛТ Л,1880 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1877_zamok_dveri_z_l1878_zamok_dveri_z_pr1879_bolt_l1880_bolt_pr.svg"
+        },
+        {
+          "title": "2017 ЗАЩ ПЛЁНКА ДВЕРИ З Л спереди,2018 ЗАЩ ПЛЁНКА ДВРИ З ПР спереди",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2017_zasch_plenka_dveri_z_l_speredi2018_zasch_plenka_dvri_z_pr_speredi.svg"
+        },
+        {
+          "title": "1893 ТРОСИК ВТ ДВЕРИ Л сзади,1894 ТРОСИК ВТ ДВЕРИ ПР сзади",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1893_trosik_vt_dveri_l_szadi1894_trosik_vt_dveri_pr_szadi.svg"
+        },
+        {
+          "title": "1755 ПОЛОСКА В ДВЕРЬ З Л,1756 ПОЛОСКА В ДВЕРЬ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1755_poloska_v_dver'_z_l1756_poloska_v_dver'_z_pr.svg"
+        },
+        {
+          "title": "1981 ПЛАНКА Н ДВЕРИ З Л,1982 ПЛАНКА Н ДВЕРИ З ПР,1985 БОЛТ Л,1986 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1981_planka_n_dveri_z_l1982_planka_n_dveri_z_pr1985_bolt_l1986_bolt_pr.svg"
+        },
+        {
+          "title": "1815 МОЛД РАМЫ ДВЕРИ З Л,1816 МОЛД РАМЫ ДВЕРИ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1815_mold_ramy_dveri_z_l1816_mold_ramy_dveri_z_pr.svg"
+        },
+        {
+          "title": "1819 СТЕКЛО ДВЕРИ З Л,1820 СТЕКЛО ДВЕРИ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1819_steklo_dveri_z_l1820_steklo_dveri_z_pr.svg"
+        },
+        {
+          "title": "1847 СТ-ПОДЪЕМНИК З Л,1848 СТ-ПОДЪЕМНИК З ПР,1851 БОЛТ Л,1852 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1847_st-pod'emnik_z_l1848_st-pod'emnik_z_pr1851_bolt_l1852_bolt_pr.svg"
+        },
+        {
+          "title": "2023 УПЛ СТЕКЛА З НАР Л,2024 УПЛ СТЕКЛА З ПР ВНУ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2023_upl_stekla_z_nar_l2024_upl_stekla_z_pr_vnu.svg"
+        },
+        {
+          "title": "1805 ОГР ХОДА ДВЕРИ З Л,1806 ФИКСАТОР ДВЕРИ З ПР,1811 БОЛТ Л,1812 БОЛТ ПР,1813 ГАЙКА Л,1814 ГАЙКА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1805_ogr_hoda_dveri_z_l1806_fiksator_dveri_z_pr1811_bolt_l1812_bolt_pr1813_gajka_l1814_gajka_pr.svg"
+        },
+        {
+          "title": "1891 НАКЛ РУЧКА З ВНУ Л,1892 НАКЛ РУЧКА З ВНУ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1891_nakl_ruchka_z_vnu_l1892_nakl_ruchka_z_vnu_pr.svg"
+        },
+        {
+          "title": "2013 ОБЛИЦОВКА ДВЕРИ З Л,2014 ОБЛИЦОВКА ДВЕРИ З ПР,2015 ЗАЖИМ КРЕПЛЕНИЯ Л,2016 ЗАЖИМ КРЕПЛЕНИЯ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2013_oblitsovka_dveri_z_l2014_oblitsovka_dveri_z_pr2015_zazhim_kreplenija_l2016_zazhim_kreplenija_pr.svg"
+        },
+        {
+          "title": "1789 КРЕПЛ ШАРНИР З Л верх,1790 КРЕПЛ ШАРНИР З ПР верх,1793 БОЛТ Л,1794 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1789_krepl_sharnir_z_l_verh1790_krepl_sharnir_z_pr_verh1793_bolt_l1794_bolt_pr.svg"
+        },
+        {
+          "title": "1821 СТЕКЛО ДВЕРИ З Л З,1822 СТЕКЛО ДВЕРИ З ПР З,1823 БОЛТ Л,1824 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1821_steklo_dveri_z_l_z1822_steklo_dveri_z_pr_z1823_bolt_l1824_bolt_pr.svg"
+        },
+        {
+          "title": "1899 КОЛПАЧОК БОЛТА внизу,1900 КОЛПАЧОК БОЛТА внизу",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1899_kolpachok_bolta_vnizu1900_kolpachok_bolta_vnizu.svg"
+        },
+        {
+          "title": "1941 ДЕК НАКЛ ВНУТР ДВ Л сзади,1942 ДЕК НАКЛ ВНУТР ДВ ПР сзади",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1941_dek_nakl_vnutr_dv_l_szadi1942_dek_nakl_vnutr_dv_pr_szadi.svg"
+        },
+        {
+          "title": "1797 КРЕПЛ ШАРНИР З Л внизу,1798 КРЕПЛ ШАРНИР З ПР внизу,1801 БОЛТ Л,1802 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1797_krepl_sharnir_z_l_vnizu1798_krepl_sharnir_z_pr_vnizu1801_bolt_l1802_bolt_pr.svg"
+        },
+        {
+          "title": "1867 ОПОРНАЯ ПАНЕЛЬ З Л,1868 ОПОРНАЯ ПАНЕЛЬ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1867_opornaja_panel'_z_l1868_opornaja_panel'_z_pr.svg"
+        },
+        {
+          "title": "1721 МОЛДИНГ П ДВЕРЬ З Л,1722 МОЛДИНГ П ДВЕРЬ З ПР,1725 ЗАЖИМ КРЕПЛЕНИЯ Л,1726 ЗАЖИМ КРЕПЛЕНИЯ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1721_molding_p_dver'_z_l1722_molding_p_dver'_z_pr1725_zazhim_kreplenija_l1726_zazhim_kreplenija_pr.svg"
+        },
+        {
+          "title": "1795 ШАРНИР Н ДВЕРЬ З Л,1796 ШАРНИР Н ДВЕРЬ З ПР,1799 БОЛТ Л,1800 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1795_sharnir_n_dver'_z_l1796_sharnir_n_dver'_z_pr1799_bolt_l1800_bolt_pr.svg"
+        },
+        {
+          "title": "1887 НАКЛАДКА РУЧКИ З Л,1888 НАКЛАДКА РУЧКИ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1887_nakladka_ruchki_z_l1888_nakladka_ruchki_z_pr.svg"
+        },
+        {
+          "title": "1809 УПЛ ДВЕРИ З Л,1810 УПЛ ДВЕРИ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1809_upl_dveri_z_l1810_upl_dveri_z_pr.svg"
+        },
+        {
+          "title": "1937 ДИНАМИК ДВЕРЬ З Л,1938 ДИНАМИК ДВЕРЬ З ПР,1939 БОЛТ Л,1940 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1937_dinamik_dver'_z_l1938_dinamik_dver'_z_pr1939_bolt_l1940_bolt_pr.svg"
+        },
+        {
+          "title": "1983 УПЛ МОЛД ДВЕРИ З Л,1984 УПЛ МОЛД ДВЕРИ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1983_upl_mold_dveri_z_l1984_upl_mold_dveri_z_pr.svg"
+        },
+        {
+          "title": "1961 МОЛД ОКНА ДВ З Л,1962 МОЛД ОКНА ДВ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1961_mold_okna_dv_z_l1962_mold_okna_dv_z_pr.svg"
+        },
+        {
+          "title": "1895 ГИБК ТЯГА ВШ ДВЕР Л сзади,1896 ГИБК ТЯГА ВШ ДВЕР ПР сзади",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1895_gibk_tjaga_vsh_dver_l_szadi1896_gibk_tjaga_vsh_dver_pr_szadi.svg"
+        },
+        {
+          "title": "1781 ДВЕРЬ З Л,1782 ДВЕРЬ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1781_dver'_z_l1782_dver'_z_pr.svg"
+        },
+        {
+          "title": "1871 РУЧКА ВНУ ДВЕРЬ З Л,1872 РУЧКА ВНУ ДВЕРЬ З ПР,1873 ЗАЖИМ КРЕПЛЕНИЯ Л,1874 ЗАЖИМ КРЕПЛЕНИЯ ПР,1875 БОЛТ Л,1876 БОЛТ ПР,1889 ГАЙКА Л,1890 ГАЙКА ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1871_ruchka_vnu_dver'_z_l1872_ruchka_vnu_dver'_z_pr1873_zazhim_kreplenija_l1874_zazhim_kreplenija_pr1875_bolt_l1876_bolt_pr1889_gajka_l1890_gajka_pr.svg"
+        },
+        {
+          "title": "2019 ЗАЩ ПЛЁНКА ДВЕРИ З Л сзади,2020 ЗАЩ ПЛЁНКА ДВРИ З ПР сзади",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/2019_zasch_plenka_dveri_z_l_szadi2020_zasch_plenka_dvri_z_pr_szadi.svg"
+        },
+        {
+          "title": "1869 ФИКСАТОР Л,1870 ФИКСАТОР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1869_fiksator_l1870_fiksator_pr.svg"
+        },
+        {
+          "title": "1863 РУЧКА ДВЕРИ НАР З Л,1864 РУЧКА ДВЕРИ НАР З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1863_ruchka_dveri_nar_z_l1864_ruchka_dveri_nar_z_pr.svg"
+        },
+        {
+          "title": "1897 КОЛПАЧОК БОЛТА верх,1898 КОЛПАЧОК БОЛТА верх",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1897_kolpachok_bolta_verh1898_kolpachok_bolta_verh.svg"
+        },
+        {
+          "title": "1881 ЗАПОРН СКОБА З Л,1882 ЗАПОРН СКОБА З ПР,1883 БОЛТ Л,1884 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1881_zaporn_skoba_z_l1882_zaporn_skoba_z_pr1883_bolt_l1884_bolt_pr.svg"
+        },
+        {
+          "title": "1943 ДИНАМИК ВЫС ТОН Л сзади,1944 ДИНАМИК ВЫС ТОН ПР сзади",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1943_dinamik_vys_ton_l_szadi1944_dinamik_vys_ton_pr_szadi.svg"
+        },
+        {
+          "title": "1787 ШАРНИР В ДВЕРЬ З Л,1788 ШАРНИР В ДВЕРЬ З ПР,1791 БОЛТ Л,1792 БОЛТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/1787_sharnir_v_dver'_z_l1788_sharnir_v_dver'_z_pr1791_bolt_l1792_bolt_pr.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Кузов/окраска",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_kuzovokraska.png",
+      "svg_path": "",
+      "has_pictograms": true,
+      "graphics_not_available": false,
+      "details": [],
+      "pictograms": [
+        {
+          "section_name": "ДЕТАЛИ",
+          "works": [
+            {
+              "work_name1": "0204 КУЗОВ В МЕТАЛЛЕ",
+              "work_name2": "",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_0204_kuzov_v_metalle.svg"
+            }
+          ]
+        },
+        {
+          "section_name": "РАБОТЫ",
+          "works": [
+            {
+              "work_name1": "0221 Т/С В СБ СНАРУЖИ",
+              "work_name2": "",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_0221_ts_v_sb_snaruzhi.svg"
+            },
+            {
+              "work_name1": "2067 БОК Т/С Л,2068 БОК Т/С ПР",
+              "work_name2": "",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_2067_bok_ts_l2068_bok_ts_pr.svg"
+            },
+            {
+              "work_name1": "0223 Т/С СНАР Б/КРЫШИ",
+              "work_name2": "",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_0223_ts_snar_bkryshi.svg"
+            },
+            {
+              "work_name1": "0910 МОТОРНЫЙ ОТСЕК",
+              "work_name2": "",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_0910_motornyj_otsek.svg"
+            },
+            {
+              "work_name1": "0467 ПЕРЕДОК Т/С",
+              "work_name2": "",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_0467_peredok_ts.svg"
+            },
+            {
+              "work_name1": "2900 ЗАДОК Т/С",
+              "work_name2": "",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_2900_zadok_ts.svg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Ходовая часть и подвеска переднего моста",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_hodovaja_chast_i_podveska_perednego_mosta.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_hodovaja_chast_i_podveska_perednego_mosta.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "7201 КОЛЕСНЫЙ ДИСК П Л,7202 КОЛЕСНЫЙ ДИСК П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7201_kolesnyj_disk_p_l7202_kolesnyj_disk_p_pr.svg"
+        },
+        {
+          "title": "7277 ПОДВEСКА СТАБИЛ Л,7278 ПОДВEСКА СТАБИЛ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7277_podveska_stabil_l7278_podveska_stabil_pr.svg"
+        },
+        {
+          "title": "7053 ПОПЕР РЫЧ ПОДВ П Н Л,7054 ПОПЕР РЧ ПОДВ П Н ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7053_poper_rych_podv_p_n_l7054_poper_rch_podv_p_n_pr.svg"
+        },
+        {
+          "title": "7315 ПЫЛЬНИК РУЛ УПРАВ Л,7316 ПЫЛЬНИК РУЛ УПРАВ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7315_pyl'nik_rul_uprav_l7316_pyl'nik_rul_uprav_pr.svg"
+        },
+        {
+          "title": "7099 ПОДКЛАДК РЕССОРА В Л,7100 ПОДКЛАДК РЕССОР В ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7099_podkladk_ressora_v_l7100_podkladk_ressor_v_pr.svg"
+        },
+        {
+          "title": "7165 ТОРМОЗН ШЛАНГ П Л,7166 ТОРМОЗН ШЛАНГ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7165_tormozn_shlang_p_l7166_tormozn_shlang_p_pr.svg"
+        },
+        {
+          "title": "7103 ПЫЛЬНИК АМОРТИЗ Л,7104 ПЫЛЬНИК АМОРТИЗ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7103_pyl'nik_amortiz_l7104_pyl'nik_amortiz_pr.svg"
+        },
+        {
+          "title": "7011 ПОДРАМНИК МОСТА П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7011_podramnik_mosta_p.svg"
+        },
+        {
+          "title": "7133 ЗАЩИТНЫЙ ЩИТОК П Л,7134 ЗАЩИТНЫЙ ЩИТОК П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7133_zaschitnyj_schitok_p_l7134_zaschitnyj_schitok_p_pr.svg"
+        },
+        {
+          "title": "7241 ГИДРОБЛОК",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7241_gidroblok.svg"
+        },
+        {
+          "title": "7245 ДАТЧ ЧАСТ ВРАЩ П Л,7246 ДАТЧ ЧАСТ ВРАЩ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7245_datch_chast_vrasch_p_l7246_datch_chast_vrasch_p_pr.svg"
+        },
+        {
+          "title": "7145 СУППОРТ П Л В СБ,7146 СУППОРТ П ПР В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7145_support_p_l_v_sb7146_support_p_pr_v_sb.svg"
+        },
+        {
+          "title": "7209 КРЫШКА СТУПИЦЫ П Л,7210 КРЫШКА СТУПИЦЫ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7209_kryshka_stupitsy_p_l7210_kryshka_stupitsy_p_pr.svg"
+        },
+        {
+          "title": "7115 ПРУЖИНА П Л,7116 ПРУЖИНА П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7115_pruzhina_p_l7116_pruzhina_p_pr.svg"
+        },
+        {
+          "title": "7261 СТАБИЛИЗАТОР П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7261_stabilizator_p.svg"
+        },
+        {
+          "title": "7141 ТОРМОЗНОЙ ДИСК П Л,7142 ТОРМОЗНОЙ ДИСК П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7141_tormoznoj_disk_p_l7142_tormoznoj_disk_p_pr.svg"
+        },
+        {
+          "title": "7039 МАНЖ ВНУТ ПОЛУОСЬ Л,7040 МАНЖ ВНУТ ПОЛУОСЬ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7039_manzh_vnut_poluos'_l7040_manzh_vnut_poluos'_pr.svg"
+        },
+        {
+          "title": "7077 АМОРТИЗАТОР П Л,7078 АМОРТИЗАТОР П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7077_amortizator_p_l7078_amortizator_p_pr.svg"
+        },
+        {
+          "title": "7109 ОТБОЙНИК П Н Л,7110 ОТБОЙНИК П Н ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7109_otbojnik_p_n_l7110_otbojnik_p_n_pr.svg"
+        },
+        {
+          "title": "7179 КОЛОДКИ ТОРМОЗ П Л,7180 КОЛОДКИ ТОРМОЗ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7179_kolodki_tormoz_p_l7180_kolodki_tormoz_p_pr.svg"
+        },
+        {
+          "title": "7227 ШИНА П Л,7228 ШИНА П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7227_shina_p_l7228_shina_p_pr.svg"
+        },
+        {
+          "title": "7369 РУЛЕВОЙ ВАЛ В СБОРЕ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7369_rulevoj_val_v_sbore.svg"
+        },
+        {
+          "title": "7503 УСИЛ ТОРМ ПРИВ В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7503_usil_torm_priv_v_sb.svg"
+        },
+        {
+          "title": "7311 НАКОНЕЧ РУЛ ТЯГИ Л,7312 НАКОНЕЧН РУЛ ТЯГИ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7311_nakonech_rul_tjagi_l7312_nakonechn_rul_tjagi_pr.svg"
+        },
+        {
+          "title": "7131 СТУПИЦА П Л,7132 СТУПИЦА П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7131_stupitsa_p_l7132_stupitsa_p_pr.svg"
+        },
+        {
+          "title": "7081 ПОВОР КУЛАК П Л В СБ,7082 ПОВОР КУЛ П ПР В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7081_povor_kulak_p_l_v_sb7082_povor_kul_p_pr_v_sb.svg"
+        },
+        {
+          "title": "7015 ПОПЕРЕЧИНА ПЕРЕДКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7015_poperechina_peredka.svg"
+        },
+        {
+          "title": "7035 ПРИВОДНОЙ ВАЛ Л,7036 ПРИВОДНОЙ ВАЛ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7035_privodnoj_val_l7036_privodnoj_val_pr.svg"
+        },
+        {
+          "title": "7242 КРОНШТ ГИДРОБЛОКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7242_kronsht_gidrobloka.svg"
+        },
+        {
+          "title": "7229 ДТЧ ДАВ В ШИНЕ П Л,7230 ДТЧ ДАВ В ШИНЕ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7229_dtch_dav_v_shine_p_l7230_dtch_dav_v_shine_p_pr.svg"
+        },
+        {
+          "title": "7095 ПОДУШКА ПРУЖ В Л,7096 ПОДУШКА ПРУЖ В ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7095_podushka_pruzh_v_l7096_podushka_pruzh_v_pr.svg"
+        },
+        {
+          "title": "7304 ЗАЩИТА РУЛ ПЕРЕДАЧИ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7304_zaschita_rul_peredachi.svg"
+        },
+        {
+          "title": "7507 ПРОБКА БАЧКА ГТЦ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7507_probka_bachka_gtts.svg"
+        },
+        {
+          "title": "7101 ОТБОЙНИК П Л,7102 ОТБОЙНИК П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7101_otbojnik_p_l7102_otbojnik_p_pr.svg"
+        },
+        {
+          "title": "7300 РУЛЕВ ПЕРЕДАЧА В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7300_rulev_peredacha_v_sb.svg"
+        },
+        {
+          "title": "7045 ШРУС ВНУ ПР-ВАЛ П Л,7046 ШРУС ВНУ ПР-ВАЛ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7045_shrus_vnu_pr-val_p_l7046_shrus_vnu_pr-val_p_pr.svg"
+        },
+        {
+          "title": "7313 ШАРН ВАЛ РУЛ ПЕР Л,7314 ШАРН ВАЛ РУЛ ПЕР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7313_sharn_val_rul_per_l7314_sharn_val_rul_per_pr.svg"
+        },
+        {
+          "title": "7509 ВАКУУМНАЯ ТРУБКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7509_vakuumnaja_trubka.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Ходовая часть и подвеска заднего моста",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_hodovaja_chast_i_podveska_zadnego_mosta.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_hodovaja_chast_i_podveska_zadnego_mosta.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "9179 К-Т ТОРМ КОЛ З Л,9180 К-Т ТОРМ НАКЛ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9179_k-t_torm_kol_z_l9180_k-t_torm_nakl_p_pr.svg"
+        },
+        {
+          "title": "9157 ЗАЩИТНЫЙ ЩИТОК З Л,9158 ЗАЩИТНЫЙ ЩИТОК З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9157_zaschitnyj_schitok_z_l9158_zaschitnyj_schitok_z_pr.svg"
+        },
+        {
+          "title": "9557 КРЫШКА СТУПИЦЫ З Л,9558 КРЫШКА СТУПИЦЫ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9557_kryshka_stupitsy_z_l9558_kryshka_stupitsy_z_pr.svg"
+        },
+        {
+          "title": "9213 ОТБОЙНИК АМОРТ З Л,9214 ОТБОЙНИК АМОРТ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9213_otbojnik_amort_z_l9214_otbojnik_amort_z_pr.svg"
+        },
+        {
+          "title": "9385 ПОПЕР РЫЧ ПОДВ З Л Н,9386 ПОП РЫЧ ПОДВ З ПР Н",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9385_poper_rych_podv_z_l_n9386_pop_rych_podv_z_pr_n.svg"
+        },
+        {
+          "title": "9245 ПРОКЛАДКА ПРУЖ З Л В,9246 ПРОКЛАДК ПРУЖ З ПР В",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9245_prokladka_pruzh_z_l_v9246_prokladk_pruzh_z_pr_v.svg"
+        },
+        {
+          "title": "9433 КРЕПЛ З ДИФФЕРЕНЦ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9433_krepl_z_differents.svg"
+        },
+        {
+          "title": "9171 ЭЛ-ДВИГ СТОЯН ТОРМОЗ л,9172 ЭЛ-ДВИГ СТОЯН ТОРМОЗ пр",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9171_el-dvig_stojan_tormoz_l9172_el-dvig_stojan_tormoz_pr.svg"
+        },
+        {
+          "title": "9243 КРЕПЛ ПРУЖИНЫ Л,9244 КРЕПЛ ПРУЖИНЫ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9243_krepl_pruzhiny_l9244_krepl_pruzhiny_pr.svg"
+        },
+        {
+          "title": "9093 ПОДВЕСК Л СТАБИЛ ЗДН,9094 ПОДВЕСК ПР СТАБИЛ ЗД",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9093_podvesk_l_stabil_zdn9094_podvesk_pr_stabil_zd.svg"
+        },
+        {
+          "title": "9391 ПОПЕР РЫЧ ПОДВ З Л П,9392 ПОП РЫЧ ПОДВ З ПР П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9391_poper_rych_podv_z_l_p9392_pop_rych_podv_z_pr_p.svg"
+        },
+        {
+          "title": "7247 ДАТЧ ЧАСТ ВРАЩ З Л,7248 ДАТЧ ЧАСТ ВРАЩ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7247_datch_chast_vrasch_z_l7248_datch_chast_vrasch_z_pr.svg"
+        },
+        {
+          "title": "9478 КР РУЛ КОЛОНКИ Н",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9478_kr_rul_kolonki_n.svg"
+        },
+        {
+          "title": "9115 ПОВОРОТ КУЛАК З Л,9116 ПОВОРОТ КУЛАК З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9115_povorot_kulak_z_l9116_povorot_kulak_z_pr.svg"
+        },
+        {
+          "title": "R8 - Аварийное запасное колесо,separator,9696 ШИНА ЗАПАСНАЯ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/r8_-_avarijnoe_zapasnoe_kolesoseparator9696_shina_zapasnaja.svg"
+        },
+        {
+          "title": "9265 ШАРН ВАЛ З Л В СБ,9266 ШАРН ВАЛ З ПР В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9265_sharn_val_z_l_v_sb9266_sharn_val_z_pr_v_sb.svg"
+        },
+        {
+          "title": "9477 ДЕРЖ РУЛ КОЛОНКИ В",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9477_derzh_rul_kolonki_v.svg"
+        },
+        {
+          "title": "9211 ЗАЩ ТР АМОРТИЗАТОР Л,9212 ЗАЩ ТР АМОРТИЗАТ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9211_zasch_tr_amortizator_l9212_zasch_tr_amortizat_pr.svg"
+        },
+        {
+          "title": "9432 БЛОК ДИФФЕРЕНЦ ЗДН",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9432_blok_differents_zdn.svg"
+        },
+        {
+          "title": "9241 ВИНТОВ ПРУЖИНА З Л,9242 ВИНТОВ ПРУЖИНА З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9241_vintov_pruzhina_z_l9242_vintov_pruzhina_z_pr.svg"
+        },
+        {
+          "title": "9565 ШИНА З Л,9566 ШИНА З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9565_shina_z_l9566_shina_z_pr.svg"
+        },
+        {
+          "title": "9081 БАЛКА МОСТА З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9081_balka_mosta_z.svg"
+        },
+        {
+          "title": "9379 ПРОД РЫЧ ПОДВ З Л В,9380 РЫЧАГ ПОДВ З В ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9379_prod_rych_podv_z_l_v9380_rychag_podv_z_v_pr.svg"
+        },
+        {
+          "title": "9253 ПОДУШКА ПРУЖ Н Л сзади,9254 ПОДУШКА ПРУЖ Н ПР сзади",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9253_podushka_pruzh_n_l_szadi9254_podushka_pruzh_n_pr_szadi.svg"
+        },
+        {
+          "title": "9181 СТУПИЦА З Л,9182 СТУПИЦА З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9181_stupitsa_z_l9182_stupitsa_z_pr.svg"
+        },
+        {
+          "title": "9436 ЭЛ-ДВ ДИФФЕРЕНЦИАЛ З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9436_el-dv_differentsial_z.svg"
+        },
+        {
+          "title": "9325 ПРОД РЫЧ ПОДВ З Л,9326 ПРОД РЫЧ ПОДВ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9325_prod_rych_podv_z_l9326_prod_rych_podv_z_pr.svg"
+        },
+        {
+          "title": "9195 ТОРМОЗН ШЛАНГ З Л,9196 ТОРМОЗН ШЛАНГ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9195_tormozn_shlang_z_l9196_tormozn_shlang_z_pr.svg"
+        },
+        {
+          "title": "9155 СУППОРТ З Л В СБ,9156 СУППОРТ З ПР В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9155_support_z_l_v_sb9156_support_z_pr_v_sb.svg"
+        },
+        {
+          "title": "9247 ПОДУШКА ПРУЖ В З Л,9248 ПОДУШКА ПРУЖ В З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9247_podushka_pruzh_v_z_l9248_podushka_pruzh_v_z_pr.svg"
+        },
+        {
+          "title": "9475 КАРДАННЫЙ ВАЛ В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9475_kardannyj_val_v_sb.svg"
+        },
+        {
+          "title": "9331 КРЕП ПОП РЫЧ ПОД Л,9332 КРЕП ПОП РЫЧ ПОД ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9331_krep_pop_rych_pod_l9332_krep_pop_rych_pod_pr.svg"
+        },
+        {
+          "title": "R8 - Аварийное запасное колесо,separator,9695 ЗАПАСНОЕ КОЛЕСО",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/r8_-_avarijnoe_zapasnoe_kolesoseparator9695_zapasnoe_koleso.svg"
+        },
+        {
+          "title": "9199 АМОРТИЗАТОР ЗД Л В С,9200 АМОРТИЗАТ ЗД ПР В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9199_amortizator_zd_l_v_s9200_amortizat_zd_pr_v_sb.svg"
+        },
+        {
+          "title": "9201 АМОРТИЗАТОР З Л,9202 АМОРТИЗАТОР З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9201_amortizator_z_l9202_amortizator_z_pr.svg"
+        },
+        {
+          "title": "9551 КОЛЁСНЫЙ ДИСК З Л,9552 КОЛЁСНЫЙ ДИСК З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9551_kolesnyj_disk_z_l9552_kolesnyj_disk_z_pr.svg"
+        },
+        {
+          "title": "9233 КРЫШКА БАМПЕРА З Л,9234 КРЫШКА БАМПЕРА З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9233_kryshka_bampera_z_l9234_kryshka_bampera_z_pr.svg"
+        },
+        {
+          "title": "9231 КРЕПЛ ГАЗ АМОРТ З Л,9232 КРЕПЛ ГАЗ АМОРТ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9231_krepl_gaz_amort_z_l9232_krepl_gaz_amort_z_pr.svg"
+        },
+        {
+          "title": "9091 СТАБИЛИЗАТОР З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9091_stabilizator_z.svg"
+        },
+        {
+          "title": "9553 ДТЧ ДАВ В ШИНЕ З Л,9554 ДТЧ ДАВ В ШИНЕ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9553_dtch_dav_v_shine_z_l9554_dtch_dav_v_shine_z_pr.svg"
+        },
+        {
+          "title": "9434 КРЫШ КАРТЕРА ДИФФ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9434_krysh_kartera_diff.svg"
+        },
+        {
+          "title": "9191 ТОРМОЗНОЙ ДИСК З Л,9192 ТОРМОЗНОЙ ДИСК З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9191_tormoznoj_disk_z_l9192_tormoznoj_disk_z_pr.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Панель приборов",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_panel_priborov.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_panel_priborov.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "4356 НАКЛАДКА КОНСОЛИ З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4356_nakladka_konsoli_z.svg"
+        },
+        {
+          "title": "4419 ВОЗДУШН КАНАЛ Л,4420 ВОЗДУШН КАНАЛ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4419_vozdushn_kanal_l4420_vozdushn_kanal_pr.svg"
+        },
+        {
+          "title": "H6 - 10 динамиков,separator,5005 ДИНАМИК П В",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/h6_-_10_dinamikovseparator5005_dinamik_p_v.svg"
+        },
+        {
+          "title": "K4 - \"Head Up Display\",separator,4337 ПРОЕЦИРУЮЩ ДИСПЛЕЙ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/k4_-_head_up_displayseparator4337_proetsirujusch_displej.svg"
+        },
+        {
+          "title": "4332 УПЛ ПАНЕЛЬ ПРИБОРОВ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4332_upl_panel'_priborov.svg"
+        },
+        {
+          "title": "4440 ВОЗД КАНАЛ П Н",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4440_vozd_kanal_p_n.svg"
+        },
+        {
+          "title": "7400 РУЛЕВОЕ КОЛЕСО",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7400_rulevoe_koleso.svg"
+        },
+        {
+          "title": "4347 ОБЛИЦ Н ПАН ПРИБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4347_oblits_n_pan_prib.svg"
+        },
+        {
+          "title": "4331 ЩИТОК ПРИБОРОВ В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4331_schitok_priborov_v_sb.svg"
+        },
+        {
+          "title": "4325 НПБ ПАССАЖИРА П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4325_npb_passazhira_p.svg"
+        },
+        {
+          "title": "5903 МОНИТОР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/5903_monitor.svg"
+        },
+        {
+          "title": "4416 РОЗЕТКА ЦЕНТ КОНСОЛЬ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4416_rozetka_tsent_konsol'.svg"
+        },
+        {
+          "title": "4341 НАКЛАДКА ДИНАМИКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4341_nakladka_dinamika.svg"
+        },
+        {
+          "title": "4411 ОТОПИТЕЛЬ В СБОРЕ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4411_otopitel'_v_sbore.svg"
+        },
+        {
+          "title": "7407 КОЖУХ РУЛ КОЛЕСА В",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7407_kozhuh_rul_kolesa_v.svg"
+        },
+        {
+          "title": "4425 ВОЗДУХОДУВ Л,4426 ВОЗДУХОДУВ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4425_vozduhoduv_l4426_vozduhoduv_pr.svg"
+        },
+        {
+          "title": "4369 ОБЛИЦ Л ЩИТ ПРИБ Н,4370 ОБЛИЦ ПР ПАН ПРИБ Н",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4369_oblits_l_schit_prib_n4370_oblits_pr_pan_prib_n.svg"
+        },
+        {
+          "title": "4421 ВОЗДУШН КАНАЛ Н Л,4422 ВОЗДУШН КАНАЛ Н ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4421_vozdushn_kanal_n_l4422_vozdushn_kanal_n_pr.svg"
+        },
+        {
+          "title": "7531 ПЕДАЛЬ АКСЕЛ В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7531_pedal'_aksel_v_sb.svg"
+        },
+        {
+          "title": "4359 ОПОРА ПОДЛОКОТНИКА П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4359_opora_podlokotnika_p.svg"
+        },
+        {
+          "title": "4344 ОБЛИЦ С ЩИТ ПРИБ В",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4344_oblits_s_schit_prib_v.svg"
+        },
+        {
+          "title": "4407 НАКЛ В Л Ц КОНС",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4407_nakl_v_l_ts_kons.svg"
+        },
+        {
+          "title": "F1 - 3-зонный автоматич кондиционер,separator,4327 КОНДИЦИОНЕР З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/f1_-_3-zonnyj_avtomatich_konditsionerseparator4327_konditsioner_z.svg"
+        },
+        {
+          "title": "7419 КОМБ ПЕРЕКЛ В СБОРЕ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7419_komb_perekl_v_sbore.svg"
+        },
+        {
+          "title": "4424 ВОЗДУХОВОД П Н",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4424_vozduhovod_p_n.svg"
+        },
+        {
+          "title": "7567 РЕЗИНКА ПЕДАЛИ ТОРМ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7567_rezinka_pedali_torm.svg"
+        },
+        {
+          "title": "4412 ЭЛ-ДВ ВЕНТИЛЯТОРА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4412_el-dv_ventiljatora.svg"
+        },
+        {
+          "title": "7408 КОЖУХ РУЛ КОЛЕСА Н",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7408_kozhuh_rul_kolesa_n.svg"
+        },
+        {
+          "title": "4429 ВОЗД КАНАЛ СОПЛО Л,4430 ВОЗД КАНАЛ СОПЛО ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4429_vozd_kanal_soplo_l4430_vozd_kanal_soplo_pr.svg"
+        },
+        {
+          "title": "4362 ЛАМПОЧКА ПЕРЧ ЯЩИКА",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4362_lampochka_perch_jaschika.svg"
+        },
+        {
+          "title": "4366 КОМБИИНСТРУМЕНТ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4366_kombiinstrument.svg"
+        },
+        {
+          "title": "4494 АНТИАЛЛЕРГ ФИЛЬТР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4494_antiallerg_fil'tr.svg"
+        },
+        {
+          "title": "4427 ВОЗДУХОДУВ СР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4427_vozduhoduv_sr.svg"
+        },
+        {
+          "title": "4396 КРЕПЛ ЦЕНТР КОНСОЛЬ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4396_krepl_tsentr_konsol'.svg"
+        },
+        {
+          "title": "7445 НПБ ВОДИТЕЛЯ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7445_npb_voditelja.svg"
+        },
+        {
+          "title": "4345 ОБЛИЦ СР ЩИТКА ПРИБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4345_oblits_sr_schitka_prib.svg"
+        },
+        {
+          "title": "4400 ЦЕНТР КОНСОЛЬ В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4400_tsentr_konsol'_v_sb.svg"
+        },
+        {
+          "title": "4361 ПЕРЧАТОЧНЫЙ ЯЩИК",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4361_perchatochnyj_jaschik.svg"
+        },
+        {
+          "title": "4333 ОБЛИЦ Л ПАНЕЛИ ПРИБ,4334 ОБЛИЦ ПР ПАН ПРИБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4333_oblits_l_paneli_prib4334_oblits_pr_pan_prib.svg"
+        },
+        {
+          "title": "4452 ВОЗДУШН КАНАЛ З Н",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4452_vozdushn_kanal_z_n.svg"
+        },
+        {
+          "title": "4405 НАКЛ Л ЦЕНТ КОНСОЛИ,4406 НАКЛ ПР ЦЕНТ КОНСОЛИ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4405_nakl_l_tsent_konsoli4406_nakl_pr_tsent_konsoli.svg"
+        },
+        {
+          "title": "4329 НАКЛ ЦЕНТР КОНС З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4329_nakl_tsentr_kons_z.svg"
+        },
+        {
+          "title": "9008 РУЧКА БЕЗОП ПАССАЖИР Консоль",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9008_ruchka_bezop_passazhir_konsol'.svg"
+        },
+        {
+          "title": "4335 ВЗД-ДУВ БОКОВ Л,4336 ВЗД-ДУВ БОКОВ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4335_vzd-duv_bokov_l4336_vzd-duv_bokov_pr.svg"
+        },
+        {
+          "title": "9005 КОНСОЛЬ РЫЧАГА П/П в сборе",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9005_konsol'_rychaga_pp_v_sbore.svg"
+        },
+        {
+          "title": "4357 ПОДКЛЮЧЕНИЕ USB П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4357_podkljuchenie_usb_p.svg"
+        },
+        {
+          "title": "4453 ИСПАРИТЕЛЬ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4453_isparitel'.svg"
+        },
+        {
+          "title": "4441 ВЗД-КАНАЛ ПАСС ОТД Л,4442 ВЗД-КАНАЛ ПАС ОТД ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4441_vzd-kanal_pass_otd_l4442_vzd-kanal_pas_otd_pr.svg"
+        },
+        {
+          "title": "4358 ПОДКЛЮЧЕНИЕ USB З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4358_podkljuchenie_usb_z.svg"
+        },
+        {
+          "title": "7566 ПЕДАЛЬ ТОРМОЗА В СБ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7566_pedal'_tormoza_v_sb.svg"
+        },
+        {
+          "title": "4431 ЗАЩ КЛП СОПЛО Л",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4431_zasch_klp_soplo_l.svg"
+        },
+        {
+          "title": "4403 ОБЛИЦОВКА Л КОНСОЛЬ,4404 ОБЛИЦОВКА ПР КОНСОЛЬ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4403_oblitsovka_l_konsol'4404_oblitsovka_pr_konsol'.svg"
+        },
+        {
+          "title": "4402 ПОДЛОК КОНСОЛЬ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4402_podlok_konsol'.svg"
+        },
+        {
+          "title": "9009 ПОДСТАВКА Д/НАПИТК П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/9009_podstavka_dnapitk_p.svg"
+        },
+        {
+          "title": "4330 БАЛКА ПАН/ПРИБОРОВ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4330_balka_panpriborov.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Передние сиденья",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_perednie_sidenja.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_perednie_sidenja.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "4653 ЗАМОК РЕМНЯ П Л,4654 ЗАМОК РЕМНЯ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4653_zamok_remnja_p_l4654_zamok_remnja_p_pr.svg"
+        },
+        {
+          "title": "4597 ПОДГОЛОВНИК П Л,4598 ПОДГОЛОВНИК П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4597_podgolovnik_p_l4598_podgolovnik_p_pr.svg"
+        },
+        {
+          "title": "4553 НАКЛ СИДЕНЬЯ ВНУ Л,4554 НАКЛ СИДЕНЬЯ ВНУ ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4553_nakl_siden'ja_vnu_l4554_nakl_siden'ja_vnu_pr.svg"
+        },
+        {
+          "title": "4521 ОПОРА СИДЕНЬЯ П Л,4522 ОПОРА СИДЕНЬЯ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4521_opora_siden'ja_p_l4522_opora_siden'ja_p_pr.svg"
+        },
+        {
+          "title": "4551 ПАНЕЛЬ СИДЕНЬЯ НАР Л,4552 ПАНЕЛЬ СИД НАР ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4551_panel'_siden'ja_nar_l4552_panel'_sid_nar_pr.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Задние сиденья",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_zadnie_sidenja.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_zadnie_sidenja.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "4717 ПОДЛОК СИДЕНЬЕ З",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4717_podlok_siden'e_z.svg"
+        },
+        {
+          "title": "4835 ЗАМОК РЕМН З Л И З С,4836 ЗАМОК РЕМ/БЕЗ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4835_zamok_remn_z_l_i_z_s4836_zamok_rembez_z_pr.svg"
+        },
+        {
+          "title": "4726 ПОДГОЛОВНИК З СР,4727 ПОДГОЛОВНИК З Л,4728 ПОДГОЛОВНИК З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4726_podgolovnik_z_sr4727_podgolovnik_z_l4728_podgolovnik_z_pr.svg"
+        }
+      ],
+      "pictograms": []
+    },
+    {
+      "title": "Допработы на стапеле/провести измерения",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_dopraboty_na_stapeleprovesti_izmerenija.png",
+      "svg_path": "",
+      "has_pictograms": true,
+      "graphics_not_available": false,
+      "details": [],
+      "pictograms": [
+        {
+          "section_name": "РАБОТЫ",
+          "works": [
+            {
+              "work_name1": "9901 Т/С ЦЕЛИКОМ ДО РЕМ",
+              "work_name2": "УУК пер+здн изм без регулировки до ремонта",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9901_ts_tselikom_do_rem_uuk_perzdn_izm_bez_regulirovki_do_remonta.svg"
+            },
+            {
+              "work_name1": "9906 Т/С ЦЕЛИКОМ",
+              "work_name2": "УУК пер+здн измерить без регулировки",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9906_ts_tselikom_uuk_perzdn_izmerit'_bez_regulirovki.svg"
+            },
+            {
+              "work_name1": "9900 Т/С ЦЕЛИКОМ",
+              "work_name2": "УУК пер+здн измер с регулировкой",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9900_ts_tselikom_uuk_perzdn_izmer_s_regulirovkoj.svg"
+            },
+            {
+              "work_name1": "9873 СТАПЕЛЬ",
+              "work_name2": "Стапель переоборудовать",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9873_stapel'_stapel'_pereoborudovat'.svg"
+            },
+            {
+              "work_name1": "9889 КУЗОВ",
+              "work_name2": "Кузов замерить ручн. измерит. системой",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9889_kuzov_kuzov_zamerit'_ruchn_izmerit_sistemoj.svg"
+            },
+            {
+              "work_name1": "9903 Т/С СПЕРЕДИ ДО РЕМОН",
+              "work_name2": "УУК пер измерить без рег-ки до ремонта",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9903_ts_speredi_do_remon_uuk_per_izmerit'_bez_reg-ki_do_remonta.svg"
+            },
+            {
+              "work_name1": "9907 Т/С СПЕРЕДИ",
+              "work_name2": "УУК пер измерить без регулировки",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9907_ts_speredi_uuk_per_izmerit'_bez_regulirovki.svg"
+            },
+            {
+              "work_name1": "9902 Т/С СПЕРЕДИ",
+              "work_name2": "УУК пер измерить с регулировкой",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9902_ts_speredi_uuk_per_izmerit'_s_regulirovkoj.svg"
+            },
+            {
+              "work_name1": "9870 Т/С НА СТАПЕЛЕ",
+              "work_name2": "А/м на стапель установить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9870_ts_na_stapele_am_na_stapel'_ustanovit'.svg"
+            },
+            {
+              "work_name1": "9890 КУЗОВ",
+              "work_name2": "Кузов замерить измер. системой",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9890_kuzov_kuzov_zamerit'_izmer_sistemoj.svg"
+            },
+            {
+              "work_name1": "9905 Т/С СЗАДИ ДО РЕМОНТА",
+              "work_name2": "УУК здн измерить без рег-ки после ремонта",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9905_ts_szadi_do_remonta_uuk_zdn_izmerit'_bez_reg-ki_posle_remonta.svg"
+            },
+            {
+              "work_name1": "9908 Т/С СЗАДИ",
+              "work_name2": "УУК здн измерить без регулировки",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9908_ts_szadi_uuk_zdn_izmerit'_bez_regulirovki.svg"
+            },
+            {
+              "work_name1": "9904 Т/С СЗАДИ",
+              "work_name2": "УУК здн измерить и регулировать",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9904_ts_szadi_uuk_zdn_izmerit'_i_regulirovat'.svg"
+            },
+            {
+              "work_name1": "9858 НАПОЛЬНЫЙ СТАПЕЛЬ",
+              "work_name2": "А/м на напольном стапеле закрепить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9858_napol'nyj_stapel'_am_na_napol'nom_stapele_zakrepit'.svg"
+            },
+            {
+              "work_name1": "9892 ЗАМЕРИТЬ КУЗОВ,9893 КУЗОВ",
+              "work_name2": "Кузов измерить с электр сист измерений",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9892_zamerit'_kuzov9893_kuzov_kuzov_izmerit'_s_elektr_sist_izmerenij.svg"
+            },
+            {
+              "work_name1": "9913 СХОЖДЕНИЕ КОЛЁС П",
+              "work_name2": "Схожд пер кол измерить с регулировкой",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9913_shozhdenie_koles_p_shozhd_per_kol_izmerit'_s_regulirovkoj.svg"
+            },
+            {
+              "work_name1": "9915 СХОД СЗАДИ",
+              "work_name2": "Схождение здн измерить с регулировкой",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9915_shod_szadi_shozhdenie_zdn_izmerit'_s_regulirovkoj.svg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Допработы двигатель/КПП",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_dopraboty_dvigatelkpp.png",
+      "svg_path": "",
+      "has_pictograms": true,
+      "graphics_not_available": false,
+      "details": [],
+      "pictograms": [
+        {
+          "section_name": "РАБОТЫ",
+          "works": [
+            {
+              "work_name1": "9705 АГРЕГАТЫ П В СБОРЕ",
+              "work_name2": "Агрегаты впереди с/у",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9705_agregaty_p_v_sbore_agregaty_vperedi_su.svg"
+            },
+            {
+              "work_name1": "9715 ДВС С КПП",
+              "work_name2": "Двигатель с коробкой передач С+У",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9715_dvs_s_kpp_dvigatel'_s_korobkoj_peredach_su.svg"
+            },
+            {
+              "work_name1": "9723 КПП",
+              "work_name2": "КПП с/у",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9723_kpp_kpp_su.svg"
+            },
+            {
+              "work_name1": "9725 РАЗДАТ КОРОБКА П",
+              "work_name2": "Раздат коробку с+у",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9725_razdat_korobka_p_razdat_korobku_su.svg"
+            },
+            {
+              "work_name1": "9761 АГРЕГАТЫ З",
+              "work_name2": "Агрегаты с/у",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9761_agregaty_z_agregaty_su.svg"
+            },
+            {
+              "work_name1": "9795 ДВИГАТЕЛЬ",
+              "work_name2": "Двигатель разоб+собр -снят-",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9795_dvigatel'_dvigatel'_razobsobr_-snjat-.svg"
+            },
+            {
+              "work_name1": "9799 КПП",
+              "work_name2": "КПП разоб+собр -снята-",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9799_kpp_kpp_razobsobr_-snjata-.svg"
+            },
+            {
+              "work_name1": "9801 РАЗДАТ КОРОБКА П",
+              "work_name2": "Раздат коробку разоб+собр -снята-",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9801_razdat_korobka_p_razdat_korobku_razobsobr_-snjata-.svg"
+            },
+            {
+              "work_name1": "9831 ДВИГАТЕЛЬ",
+              "work_name2": "Двигатель проверить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9831_dvigatel'_dvigatel'_proverit'.svg"
+            },
+            {
+              "work_name1": "9835 КПП",
+              "work_name2": "КПП проверить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9835_kpp_kpp_proverit'.svg"
+            },
+            {
+              "work_name1": "9836 РАСПРЕД КОРОБКА",
+              "work_name2": "Раздат коробку проверить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9836_raspred_korobka_razdat_korobku_proverit'.svg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Допработы, передний/задний мосты",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_dopraboty_perednijzadnij_mosty.png",
+      "svg_path": "",
+      "has_pictograms": true,
+      "graphics_not_available": false,
+      "details": [],
+      "pictograms": [
+        {
+          "section_name": "ДЕТАЛИ",
+          "works": [
+            {
+              "work_name1": "6900 МОТОРНОЕ МАСЛО,6901 ТРАНСМИСС МАСЛО,6902 МАСЛО ДИФФЕРЕНЦИАЛА,6903 ОХЛАЖДАЮЩАЯ ЖИДКОСТЬ,6904 ЖИДК СТ-ОМЫВАТЕЛЯ,6905 ТОРМОЗН ЖИДКОСТЬ,6906 ДЕСТИЛЛИРОВ ВОДА,6909 ХЛАДАГЕНТ КОНДИЦ,6989 ОЖ РАЗБАВЛЕННАЯ",
+              "work_name2": "Эксплуатац. материалы заменить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_6900_motornoe_maslo6901_transmiss_maslo6902_maslo_differentsiala6903_ohlazhdajuschaja_zhidkost'6904_zhidk_st-omyvatelja6905_tormozn_zhidkost'6906_destillirov_voda6909_hladagent_kondits6989_ozh_razbavlennaja_ekspluatats_materialy_zamenit'.svg"
+            }
+          ]
+        },
+        {
+          "section_name": "РАБОТЫ",
+          "works": [
+            {
+              "work_name1": "9731 ПОЛУОСЬ П Л,9732 ПОЛУОСЬ П ПР",
+              "work_name2": "Переднюю полуось с/у",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9731_poluos'_p_l9732_poluos'_p_pr_perednjuju_poluos'_su.svg"
+            },
+            {
+              "work_name1": "9775 ПОЛУОСЬ З Л,9776 ПОЛУОСЬ З ПР",
+              "work_name2": "Заднюю полуось с+у",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9775_poluos'_z_l9776_poluos'_z_pr_zadnjuju_poluos'_su.svg"
+            },
+            {
+              "work_name1": "9773 ДИФФЕРЕНЦИАЛ З",
+              "work_name2": "Здн дифференциал -",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9773_differentsial_z_zdn_differentsial_-.svg"
+            },
+            {
+              "work_name1": "9940 СИСТЕМА ABS",
+              "work_name2": "Функциональность ABS проверить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9940_sistema_abs_funktsional'nost'_abs_proverit'.svg"
+            },
+            {
+              "work_name1": "4475 КОНДИЦИОНЕР",
+              "work_name2": "Кондиционер опорожнить, промыть заправить и проверить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_4475_konditsioner_konditsioner_oporozhnit'_promyt'_zapravit'_i_proverit'.svg"
+            },
+            {
+              "work_name1": "9789 ПОЛУОСЬ П Л,9790 ПОЛУОСЬ П ПР",
+              "work_name2": "Переднюю полуось разоб+собр -снята-",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9789_poluos'_p_l9790_poluos'_p_pr_perednjuju_poluos'_razobsobr_-snjata-.svg"
+            },
+            {
+              "work_name1": "9807 ПОЛУОСЬ З Л,9808 ПОЛУОСЬ З ПР",
+              "work_name2": "Заднюю полуось раз-/собр -снята-",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9807_poluos'_z_l9808_poluos'_z_pr_zadnjuju_poluos'_raz-sobr_-snjata-.svg"
+            },
+            {
+              "work_name1": "9813 ДИФФЕРЕНЦИАЛ",
+              "work_name2": "Здн дифференциал разобр+собр -снят-",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9813_differentsial_zdn_differentsial_razobrsobr_-snjat-.svg"
+            },
+            {
+              "work_name1": "9947 ФАРЫ",
+              "work_name2": "Фары регулировать",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9947_fary_fary_regulirovat'.svg"
+            },
+            {
+              "work_name1": "9926 ТРАСПОРТНОЕ СРЕДСТВО",
+              "work_name2": "очистка ТС",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9926_trasportnoe_sredstvo_ochistka_ts.svg"
+            },
+            {
+              "work_name1": "9825 ПОЛУОСЬ П Л,9826 ПОЛУОСЬ П ПР",
+              "work_name2": "Переднюю полуось проверить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9825_poluos'_p_l9826_poluos'_p_pr_perednjuju_poluos'_proverit'.svg"
+            },
+            {
+              "work_name1": "9845 ПОЛУОСЬ З Л,9846 ПОЛУОСЬ З ПР",
+              "work_name2": "Заднюю полуось проверить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9845_poluos'_z_l9846_poluos'_z_pr_zadnjuju_poluos'_proverit'.svg"
+            },
+            {
+              "work_name1": "9810 ДИФФЕРЕНЦИАЛ З",
+              "work_name2": "Здн. дифф-циал проверить",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9810_differentsial_z_zdn_diff-tsial_proverit'.svg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "НСП",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_nsp.png",
+      "svg_path": "",
+      "has_pictograms": true,
+      "graphics_not_available": false,
+      "details": [],
+      "pictograms": [
+        {
+          "section_name": "ДЕТАЛИ",
+          "works": [
+            {
+              "work_name1": "3040 БУКВ КОД СТРАНЫ",
+              "work_name2": "Идентификатор страны",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_3040_bukv_kod_strany_identifikator_strany.svg"
+            },
+            {
+              "work_name1": "4993 ЗНАК АВАР ОСТАНОВКИ",
+              "work_name2": "Знак аварийной остановки",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_4993_znak_avar_ostanovki_znak_avarijnoj_ostanovki.svg"
+            },
+            {
+              "work_name1": "2705 СБОР ЗА ПОВТ РЕГИСТР",
+              "work_name2": "Сбор за повт. регистрацию",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_2705_sbor_za_povt_registr_sbor_za_povt_registratsiju.svg"
+            },
+            {
+              "work_name1": "3681 БРЫЗГОВИКИ П + З",
+              "work_name2": "Брызговики пер+здн",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_3681_bryzgoviki_p__z_bryzgoviki_perzdn.svg"
+            },
+            {
+              "work_name1": "6984 ДОПОЛН КОВРИКИ",
+              "work_name2": "Коврики",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_6984_dopoln_kovriki_kovriki.svg"
+            },
+            {
+              "work_name1": "6985 УС-ВО SPIKES-SPIDER",
+              "work_name2": "Устр-во Spikes-Spider",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_6985_us-vo_spikes-spider_ustr-vo_spikes-spider.svg"
+            },
+            {
+              "work_name1": "9951 СИСТЕМА ГБО",
+              "work_name2": "Система питания сжиженным газом",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_9951_sistema_gbo_sistema_pitanija_szhizhennym_gazom.svg"
+            },
+            {
+              "work_name1": "9974 МАСЛО ДЛЯ ГУР,9984 МОТОРНОЕ МАСЛО,9985 СМАЗОЧНЫЕ ВЕЩ-ВА,9986 ХЛАДАГЕНТ КОНДИЦ,9987 ОХЛАЖДАЮЩАЯ ЖИДКОСТЬ,9988 ТОРМОЗН ЖИДКОСТЬ,9989 ТРАНСМИСС МАСЛО",
+              "work_name2": "Эксплуатационные материалы",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_9974_maslo_dlja_gur9984_motornoe_maslo9985_smazochnye_vesch-va9986_hladagent_kondits9987_ohlazhdajuschaja_zhidkost'9988_tormozn_zhidkost'9989_transmiss_maslo_ekspluatatsionnye_materialy.svg"
+            },
+            {
+              "work_name1": "6981 ДЕКОР-ПОЛОСКИ",
+              "work_name2": "Декоративные полосы",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_6981_dekor-poloski_dekorativnye_polosy.svg"
+            },
+            {
+              "work_name1": "2709 ТСУ",
+              "work_name2": "ТСУ",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_2709_tsu_tsu.svg"
+            },
+            {
+              "work_name1": "6987 ПОВОРОТНИК/И БОКОВ,0731 ЛАМПЫ НАКАЛИВАНИЯ,0736 ДОПОЛН ФОНАРИ П/З",
+              "work_name2": "Лампы Лампочки",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_6987_povorotniki_bokov0731_lampy_nakalivanija0736_dopoln_fonari_pz_lampy_lampochki.svg"
+            },
+            {
+              "work_name1": "4410 РАДИО,0730 РАДИОСТАНЦИЯ,0729 АВТОМОБ ТЕЛЕФОН,0727 СИСТЕМА НАВИГАЦИИ,0728 МОБИЛЬНЫЙ ТЕЛЕФОН,0734 ДОП АНТЕННА/Ы",
+              "work_name2": "Мультимедиа Связь",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_4410_radio0730_radiostantsija0729_avtomob_telefon0727_sistema_navigatsii0728_mobil'nyj_telefon0734_dop_antennay_mul'timedia_svjaz'.svg"
+            },
+            {
+              "work_name1": "0739 ДОП ЗЕРКАЛО З/ВИДА",
+              "work_name2": "Дополнит. зеркало",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_0739_dop_zerkalo_zvida_dopolnit_zerkalo.svg"
+            },
+            {
+              "work_name1": "9954 ПЛЁНКА / ПЛЁНКИ",
+              "work_name2": "Нанесение рекламы на кузов",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_9954_plenka__plenki_nanesenie_reklamy_na_kuzov.svg"
+            },
+            {
+              "work_name1": "6963 ПРУЖИНЫ/ШАРНИРЫ",
+              "work_name2": "Пружины/шарниры",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_6963_pruzhinysharniry_pruzhinysharniry.svg"
+            },
+            {
+              "work_name1": "6983 ВЕТРООТРАЖАТЕЛЬ",
+              "work_name2": "Обтекатель",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_6983_vetrootrazhatel'_obtekatel'.svg"
+            },
+            {
+              "work_name1": "6982 БАГАЖНИК/КРЫША",
+              "work_name2": "Багажник на крыше",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_6982_bagazhnikkrysha_bagazhnik_na_kryshe.svg"
+            },
+            {
+              "work_name1": "6986 ДЕТСКОЕ СИДЕНЬЕ",
+              "work_name2": "Детское сиденье",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_6986_detskoe_siden'e_detskoe_siden'e.svg"
+            },
+            {
+              "work_name1": "2696 ПАРКТРОНИК",
+              "work_name2": "Система помощи при парковке",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_2696_parktronik_sistema_pomoschi_pri_parkovke.svg"
+            },
+            {
+              "work_name1": "6962 КРЕПЕЖНЫЕ ЗАЖИМЫ",
+              "work_name2": "Зажим",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_6962_krepezhnye_zazhimy_zazhim.svg"
+            },
+            {
+              "work_name1": "9699 ШИНОМОНТАЖ",
+              "work_name2": "Сезонная замена шин",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_9699_shinomontazh_sezonnaja_zamena_shin.svg"
+            },
+            {
+              "work_name1": "2001 ШУМОИЗОЛЯЦ МАТЫ",
+              "work_name2": "Шумоизоляционный мат",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_2001_shumoizoljats_maty_shumoizoljatsionnyj_mat.svg"
+            },
+            {
+              "work_name1": "9797 ЗНАК УРОВ ВЫБР ПЫЛИ",
+              "work_name2": "Знак уровня выброса м-дисп. пыли",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/detali_9797_znak_urov_vybr_pyli_znak_urovnja_vybrosa_m-disp_pyli.svg"
+            }
+          ]
+        },
+        {
+          "section_name": "РАБОТЫ",
+          "works": [
+            {
+              "work_name1": "0250 ЭВАКУАЦИЯ Т/С",
+              "work_name2": "Транспортировка",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_0250_evakuatsija_ts_transportirovka.svg"
+            },
+            {
+              "work_name1": "0247 ДЕ-/МОНТАЖ С ЦЕЛЬЮ",
+              "work_name2": "Демонтаж для окраски",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_0247_de-montazh_s_tsel'ju_demontazh_dlja_okraski.svg"
+            },
+            {
+              "work_name1": "1477 БОК Л,1478 БОК ПР,2695 ЗАДОК,0245 ПЕРЕДОК",
+              "work_name2": "Рихтовать",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_1477_bok_l1478_bok_pr2695_zadok0245_peredok_rihtovat'.svg"
+            },
+            {
+              "work_name1": "9852 ПАМ НЕИСП ДО РЕМОНТА,9854 ПАМЯТЬ НЕИСПРАВНОСТ",
+              "work_name2": "Память неисправностей",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9852_pam_neisp_do_remonta9854_pamjat'_neispravnost_pamjat'_neispravnostej.svg"
+            },
+            {
+              "work_name1": "0243 РАСТЯЖКА/СТАПЕЛЬ",
+              "work_name2": "Подъемник",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_0243_rastjazhkastapel'_pod'emnik.svg"
+            },
+            {
+              "work_name1": "9860 АРЕНДА ЗА,9950 СТАПЕЛЬ ПАУШАЛЬНО,9952 ПОДОГНАТЬ СТАПЕЛЬ",
+              "work_name2": "Стапель",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9860_arenda_za9950_stapel'_paushal'no9952_podognat'_stapel'_stapel'.svg"
+            },
+            {
+              "work_name1": "9760 СИСТ ВЫСОК НАПРЯЖЕН",
+              "work_name2": "Обесточивание ВВ-сист",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9760_sist_vysok_naprjazhen_obestochivanie_vv-sist.svg"
+            },
+            {
+              "work_name1": "0991 ПЛАСТМАСС ДЕТАЛИ",
+              "work_name2": "Ремонт пластика",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_0991_plastmass_detali_remont_plastika.svg"
+            },
+            {
+              "work_name1": "1406 ОСКОЛКИ СТЕКЛА",
+              "work_name2": "Удалить осколки",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_1406_oskolki_stekla_udalit'_oskolki.svg"
+            },
+            {
+              "work_name1": "0249 ДЕ-/МОНТАЖ С ЦЕЛЬЮ",
+              "work_name2": "Демонтаж после града",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_0249_de-montazh_s_tsel'ju_demontazh_posle_grada.svg"
+            },
+            {
+              "work_name1": "9722 ПОИСК НЕИСПРАВНОСТЕЙ",
+              "work_name2": "Испытания/ Проверки",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9722_poisk_neispravnostej_ispytanija_proverki.svg"
+            },
+            {
+              "work_name1": "9973 ПРОБНАЯ ПОЕЗДКА,9983 КАЛИБРОВОЧН ПОЕЗДКА",
+              "work_name2": "Пробная поездка",
+              "svg_path": "/static/svgs/3109624_LB37852D6RS125970/raboty_9973_probnaja_poezdka9983_kalibrovochn_poezdka_probnaja_poezdka.svg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Система безопасности",
+      "screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/zone_sistema_bezopasnosti.png",
+      "svg_path": "/static/svgs/3109624_LB37852D6RS125970/zone_sistema_bezopasnosti.svg",
+      "has_pictograms": false,
+      "graphics_not_available": false,
+      "details": [
+        {
+          "title": "4605 ДАТЧИК НПБ П Л,4606 ДАТЧИК НПБ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4605_datchik_npb_p_l4606_datchik_npb_p_pr.svg"
+        },
+        {
+          "title": "4653 ЗАМОК РЕМНЯ П Л,4654 ЗАМОК РЕМНЯ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4653_zamok_remnja_p_l4654_zamok_remnja_p_pr.svg"
+        },
+        {
+          "title": "4627 ГОЛОВНАЯ НПБ П Л,4628 ГОЛОВНАЯ НПБ П ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4627_golovnaja_npb_p_l4628_golovnaja_npb_p_pr.svg"
+        },
+        {
+          "title": "7445 НПБ ВОДИТЕЛЯ",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/7445_npb_voditelja.svg"
+        },
+        {
+          "title": "4613 ДТЧ БОКОВОЙ НПБ Л на В-стойке,4614 ДТЧ БОКОВОЙ НПБ ПР на В-стойке",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4613_dtch_bokovoj_npb_l_na_v-stojke4614_dtch_bokovoj_npb_pr_na_v-stojke.svg"
+        },
+        {
+          "title": "4835 ЗАМОК РЕМН З Л И З С,4836 ЗАМОК РЕМ/БЕЗ З ПР",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4835_zamok_remn_z_l_i_z_s4836_zamok_rembez_z_pr.svg"
+        },
+        {
+          "title": "4325 НПБ ПАССАЖИРА П",
+          "svg_path": "/static/svgs/3109624_LB37852D6RS125970/4325_npb_passazhira_p.svg"
+        }
+      ],
+      "pictograms": []
+    }
+  ],
+  "main_screenshot_path": "/static/screenshots/3109624_LB37852D6RS125970/main_screenshot.png",
+  "main_svg_path": "/static/svgs/3109624_LB37852D6RS125970/main.svg",
+  "zones_table": "<div class=\"zones-table\"><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Кузов передняя наружная часть\">Кузов передняя наружная часть</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_perednjaja_naruzhnaja_chast.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Кузов средняя наружная часть\">Кузов средняя наружная часть</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_srednjaja_naruzhnaja_chast.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Кузов, задняя наружная часть\">Кузов, задняя наружная часть</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_zadnjaja_naruzhnaja_chast.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Кузов передняя внутренняя часть\">Кузов передняя внутренняя часть</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_perednjaja_vnutrennjaja_chast.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Кузов средняя внутренняя часть\">Кузов средняя внутренняя часть</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_srednjaja_vnutrennjaja_chast.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Кузов, задняя внутренняя часть\">Кузов, задняя внутренняя часть</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_kuzov_zadnjaja_vnutrennjaja_chast.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Передние двери\">Передние двери</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_perednie_dveri.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Задние двери\">Задние двери</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_zadnie_dveri.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Кузов/окраска\">Кузов/окраска<span class=\"pictogram-icon\">🖼️</span></button></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Ходовая часть и подвеска переднего моста\">Ходовая часть и подвеска переднего моста</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_hodovaja_chast_i_podveska_perednego_mosta.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Ходовая часть и подвеска заднего моста\">Ходовая часть и подвеска заднего моста</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_hodovaja_chast_i_podveska_zadnego_mosta.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Панель приборов\">Панель приборов</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_panel_priborov.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Передние сиденья\">Передние сиденья</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_perednie_sidenja.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Задние сиденья\">Задние сиденья</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_zadnie_sidenja.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Допработы на стапеле/провести измерения\">Допработы на стапеле/провести измерения<span class=\"pictogram-icon\">🖼️</span></button></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Допработы двигатель/КПП\">Допработы двигатель/КПП<span class=\"pictogram-icon\">🖼️</span></button></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Допработы, передний/задний мосты\">Допработы, передний/задний мосты<span class=\"pictogram-icon\">🖼️</span></button></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"НСП\">НСП<span class=\"pictogram-icon\">🖼️</span></button></div><div class=\"zone-row\"><button class=\"zone-button\" data-zone-title=\"Система безопасности\">Система безопасности</button><a href=\"/static/svgs/3109624_LB37852D6RS125970/zone_sistema_bezopasnosti.svg\" download class=\"svg-download\" title=\"Скачать SVG\"><span class=\"download-icon\">⬇</span></a></div></div>",
+  "all_svgs_zip": "",
+  "options_data": {
+    "success": true,
+    "claim_number": "3109624",
+    "vin": "LB37852D6RS125970",
+    "zones": [
+      {
+        "zone_title": "ВСЕ ВЫБРАННЫЕ ОПЦИИ",
+        "zone_id": "model-options-section-all-selected",
+        "zone_type": "section",
+        "data_value": "all-selected",
+        "options": [
+          {
+            "code": "01",
+            "title": "Monjaro",
+            "category": "ПОДТИП",
+            "selected": true,
+            "source": "all_selected_zone",
+            "original_description": "01 - Monjaro",
+            "container_id": "s01"
+          },
+          {
+            "code": "X7",
+            "title": "Россия",
+            "category": "КОМПЛЕКТАЦИЯ",
+            "selected": true,
+            "source": "all_selected_zone",
+            "original_description": "X7 - Россия",
+            "container_id": "mX7"
+          },
+          {
+            "code": "A6",
+            "title": "с 01.2024",
+            "category": "ПЕРИОД ПРОИЗВОДСТВА",
+            "selected": true,
+            "source": "all_selected_zone",
+            "original_description": "A6 - с 01.2024",
+            "container_id": "mA6"
+          },
+          {
+            "code": "X5",
+            "title": "GF",
+            "category": "ПАКЕТ ОСНАЩЕНИЯ",
+            "selected": true,
+            "source": "all_selected_zone",
+            "original_description": "X5 - GF",
+            "container_id": "mX5"
+          },
+          {
+            "code": "Y4",
+            "title": "2-слойная, мeталлик",
+            "category": "ЛКП",
+            "selected": true,
+            "source": "all_selected_zone",
+            "original_description": "Y4 - 2-слойная, мeталлик",
+            "container_id": "mY4"
+          },
+          {
+            "code": "Y8",
+            "title": "Монтажные детали окрасить снятыми",
+            "category": "ЛКП",
+            "selected": true,
+            "source": "all_selected_zone",
+            "original_description": "Y8 - Монтажные детали окрасить снятыми",
+            "container_id": "mY8"
+          }
+        ],
+        "total_options": 6,
+        "selected_count": 6,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Обработано как зона 'Все выбранные опции'"
+        ],
+        "processing_status": "success"
+      },
+      {
+        "zone_title": "СООТВЕТСТВУЕТ ТЕКУЩЕЙ ЗОНЕ",
+        "zone_id": "model-options-section-zone-relevant",
+        "zone_type": "section",
+        "data_value": "zone-relevant",
+        "options": [
+          {
+            "code": "",
+            "title": "Нет соответствующих модельных опций для данной зоны",
+            "selected": false,
+            "source": "empty_zone"
+          }
+        ],
+        "total_options": 1,
+        "selected_count": 0,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Зона пустая - содержит официальное сообщение об отсутствии опций"
+        ],
+        "processing_status": "success"
+      },
+      {
+        "zone_title": "ПОДТИП",
+        "zone_id": "model-options-section-0",
+        "zone_type": "section",
+        "data_value": "0",
+        "options": [
+          {
+            "code": "01",
+            "title": "Monjaro_regular",
+            "selected": true,
+            "source": "regular_option"
+          },
+          {
+            "code": "06",
+            "title": "Monjaro GC_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "08",
+            "title": "Monjaro GF_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "09",
+            "title": "Monjaro GF+_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "07",
+            "title": "Monjaro GK_regular",
+            "selected": false,
+            "source": "regular_option"
+          }
+        ],
+        "total_options": 5,
+        "selected_count": 1,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Обработано как зона без секций",
+          "Успешно извлечено 5 уникальных опций"
+        ],
+        "processing_status": "success"
+      },
+      {
+        "zone_title": "КОМПЛЕКТАЦИЯ",
+        "zone_id": "model-options-section-1",
+        "zone_type": "section",
+        "data_value": "1",
+        "options": [
+          {
+            "code": "X7",
+            "title": "Россия_regular",
+            "selected": true,
+            "source": "regular_option"
+          }
+        ],
+        "total_options": 1,
+        "selected_count": 1,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Обработано как зона без секций",
+          "Успешно извлечено 1 уникальных опций"
+        ],
+        "processing_status": "success"
+      },
+      {
+        "zone_title": "ПЕРИОД ПРОИЗВОДСТВА",
+        "zone_id": "model-options-section-2",
+        "zone_type": "section",
+        "data_value": "2",
+        "options": [
+          {
+            "code": "A1",
+            "title": "с 01.2021_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "A2",
+            "title": "с 01.2022_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "A3",
+            "title": "с 05.2022_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "A4",
+            "title": "с 12.2022_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "A5",
+            "title": "с 01.2023_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "A6",
+            "title": "с 01.2024_regular",
+            "selected": true,
+            "source": "regular_option"
+          }
+        ],
+        "total_options": 6,
+        "selected_count": 1,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Обработано как зона без секций",
+          "Успешно извлечено 6 уникальных опций"
+        ],
+        "processing_status": "success"
+      },
+      {
+        "zone_title": "ПАКЕТ ОСНАЩЕНИЯ",
+        "zone_id": "model-options-section-3",
+        "zone_type": "section",
+        "data_value": "3",
+        "options": [
+          {
+            "code": "X4",
+            "title": "GK_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "X5",
+            "title": "GF_regular",
+            "selected": true,
+            "source": "regular_option"
+          }
+        ],
+        "total_options": 2,
+        "selected_count": 1,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Обработано как зона без секций",
+          "Успешно извлечено 2 уникальных опций"
+        ],
+        "processing_status": "success"
+      },
+      {
+        "zone_title": "СНАРУЖИ",
+        "zone_id": "model-options-section-4",
+        "zone_type": "section",
+        "data_value": "4",
+        "options": [
+          {
+            "code": "I4",
+            "title": "ФАРА динамич эффект_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "K3",
+            "title": "Хромированная отделка_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "K2",
+            "title": "завод Wanhong_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "M7",
+            "title": "Система помощи при парковке спереди/сзади/сбоку_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "M8",
+            "title": "система парковки автоматическая_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "M5",
+            "title": "Система предупреждения о грозящем столкновении_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "M9",
+            "title": "Система мотиторинга непросматриваемых зон (BLIS)_regular",
+            "selected": false,
+            "source": "regular_option"
+          }
+        ],
+        "total_options": 7,
+        "selected_count": 0,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Обработано как зона без секций",
+          "Успешно извлечено 7 уникальных опций"
+        ],
+        "processing_status": "success"
+      },
+      {
+        "zone_title": "ВНУТРИ",
+        "zone_id": "model-options-section-5",
+        "zone_type": "section",
+        "data_value": "5",
+        "options": [
+          {
+            "code": "F1",
+            "title": "3-зонный автоматич кондиционер_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "K4",
+            "title": "\"Head Up Display\"_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "M6",
+            "title": "Ходовая камера кругового обзора_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "M4",
+            "title": "Активная система удержания полосы движения_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "Q9",
+            "title": "Адаптивный круиз-контроль_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "H4",
+            "title": "монитор 12.3\"_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "H6",
+            "title": "10 динамиков_regular",
+            "selected": false,
+            "source": "regular_option"
+          }
+        ],
+        "total_options": 7,
+        "selected_count": 0,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Обработано как зона без секций",
+          "Успешно извлечено 7 уникальных опций"
+        ],
+        "processing_status": "success"
+      },
+      {
+        "zone_title": "ДВИГАТЕЛЬ/КПП",
+        "zone_id": "model-options-section-6",
+        "zone_type": "section",
+        "data_value": "6",
+        "options": [
+          {
+            "code": "N1",
+            "title": "1969ccm (2.0 л) 175кВт  JLH-4G20TD_Бензиновый",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "",
+            "title": "БУКВЕННЫЙ КОД ДВИГАТЕЛЯ_Бензиновый",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "P7",
+            "title": "8-ступенчатая АКП_КПП",
+            "selected": false,
+            "source": "regular_option"
+          }
+        ],
+        "total_options": 3,
+        "selected_count": 0,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Обработано 2 секций с опциями",
+          "Успешно извлечено 3 уникальных опций"
+        ],
+        "processing_status": "success"
+      },
+      {
+        "zone_title": "ХОДОВАЯ ЧАСТЬ",
+        "zone_id": "model-options-section-7",
+        "zone_type": "section",
+        "data_value": "7",
+        "options": [
+          {
+            "code": "S2",
+            "title": "7.5 J x 19 Alu_Дисковые колеса",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "S5",
+            "title": "7.5 J x 19 Alu_Дисковые колеса",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "S1",
+            "title": "8 J x 20 Alu_Дисковые колеса",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "S3",
+            "title": "8 J x 20 Alu_Дисковые колеса",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "S4",
+            "title": "8 J x 20 Alu_Дисковые колеса",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "R1",
+            "title": "245/45 R 20 .. V_Шины",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "R2",
+            "title": "235/50 R 19 .. V_Шины",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "R9",
+            "title": "Зимние шины_Шины",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "R8",
+            "title": "Аварийное запасное колесо_Шины",
+            "selected": false,
+            "source": "regular_option"
+          }
+        ],
+        "total_options": 9,
+        "selected_count": 0,
+        "errors": [
+          "Не найден текст опции",
+          "Не найден текст опции",
+          "Не найден текст опции",
+          "Не найден текст опции",
+          "Не найден текст опции",
+          "Не найден текст опции",
+          "Не найден текст опции"
+        ],
+        "error_count": 7,
+        "processing_notes": [
+          "Обработано 2 секций с опциями",
+          "Успешно извлечено 9 уникальных опций",
+          "Обнаружено 7 ошибок при обработке"
+        ],
+        "processing_status": "warning"
+      },
+      {
+        "zone_title": "ЛКП",
+        "zone_id": "model-options-section-8",
+        "zone_type": "section",
+        "data_value": "8",
+        "options": [
+          {
+            "code": "Y7",
+            "title": "Детали грунтовать снятыми_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "Y8",
+            "title": "Монтажные детали окрасить снятыми_regular",
+            "selected": true,
+            "source": "regular_option"
+          },
+          {
+            "code": "Y2",
+            "title": "1-слойная, солид_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "Z8",
+            "title": "2-слойная акриловая_regular",
+            "selected": false,
+            "source": "regular_option"
+          },
+          {
+            "code": "Y4",
+            "title": "2-слойная, мeталлик_regular",
+            "selected": true,
+            "source": "regular_option"
+          },
+          {
+            "code": "Z7",
+            "title": "2-слойная, слюда_regular",
+            "selected": false,
+            "source": "regular_option"
+          }
+        ],
+        "total_options": 6,
+        "selected_count": 2,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Обработано как зона без секций",
+          "Успешно извлечено 6 уникальных опций"
+        ],
+        "processing_status": "success"
+      },
+      {
+        "zone_title": "ПОДГОТОВКА К ОКРАСКЕ AZT",
+        "zone_id": "model-options-section-paint-system",
+        "zone_type": "section",
+        "data_value": "paint-system",
+        "options": [
+          {
+            "code": "",
+            "title": "AZT - Идентификация производителя ЛКП / поиск кода цвета",
+            "selected": false,
+            "source": "azt_zone"
+          },
+          {
+            "code": "",
+            "title": "AZT - Дополнительные затраты на смешивание краски",
+            "selected": true,
+            "source": "azt_zone"
+          },
+          {
+            "code": "",
+            "title": "AZT - Окончательный подбор цвета и выкрас образца",
+            "selected": true,
+            "source": "azt_zone"
+          },
+          {
+            "code": "",
+            "title": "AZT - Обезжиривание и очистка",
+            "selected": false,
+            "source": "azt_zone"
+          },
+          {
+            "code": "",
+            "title": "AZT - 2-х цветная окраска",
+            "selected": false,
+            "source": "azt_zone"
+          },
+          {
+            "code": "",
+            "title": "AZT - Дополнительные затраты на укрывочные работы пластиковых деталей",
+            "selected": false,
+            "source": "azt_zone"
+          },
+          {
+            "code": "",
+            "title": "AZT - Дополнительные затраты на укрывочные работы стёкол",
+            "selected": false,
+            "source": "azt_zone"
+          },
+          {
+            "code": "",
+            "title": "AZT - Дополнительные затраты на укрывочные работы боковых стёкол",
+            "selected": false,
+            "source": "azt_zone"
+          }
+        ],
+        "total_options": 8,
+        "selected_count": 2,
+        "errors": [],
+        "error_count": 0,
+        "processing_notes": [
+          "Обработано как AZT зона"
+        ],
+        "processing_status": "success"
+      }
+    ],
+    "statistics": {
+      "total_zones": 12,
+      "total_options": 61,
+      "total_selected": 14,
+      "total_errors": 7
+    }
+  },
+  "claim_number": "3109624"
+}

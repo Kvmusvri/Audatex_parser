@@ -17,3 +17,6 @@ core/login/__pycache__/parser.cpython-311.pyc
 core/old_stash_code/parser.py
 core/login/__pycache__/parser.cpython-311.pyc
 
+# Автоматически создаваемые файлы библиотек
+downloaded_files/
+

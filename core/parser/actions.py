@@ -4,11 +4,13 @@
 import logging
 import time
 import functools
+import random
 from typing import Optional, Callable, Any
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import (
     TimeoutException, 
     StaleElementReferenceException, 
@@ -22,6 +24,99 @@ from .constants import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def human_like_delay(min_seconds: float = 0.5, max_seconds: float = 2.0):
+    """Человеческая задержка с рандомизацией"""
+    delay = random.uniform(min_seconds, max_seconds)
+    time.sleep(delay)
+
+
+def human_like_click(driver: WebDriver, element, use_actions: bool = False):
+    """Человеческий клик с рандомизацией"""
+    try:
+        if use_actions:
+            # Используем ActionChains для более человечного поведения
+            actions = ActionChains(driver)
+            actions.move_to_element(element)
+            human_like_delay(0.1, 0.3)
+            actions.click()
+            actions.perform()
+        else:
+            # Обычный клик с небольшой задержкой
+            human_like_delay(0.1, 0.2)
+            element.click()
+        return True
+    except ElementClickInterceptedException:
+        # Fallback на JavaScript клик
+        driver.execute_script("arguments[0].click();", element)
+        return True
+    except Exception as e:
+        logger.error(f"Ошибка при клике: {e}")
+        return False
+
+
+def add_human_behavior(driver: WebDriver):
+    """Добавляет человеческое поведение для обхода детекции"""
+    try:
+        # Случайные движения мыши
+        actions = ActionChains(driver)
+        for _ in range(random.randint(2, 5)):
+            x = random.randint(100, 800)
+            y = random.randint(100, 600)
+            actions.move_by_offset(x, y)
+            human_like_delay(0.1, 0.3)
+        
+        # Случайный скролл
+        scroll_amount = random.randint(-300, 300)
+        driver.execute_script(f"window.scrollBy(0, {scroll_amount});")
+        human_like_delay(0.2, 0.5)
+        
+        logger.debug("Добавлено человеческое поведение")
+    except Exception as e:
+        logger.warning(f"Ошибка при добавлении человеческого поведения: {e}")
+
+
+def check_for_bot_detection(driver: WebDriver) -> bool:
+    """Проверяет признаки детекции бота"""
+    try:
+        page_source = driver.page_source.lower()
+        bot_indicators = [
+            "gethandleverifier",
+            "white screen",
+            "bot detected",
+            "automation detected",
+            "captcha",
+            "cloudflare"
+        ]
+        
+        for indicator in bot_indicators:
+            if indicator in page_source:
+                logger.warning(f"🚨 Обнаружен индикатор детекции бота: {indicator}")
+                return True
+        return False
+    except Exception as e:
+        logger.error(f"Ошибка при проверке детекции бота: {e}")
+        return False
+
+
+def handle_bot_detection(driver: WebDriver):
+    """Обрабатывает детекцию бота"""
+    logger.warning("🚨 Обрабатываем детекцию бота...")
+    
+    # Длительная пауза
+    human_like_delay(5.0, 10.0)
+    
+    # Добавляем человеческое поведение
+    add_human_behavior(driver)
+    
+    # Пробуем обновить страницу
+    try:
+        driver.refresh()
+        human_like_delay(3.0, 5.0)
+        add_human_behavior(driver)
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении страницы: {e}")
 
 
 # Декоратор для повторных попыток - оптимизированный
@@ -40,6 +135,12 @@ def retry_on_failure(max_attempts: int = 2, delay: float = 0.5):
             
             for attempt in range(1, max_attempts + 1):
                 try:
+                    # Проверяем детекцию бота перед выполнением
+                    if len(args) > 0 and hasattr(args[0], 'page_source'):
+                        driver = args[0]
+                        if check_for_bot_detection(driver):
+                            handle_bot_detection(driver)
+                    
                     result = func(*args, **kwargs)
                     if attempt > 1:
                         logger.info(f"Функция {func.__name__} успешна с попытки {attempt}")
@@ -92,12 +193,18 @@ def click_cansel_button(driver: WebDriver) -> bool:
             EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
         )
         
-        try:
-            button.click()
-        except ElementClickInterceptedException:
-            driver.execute_script("arguments[0].click();", button)
+        # Добавляем человеческое поведение
+        add_human_behavior(driver)
         
-        logger.info("Кнопка подтверждения нажата")
+        # Используем человеческий клик
+        success = human_like_click(driver, button, use_actions=True)
+        
+        if success:
+            logger.info("Кнопка подтверждения нажата")
+            return True
+        else:
+            logger.error("Не удалось нажать кнопку подтверждения")
+            return False
         return True
         
     except TimeoutException:
@@ -125,10 +232,19 @@ def click_request_type_button(driver: WebDriver, req_type: str) -> bool:
         else:
             logger.error(f"Неизвестный тип заявки: {req_type}")
             return False
-            
-        more_views_link.click()
-        logger.info(f"Клик по кнопке {req_type}")
-        return True
+        
+        # Добавляем человеческое поведение
+        add_human_behavior(driver)
+        
+        # Используем человеческий клик
+        success = human_like_click(driver, more_views_link, use_actions=True)
+        
+        if success:
+            logger.info(f"Клик по кнопке {req_type}")
+            return True
+        else:
+            logger.error(f"Не удалось кликнуть по кнопке {req_type}")
+            return False
         
     except TimeoutException as e:
         logger.error(f"Ошибка клика по кнопке {req_type}: {str(e)}")
@@ -144,10 +260,21 @@ def search_in_table(driver: WebDriver, search_value: str, search_type: str) -> b
         search_input = WebDriverWait(driver, 8).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "#root\\.quickfilter\\.searchbox"))
         )
+        
+        # Добавляем человеческое поведение
+        add_human_behavior(driver)
+        
+        # Очищаем поле с человеческой задержкой
         search_input.clear()
-        search_input.send_keys(search_value)
+        human_like_delay(0.3, 0.7)
+        
+        # Вводим текст с человеческими паузами
+        for char in search_value:
+            search_input.send_keys(char)
+            human_like_delay(0.05, 0.15)
+        
         logger.info(f"Введён {search_type}: {search_value}")
-        time.sleep(0.8)  # Уменьшено с 1 сек
+        human_like_delay(0.8, 1.2)  # Человеческая задержка
         
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, ROW_SELECTOR))

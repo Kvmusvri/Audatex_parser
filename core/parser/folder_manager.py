@@ -3,12 +3,14 @@ import logging
 import os
 import time
 import shutil
+import random
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 from .constants import SCREENSHOT_DIR, SVG_DIR, DATA_DIR, TIMEOUT, CLAIM_NUMBER_SELECTOR, VIN_SELECTOR
-from .actions import get_vin_status
+from .actions import get_vin_status, add_human_behavior, check_for_bot_detection, handle_bot_detection
+from .stealth import stealth_open_url, stealth_wait_for_element, check_stealth_detection, handle_stealth_detection
 
 logger = logging.getLogger(__name__)
 
@@ -77,18 +79,33 @@ def extract_vin_and_claim_number(driver, current_url):
         for attempt in range(1, max_page_refresh_attempts + 1):
             try:
                 logger.info(f"📄 Попытка {attempt}/{max_page_refresh_attempts}: Переход на URL для {config['log_name']}")
-                driver.get(config['url'])
-                time.sleep(3)  # Базовая задержка после перехода
+                
+                # Используем stealth-методы для открытия URL
+                if not stealth_open_url(driver, config['url'], reconnect_time=random.uniform(3.0, 5.0)):
+                    logger.error(f"❌ Не удалось скрытно открыть URL для {config['log_name']}")
+                    continue
+                
+                # Добавляем человеческое поведение после загрузки страницы
+                add_human_behavior(driver)
                 
                 # Проверяем готовность страницы
                 WebDriverWait(driver, TIMEOUT).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
-                time.sleep(2)  # Дополнительная задержка для прогрузки элементов
+                time.sleep(random.uniform(1.5, 3.0))  # Человеческая задержка для прогрузки элементов
                 
-                # Пытаемся найти целевой элемент
+                # Проверяем на детекцию бота и stealth-детекцию
+                if check_for_bot_detection(driver) or check_stealth_detection(driver):
+                    logger.error(f"🚨 Обнаружена детекция бота! Попытка {attempt}")
+                    handle_bot_detection(driver)
+                    handle_stealth_detection(driver, config['url'])
+                    continue
+                
+                # Пытаемся найти целевой элемент с stealth-методами
                 logger.info(f"🔎 Ищем элемент по селектору: {config['selector']}")
-                input_element = WebDriverWait(driver, TIMEOUT).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, config['selector']))
-                )
+                if not stealth_wait_for_element(driver, config['selector'], timeout=TIMEOUT):
+                    logger.error(f"❌ Элемент {config['selector']} не найден скрытно")
+                    continue
+                
+                input_element = driver.find_element(By.CSS_SELECTOR, config['selector'])
                 
                 # Проверяем, что элемент действительно загружен и доступен
                 if input_element and input_element.is_displayed():
@@ -96,19 +113,27 @@ def extract_vin_and_claim_number(driver, current_url):
                     result[config['key']] = value
                     logger.info(f"✅ Успешно извлечён {config['log_name']}: '{value}' (попытка {attempt})")
                     success = True
-                    time.sleep(2)  # Стабилизация перед следующим полем
+                    time.sleep(random.uniform(1.5, 2.5))  # Стабилизация перед следующим полем
                     break
                 else:
                     raise Exception("Элемент найден, но не отображается")
                     
             except (TimeoutException, StaleElementReferenceException, Exception) as e:
-                logger.warning(f"⚠️ Попытка {attempt}: Ошибка при извлечении {config['log_name']}: {str(e)}")
+                error_msg = str(e)
+                logger.warning(f"⚠️ Попытка {attempt}: Ошибка при извлечении {config['log_name']}: {error_msg}")
+                
+                # Проверяем на детекцию бота
+                if "GetHandleVerifier" in error_msg or "white screen" in driver.page_source.lower():
+                    logger.error(f"🚨 Обнаружена детекция бота! Попытка {attempt}")
+                    # Добавляем длительную паузу и человеческое поведение
+                    time.sleep(random.uniform(5.0, 10.0))
+                    add_human_behavior(driver)
                 
                 if attempt < max_page_refresh_attempts:
                     logger.info(f"🔄 Обновляем страницу и повторяем попытку...")
                     try:
                         driver.refresh()
-                        time.sleep(3)  # Ждем после обновления
+                        time.sleep(random.uniform(2.0, 4.0))  # Человеческая задержка
                     except Exception as refresh_error:
                         logger.error(f"❌ Ошибка при обновлении страницы: {refresh_error}")
                 else:

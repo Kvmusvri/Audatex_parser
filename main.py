@@ -9,19 +9,18 @@ import json
 import os
 from datetime import datetime
 import logging
-from core.database.models import start_db, ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, async_session
+from core.database.models import ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, async_session
 from pydantic import BaseModel
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.sql import text
 import re
 from core.database.requests import (
-    create_request_status,
-    create_equipment_zone,
-    create_group_zone,
-    create_car_detail,
+    save_parser_data_to_db,
+    update_json_with_claim_number,
+    save_updated_json_to_file,
 )
-from core.database.engine import engine
+
 import time
 import concurrent.futures
 import threading
@@ -49,18 +48,17 @@ class SearchRequest(BaseModel):
     svg_collection: bool = True  # По умолчанию включен сбор SVG
 
 
+def fix_path(path: str, folder: str) -> str:
+    """Исправляет путь, добавляя имя папки, если нужно, и убирает двойные слеши"""
+    if not path:
+        return path
+    parts = path.split('/')
+    if len(parts) >= 4 and parts[3] == '':
+        parts[3] = folder
+    return '/'.join(parts)
+
 def normalize_paths(record: dict, folder_name: str) -> dict:
-    """Нормализует пути к файлам, добавляя claim_number и vin исправляя слеши"""
-
-    def fix_path(path: str, folder: str) -> str:
-        if not path:
-            return path
-        # Убираем двойные слеши и добавляем claim_number
-        parts = path.split('/')
-        if len(parts) >= 4 and parts[3] == '':
-            parts[3] = folder_name
-        return '/'.join(parts)
-
+    """Нормализует пути к файлам, добавляя claim_number и vin, исправляя слеши"""
     if record.get("main_screenshot_path"):
         record["main_screenshot_path"] = fix_path(record["main_screenshot_path"], folder_name)
     if record.get("main_svg_path"):
@@ -86,6 +84,73 @@ def normalize_paths(record: dict, folder_name: str) -> dict:
     return record
 
 
+async def process_parser_result_data(claim_number: str, vin_value: str, parser_result: dict) -> bool:
+    """
+    Обрабатывает данные результата парсера: ищет JSON файл и сохраняет в БД
+    
+    Args:
+        claim_number: Номер заявки
+        vin_value: VIN номер
+        parser_result: Результат парсера
+    
+    Returns:
+        bool: True если обработка прошла успешно
+    """
+    try:
+        # Формируем имя папки
+        folder_name = f"{claim_number}_{vin_value}"
+        folder_path = os.path.join("static", "data", folder_name)
+        
+        # Проверяем существование папки
+        if not os.path.isdir(folder_path):
+            logger.error(f"Папка {folder_path} не существует после парсинга")
+            return False
+        
+        # Ищем JSON файлы в папке
+        json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
+        if not json_files:
+            logger.error(f"JSON-файлы не найдены в {folder_path}")
+            return False
+        
+        # Берем самый новый JSON файл
+        latest_json = max(json_files, key=lambda f: os.path.getctime(os.path.join(folder_path, f)))
+        file_path = os.path.join(folder_path, latest_json)
+        
+        logger.info(f"📁 Обрабатываем JSON файл: {file_path}")
+        
+        # Читаем JSON файл
+        with open(file_path, 'r', encoding='utf-8') as f:
+            json_data = json.load(f)
+        
+        # Обновляем JSON с claim_number
+        updated_json = update_json_with_claim_number(json_data, claim_number)
+        
+        # Сохраняем обновленный JSON обратно в файл
+        save_success = await save_updated_json_to_file(updated_json, file_path)
+        if not save_success:
+            logger.error(f"❌ Ошибка сохранения обновленного JSON: {file_path}")
+            return False
+        
+        # Сохраняем данные в БД
+        db_success = await save_parser_data_to_db(
+            json_data=updated_json,
+            request_id=claim_number,
+            vin=vin_value,
+            is_success=True
+        )
+        
+        if db_success:
+            logger.info(f"✅ Данные успешно сохранены в БД для request_id={claim_number}, vin={vin_value}")
+            return True
+        else:
+            logger.error(f"❌ Ошибка сохранения данных в БД для request_id={claim_number}, vin={vin_value}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки данных парсера: {e}")
+        return False
+
+
 @app.post("/process_audatex_requests")
 async def import_from_json(request: SearchRequest):
     logger.info(f"🎛️ API запрос с флагом сбора SVG: {'ВКЛЮЧЕН' if request.svg_collection else 'ОТКЛЮЧЕН'}")
@@ -109,8 +174,16 @@ async def import_from_json(request: SearchRequest):
 
                 if "error" in parser_result:
                     logger.error(f"Ошибка парсинга для requestId {claim_number}: {parser_result['error']}")
-                    async with AsyncSession(engine) as session:
-                        await create_request_status(session, claim_number, vin_number, "nsvg")
+                    
+                    # Сохраняем данные об ошибке в БД
+                    error_data = {
+                        "folder": f"{claim_number}_{vin_number}",
+                        "vin_value": vin_number,
+                        "zone_data": [],
+                        "error_message": parser_result['error']
+                    }
+                    await save_parser_data_to_db(error_data, claim_number, vin_number, is_success=False)
+                    
                     results.append({
                         "requestId": item.requestId,
                         "vin": vin_number,
@@ -119,152 +192,60 @@ async def import_from_json(request: SearchRequest):
                     })
                     continue
 
-                # Проверяем, создался ли JSON-файл
-                folder_path = os.path.join("static", "data", claim_number)
-                if not os.path.isdir(folder_path):
-                    logger.error(f"Папка {folder_path} не существует после парсинга")
-                    async with AsyncSession(engine) as session:
-                        await create_request_status(session, claim_number, vin_number, "nsvg")
-                    results.append({
-                        "requestId": item.requestId,
-                        "vin": vin_number,
-                        "status": "error",
-                        "error": "Папка не найдена после парсинга"
-                    })
-                    continue
-
-                json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
-                if not json_files:
-                    logger.error(f"JSON-файлы не найдены в {folder_path}")
-                    async with AsyncSession(engine) as session:
-                        await create_request_status(session, claim_number, vin_number, "nsvg")
-                    results.append({
-                        "requestId": item.requestId,
-                        "vin": vin_number,
-                        "status": "error",
-                        "error": "Данные не найдены после парсинга"
-                    })
-                    continue
-
-                # Записываем статус ysvg, так как JSON-файл найден
-                async with AsyncSession(engine) as session:
-                    await create_request_status(session, claim_number, vin_number, "ysvg")
-
-                    # Создаём зону комплектации
-                    equipment_zone_id = await create_equipment_zone(session, claim_number, vin_number)
-
-                    # Читаем последний JSON-файл
-                    latest_json = max(json_files, key=lambda f: os.path.getctime(os.path.join(folder_path, f)))
-                    file_path = os.path.join(folder_path, latest_json)
-
-                    try:
-                        with open(file_path, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-
-                        vin_value = data.get("vin_value", vin_number)
-                        zone_data = data.get("zone_data", [])
-
-                        if not zone_data:
-                            logger.warning(f"Зоны не найдены в JSON для requestId {claim_number}")
-                            results.append({
-                                "requestId": item.requestId,
-                                "vin": vin_number,
-                                "status": "error",
-                                "error": "Зоны не найдены"
-                            })
-                            continue
-
-                        logger.info(f"Найдено зон для requestId {claim_number}: {len(zone_data)}")
-                        for zone in zone_data:
-                            zone_title = zone.get("title", "").strip()
-                            has_pictograms = zone.get("has_pictograms", False)
-                            logger.debug(f"Обработка зоны: {zone_title}, has_pictograms: {has_pictograms}")
-
-                            group_zone_id = await create_group_zone(
-                                session, claim_number, vin_value, has_pictograms, zone_title
-                            )
-
-                            items = zone.get("pictograms", []) if has_pictograms else zone.get("details", [])
-                            logger.debug(f"Количество элементов в зоне {zone_title}: {len(items)}")
-
-                            if has_pictograms:
-                                for pictogram in items:
-                                    works = pictogram.get("works", [])
-                                    logger.debug(f"Количество работ в пиктограмме: {len(works)}")
-                                    for work in works:
-                                        title = work.get("work_name1", "")
-                                        titles = title.split(",")
-                                        for t in titles:
-                                            t = t.strip()
-                                            if not t:
-                                                logger.debug(f"Пропущен пустой элемент: {t}")
-                                                continue
-                                            code_match = re.match(r'^[A-Za-z0-9]+', t)
-                                            if not code_match:
-                                                logger.debug(f"Пропущен элемент без кода: {t}")
-                                                continue
-                                            code = code_match.group(0)
-                                            clean_title = t[len(code):].strip().strip("- ")
-                                            is_letter_code = bool(re.match(r'^[A-Za-z]', code))
-                                            if clean_title:
-                                                await create_car_detail(
-                                                    session,
-                                                    claim_number,
-                                                    equipment_zone_id if is_letter_code else group_zone_id,
-                                                    vin_value,
-                                                    code,
-                                                    clean_title
-                                                )
-                                                logger.debug(f"Записана деталь: code={code}, title={clean_title}, group_zone={equipment_zone_id if is_letter_code else group_zone_id}")
-                                            else:
-                                                logger.debug(f"Пропущена деталь с пустым clean_title: {t}")
-                            else:
-                                for detail in items:
-                                    titles = detail.get("title", "").split(",")
-                                    logger.debug(f"Количество заголовков в детали: {len(titles)}")
-                                    for title in titles:
-                                        title = title.strip()
-                                        if not title:
-                                            logger.debug(f"Пропущен пустой элемент: {title}")
-                                            continue
-                                        code_match = re.match(r'^[A-Za-z0-9]+', title)
-                                        if not code_match:
-                                            logger.debug(f"Пропущен элемент без кода: {title}")
-                                            continue
-                                        code = code_match.group(0)
-                                        clean_title = title[len(code):].strip().strip("- ")
-                                        is_letter_code = bool(re.match(r'^[A-Za-z]', code))
-                                        if clean_title:
-                                            await create_car_detail(
-                                                session,
-                                                claim_number,
-                                                equipment_zone_id if is_letter_code else group_zone_id,
-                                                vin_value,
-                                                code,
-                                                clean_title
-                                            )
-                                            logger.debug(f"Записана деталь: code={code}, title={clean_title}, group_zone={equipment_zone_id if is_letter_code else group_zone_id}")
-                                        else:
-                                            logger.debug(f"Пропущена деталь с пустым clean_title: {title}")
-
+                # Обрабатываем данные парсера: ищем JSON файл и сохраняем в БД
+                try:
+                    # Извлекаем данные для БД
+                    request_id = str(claim_number)
+                    vin = str(parser_result.get('vin_value', vin_number))
+                    
+                    # Обрабатываем данные через новую функцию
+                    db_success = await process_parser_result_data(request_id, vin, parser_result)
+                    
+                    if db_success:
+                        logger.info(f"✅ Данные успешно обработаны и сохранены в БД для requestId {claim_number}")
                         results.append({
                             "requestId": item.requestId,
                             "vin": vin_number,
                             "status": "success",
-                            "message": "Данные импортированы"
+                            "message": "Данные успешно обработаны и сохранены"
                         })
-
-                    except Exception as e:
-                        logger.error(f"Ошибка обработки JSON для requestId {claim_number}: {str(e)}")
+                    else:
+                        logger.error(f"❌ Ошибка обработки данных для requestId {claim_number}")
                         results.append({
                             "requestId": item.requestId,
                             "vin": vin_number,
                             "status": "error",
-                            "error": f"Ошибка обработки JSON: {str(e)}"
+                            "error": "Ошибка обработки данных"
                         })
+                        
+                except Exception as e:
+                    logger.error(f"❌ Ошибка обработки данных парсера для requestId {claim_number}: {e}")
+                    
+                    # Сохраняем данные об ошибке в БД
+                    error_data = {
+                        "folder": f"{claim_number}_{vin_number}",
+                        "vin_value": vin_number,
+                        "zone_data": [],
+                        "error_message": str(e)
+                    }
+                    await save_parser_data_to_db(error_data, claim_number, vin_number, is_success=False)
+                    
+                    results.append({
+                        "requestId": item.requestId,
+                        "vin": vin_number,
+                        "status": "error",
+                        "error": f"Ошибка обработки данных: {e}"
+                    })
+                    continue
 
-    finally:
-        await engine.dispose()
+            logger.info(f"✅ Обработка группы завершена")
+
+    except Exception as e:
+        logger.error(f"❌ Общая ошибка обработки: {e}")
+        results.append({
+            "status": "error",
+            "error": f"Общая ошибка: {e}"
+        })
 
     return {"results": results}
 
@@ -364,6 +345,7 @@ async def login(request: Request, username: str = Form(...), password: str = For
     record = {
         "folder": folder_name,
         "vin_value": parser_result.get("vin_value", vin_number or claim_number),
+        "vin_status": parser_result.get("vin_status", "Неизвестно"),
         "zone_data": parser_result.get("zone_data", []),
         "main_screenshot_path": parser_result.get("main_screenshot_path", ""),
         "main_svg_path": parser_result.get("main_svg_path", ""),
@@ -374,6 +356,22 @@ async def login(request: Request, username: str = Form(...), password: str = For
 
     # Нормализуем пути
     record = normalize_paths(record, folder_name)
+
+    # Обрабатываем данные парсера: ищем JSON файл и сохраняем в БД
+    try:
+        # Извлекаем данные для БД
+        request_id = str(parser_result.get('claim_number', claim_number))
+        vin = str(parser_result.get('vin_value', vin_number))
+        
+        # Обрабатываем данные через новую функцию
+        db_success = await process_parser_result_data(request_id, vin, parser_result)
+        
+        if db_success:
+            logger.info(f"✅ Данные успешно обработаны и сохранены в БД для request_id={request_id}, vin={vin}")
+        else:
+            logger.error(f"❌ Ошибка обработки данных для request_id={request_id}, vin={vin}")
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки данных парсера: {e}")
 
     logger.info("Парсинг успешно завершен, отображаем результаты")
 
@@ -490,7 +488,6 @@ async def history_detail(request: Request, folder: str):
         })
 
 
-
 @app.post("/stop_parser")
 async def stop_parser_endpoint():
     global current_parser_future, current_parser_pid
@@ -529,5 +526,4 @@ async def stop_parser_endpoint():
 
 
 if __name__ == "__main__":
-    asyncio.run(start_db())
     uvicorn.run(app, host="0.0.0.0", port=8000)
