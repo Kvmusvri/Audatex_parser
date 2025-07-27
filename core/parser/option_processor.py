@@ -14,9 +14,9 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 logger = logging.getLogger(__name__)
 
 # Константы для таймаутов
-OPTION_TIMEOUT = 15
+OPTION_TIMEOUT = 5  # Уменьшаем с 15 до 5 секунд
 FAST_POLL_INTERVAL = 0.1
-SECTION_TIMEOUT = 10
+SECTION_TIMEOUT = 5  # Уменьшаем с 10 до 5 секунд
 OPTION_POLL_INTERVAL = 0.2
 
 
@@ -34,11 +34,9 @@ def wait_for_element_clickable(driver, selector, timeout=OPTION_TIMEOUT):
 
 
 def wait_for_content_loaded(driver, timeout=SECTION_TIMEOUT):
-    """Ждет загрузки контента опций с увеличенным таймаутом"""
+    """Ждет загрузки контента опций"""
     try:
-        # Увеличиваем таймаут для гарантированной загрузки
-        extended_timeout = max(timeout, 15)  # Минимум 15 секунд
-        wait = WebDriverWait(driver, extended_timeout, poll_frequency=0.5,
+        wait = WebDriverWait(driver, timeout, poll_frequency=0.5,
                             ignored_exceptions=[NoSuchElementException])
         
         content_element = wait.until(

@@ -78,6 +78,14 @@
                 </span>
             </div>
             
+            <!-- Время работы -->
+            <div class="time-info-field">
+                <span class="time-info-label">Время работы:</span>
+                <span class="time-info-value">
+                    {{ started_at }} - {{ completed_at }} ({{ duration }})
+                </span>
+            </div>
+            
             <div class="tabs">
                 <button class="tab-button active" data-tab="results">Результаты</button>
                 <button class="tab-button" onclick="window.location.href='/history'">История</button>
@@ -93,9 +101,11 @@
                             <h2>Зоны</h2>
                             <div class="zone-row">
                                 <button class="all-zones-button">Все зоны</button>
+                                {% if main_svg_path and main_svg_path.strip() %}
                                 <a href="{{ main_svg_path }}" download class="svg-download" title="Скачать SVG">
                                     <span class="download-icon">⬇</span>
                                 </a>
+                                {% endif %}
                             </div>
                             {{ zones_table | safe }}
                         </div>
@@ -173,9 +183,9 @@
                                 const detailButton = document.createElement('div');
                                 detailButton.className = 'detail-button';
                                 detailButton.innerHTML = `
-                                    <a href="${detail.svg_path}" download class="svg-download detail-svg-download" title="Скачать SVG">
+                                    ${detail.svg_path && detail.svg_path.trim() ? `<a href="${detail.svg_path}" download class="svg-download detail-svg-download" title="Скачать SVG">
                                         <span class="download-icon">⬇</span>
-                                    </a>
+                                    </a>` : ''}
                                     <span>${detail.title}</span>
                                 `;
                                 detailButton.addEventListener('click', (e) => {
@@ -222,9 +232,9 @@
                             const detailButton = document.createElement('div');
                             detailButton.className = 'detail-button';
                             detailButton.innerHTML = `
-                                <a href="${detail.svg_path}" download class="svg-download detail-svg-download" title="Скачать SVG">
+                                ${detail.svg_path && detail.svg_path.trim() ? `<a href="${detail.svg_path}" download class="svg-download detail-svg-download" title="Скачать SVG">
                                     <span class="download-icon">⬇</span>
-                                </a>
+                                </a>` : ''}
                                 <span>${detail.title}</span>
                             `;
                             detailButton.addEventListener('click', (e) => {

@@ -11,7 +11,7 @@
         <div class="form-wrapper">
             <h1>Вход в систему</h1>
             <button onclick="window.location.href='/history'" class="history-button">Посмотреть историю</button>
-            <form action="/login" method="post">
+            <form action="/login" method="post" id="login-form">
                 <div class="form-group">
                     <label for="username">Логин:</label>
                     <input type="text" id="username" name="username" required>
@@ -34,7 +34,7 @@
                     <label class="svg-toggle-label">
                         <span class="svg-toggle-text">Сбор SVG файлов:</span>
                         <div class="svg-toggle-switch">
-                            <input type="checkbox" id="svg_collection" name="svg_collection" value="true" checked>
+                            <input type="checkbox" id="svg_collection" name="svg_collection" value="on" checked>
                             <span class="svg-slider"></span>
                         </div>
                         <span class="svg-status-text" id="svg-status">Включен</span>
@@ -54,32 +54,32 @@
             btn.textContent = 'Остановка...';
 
             // Логируем в консоль, что отправляется запрос на остановку парсера
-            console.log('Отправка POST запроса на /stop_parser для остановки парсера');
+            console.log('Отправка POST запроса на /terminate для остановки парсера');
 
             try {
-                const response = await fetch('/stop_parser', {
+                const response = await fetch('/terminate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 });
                 // Логируем ответ сервера
-                console.log('Ответ от /stop_parser:', response);
+                console.log('Ответ от /terminate:', response);
 
                 const data = await response.json();
                 console.log('Данные ответа:', data);
 
                 const notif = document.getElementById('stop-parser-notification');
-                if (response.ok && data.success) {
-                    notif.textContent = 'Парсер успешно остановлен.';
+                if (response.ok && data.status === 'success') {
+                    notif.textContent = data.message || 'Парсер успешно остановлен.';
                     notif.className = 'notification success';
                 } else {
-                    notif.textContent = data.message || 'Ошибка при остановке парсера.';
+                    notif.textContent = data.error || data.message || 'Ошибка при остановке парсера.';
                     notif.className = 'notification error';
                 }
                 notif.classList.remove('hidden');
             } catch (e) {
-                console.error('Ошибка при обращении к /stop_parser:', e);
+                console.error('Ошибка при обращении к /terminate:', e);
                 const notif = document.getElementById('stop-parser-notification');
                 notif.textContent = 'Ошибка соединения с сервером.';
                 notif.className = 'notification error';
@@ -104,6 +104,8 @@
                 statusText.classList.add('disabled');
             }
         });
+        
+
     </script>
 </body>
 </html>

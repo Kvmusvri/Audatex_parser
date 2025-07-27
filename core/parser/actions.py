@@ -59,13 +59,20 @@ def human_like_click(driver: WebDriver, element, use_actions: bool = False):
 def add_human_behavior(driver: WebDriver):
     """Добавляет человеческое поведение для обхода детекции"""
     try:
-        # Случайные движения мыши
-        actions = ActionChains(driver)
-        for _ in range(random.randint(2, 5)):
-            x = random.randint(100, 800)
-            y = random.randint(100, 600)
-            actions.move_by_offset(x, y)
-            human_like_delay(0.1, 0.3)
+        # Случайные движения мыши в пределах окна
+        try:
+            window_size = driver.get_window_size()
+            max_x = window_size['width'] - 100
+            max_y = window_size['height'] - 100
+            
+            actions = ActionChains(driver)
+            for _ in range(random.randint(2, 5)):
+                x = random.randint(50, max(100, max_x))
+                y = random.randint(50, max(100, max_y))
+                actions.move_by_offset(x, y)
+                human_like_delay(0.1, 0.3)
+        except Exception as e:
+            logger.debug(f"Ошибка движения мыши: {e}")
         
         # Случайный скролл
         scroll_amount = random.randint(-300, 300)
@@ -75,6 +82,91 @@ def add_human_behavior(driver: WebDriver):
         logger.debug("Добавлено человеческое поведение")
     except Exception as e:
         logger.warning(f"Ошибка при добавлении человеческого поведения: {e}")
+
+
+def add_extended_human_behavior(driver: WebDriver, total_delay: float = 60.0):
+    """
+    Расширенное человеческое поведение с контролируемой общей задержкой.
+    Распределяет задержку на различные человеческие действия.
+    
+    Args:
+        driver: WebDriver instance
+        total_delay: Общая задержка в секундах (по умолчанию 1 минута)
+    """
+    try:
+        logger.info(f"🤖 Добавляем расширенное человеческое поведение (общая задержка: {total_delay:.1f}с)")
+        
+        # Распределяем задержку на различные действия
+        actions_count = random.randint(8, 15)
+        delay_per_action = total_delay / actions_count
+        
+        for i in range(actions_count):
+            action_type = random.choice([
+                'mouse_movement',
+                'scroll',
+                'pause',
+                'window_focus',
+                'element_hover'
+            ])
+            
+            if action_type == 'mouse_movement':
+                # Случайные движения мыши в пределах окна
+                try:
+                    # Получаем размеры окна
+                    window_size = driver.get_window_size()
+                    max_x = window_size['width'] - 100  # Оставляем отступ от краев
+                    max_y = window_size['height'] - 100
+                    
+                    # Генерируем координаты в пределах окна
+                    x = random.randint(50, max(100, max_x))
+                    y = random.randint(50, max(100, max_y))
+                    
+                    actions = ActionChains(driver)
+                    actions.move_by_offset(x, y)
+                    actions.perform()
+                    time.sleep(delay_per_action * 0.3)
+                except Exception as e:
+                    logger.debug(f"Ошибка движения мыши: {e}")
+                    time.sleep(delay_per_action * 0.5)
+                
+            elif action_type == 'scroll':
+                # Случайный скролл
+                scroll_amount = random.randint(-500, 500)
+                driver.execute_script(f"window.scrollBy(0, {scroll_amount});")
+                time.sleep(delay_per_action * 0.4)
+                
+            elif action_type == 'pause':
+                # Простая пауза
+                time.sleep(delay_per_action * 0.8)
+                
+            elif action_type == 'window_focus':
+                # Фокус на окно
+                driver.execute_script("window.focus();")
+                time.sleep(delay_per_action * 0.2)
+                
+            elif action_type == 'element_hover':
+                # Наведение на случайный элемент
+                try:
+                    elements = driver.find_elements(By.CSS_SELECTOR, "div, span, a, button")
+                    if elements:
+                        random_element = random.choice(elements)
+                        actions = ActionChains(driver)
+                        actions.move_to_element(random_element)
+                        actions.perform()
+                        time.sleep(delay_per_action * 0.3)
+                except:
+                    time.sleep(delay_per_action * 0.5)
+            
+            # Небольшая пауза между действиями
+            time.sleep(random.uniform(0.1, 0.3))
+            
+            if i % 5 == 0:
+                logger.debug(f"🤖 Выполнено {i+1}/{actions_count} человеческих действий")
+        
+        logger.info("✅ Расширенное человеческое поведение завершено")
+        
+    except Exception as e:
+        logger.warning(f"Ошибка при добавлении расширенного человеческого поведения: {e}")
 
 
 def check_for_bot_detection(driver: WebDriver) -> bool:
@@ -101,14 +193,14 @@ def check_for_bot_detection(driver: WebDriver) -> bool:
 
 
 def handle_bot_detection(driver: WebDriver):
-    """Обрабатывает детекцию бота"""
+    """Обрабатывает детекцию бота с расширенным человеческим поведением"""
     logger.warning("🚨 Обрабатываем детекцию бота...")
     
     # Длительная пауза
     human_like_delay(5.0, 10.0)
     
-    # Добавляем человеческое поведение
-    add_human_behavior(driver)
+    # Добавляем расширенное человеческое поведение
+    add_extended_human_behavior(driver, total_delay=60.0)
     
     # Пробуем обновить страницу
     try:
@@ -162,8 +254,11 @@ def retry_on_failure(max_attempts: int = 2, delay: float = 0.5):
 @retry_on_failure(max_attempts=2, delay=0.5)
 def wait_for_table(driver: WebDriver, selector: Optional[str] = None) -> bool:
     """
-    Быстрое ожидание загрузки таблицы.
+    Ожидание загрузки таблицы с человеческим поведением.
     """
+    # Добавляем человеческое поведение перед ожиданием таблицы
+    add_human_behavior(driver)
+    
     selectors_to_check = [selector] if selector else [OPEN_TABLE_SELECTOR, OUTGOING_TABLE_SELECTOR]
     timeout = 8  # Уменьшен с TIMEOUT
 
@@ -184,7 +279,7 @@ def wait_for_table(driver: WebDriver, selector: Optional[str] = None) -> bool:
 @retry_on_failure(max_attempts=2, delay=0.5)
 def click_cansel_button(driver: WebDriver) -> bool:
     """
-    Быстрое нажатие кнопки отмены.
+    Нажатие кнопки отмены с человеческим поведением.
     """
     selector = "#confirm > div > div > div.modal-footer > button"
     
@@ -218,7 +313,7 @@ def click_cansel_button(driver: WebDriver) -> bool:
 @retry_on_failure(max_attempts=2, delay=0.5)
 def click_request_type_button(driver: WebDriver, req_type: str) -> bool:
     """
-    Быстрое переключение между типами заявок.
+    Переключение между типами заявок с человеческим поведением.
     """
     try:
         if req_type == "open":
@@ -254,9 +349,14 @@ def click_request_type_button(driver: WebDriver, req_type: str) -> bool:
 @retry_on_failure(max_attempts=2, delay=0.5)
 def search_in_table(driver: WebDriver, search_value: str, search_type: str) -> bool:
     """
-    Быстрый поиск в таблице.
+    Поиск в таблице с расширенным человеческим поведением для обхода детекции.
     """
     try:
+        logger.info(f"🔍 Начинаем поиск по {search_type}: {search_value}")
+        
+        # Добавляем расширенное человеческое поведение перед поиском
+        add_extended_human_behavior(driver, total_delay=60.0)
+        
         search_input = WebDriverWait(driver, 8).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "#root\\.quickfilter\\.searchbox"))
         )
@@ -276,7 +376,7 @@ def search_in_table(driver: WebDriver, search_value: str, search_type: str) -> b
         logger.info(f"Введён {search_type}: {search_value}")
         human_like_delay(0.8, 1.2)  # Человеческая задержка
         
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, ROW_SELECTOR))
         )
         logger.info(f"Найдены строки по {search_type}")
@@ -290,7 +390,7 @@ def search_in_table(driver: WebDriver, search_value: str, search_type: str) -> b
 @retry_on_failure(max_attempts=2, delay=0.5)
 def click_more_icon(driver: WebDriver) -> bool:
     """
-    Быстрое нажатие иконки "Еще". Пробует селекторы для исходящих и открытых дел.
+    Нажатие иконки "Еще" с человеческим поведением. Пробует селекторы для исходящих и открытых дел.
     """
     # Селекторы для разных типов таблиц
     selectors = [
@@ -303,10 +403,17 @@ def click_more_icon(driver: WebDriver) -> bool:
             more_icon = WebDriverWait(driver, 4).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
             )
-            more_icon.click()
-            table_type = "исходящих" if i == 0 else "открытых"
-            logger.info(f"Клик по иконке 'ещё' в таблице {table_type} дел")
-            return True
+            
+            # Добавляем человеческое поведение
+            add_human_behavior(driver)
+            
+            # Используем человеческий клик
+            success = human_like_click(driver, more_icon, use_actions=True)
+            
+            if success:
+                table_type = "исходящих" if i == 0 else "открытых"
+                logger.info(f"Клик по иконке 'ещё' в таблице {table_type} дел с человеческим поведением")
+                return True
         except TimeoutException:
             continue
     
@@ -317,14 +424,20 @@ def click_more_icon(driver: WebDriver) -> bool:
 @retry_on_failure(max_attempts=2, delay=0.5)
 def open_task(driver: WebDriver) -> bool:
     """
-    Быстрое открытие задачи.
+    Открытие задачи с человеческим поведением для обхода детекции.
     """
     try:
+        # Добавляем человеческое поведение перед открытием задачи
+        add_human_behavior(driver)
+        
         open_task = WebDriverWait(driver, 8).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "#openTask"))
         )
-        open_task.click()
-        logger.info("Кнопка 'openTask' нажата")
+        
+        # Используем человеческий клик
+        human_like_click(driver, open_task, use_actions=True)
+        
+        logger.info("Кнопка 'openTask' нажата с человеческим поведением")
         return True
     except TimeoutException as e:
         logger.error(f"Ошибка клика по openTask: {str(e)}")
@@ -334,11 +447,14 @@ def open_task(driver: WebDriver) -> bool:
 @retry_on_failure(max_attempts=3, delay=1.0)
 def switch_to_frame_and_confirm(driver: WebDriver) -> bool:
     """
-    Надёжное переключение в iframe с дополнительными проверками.
+    Надёжное переключение в iframe с человеческим поведением и дополнительными проверками.
     """
     try:
+        # Добавляем человеческое поведение перед переключением на фрейм
+        add_human_behavior(driver)
+        
         # Ждём полной загрузки страницы
-        WebDriverWait(driver, 15).until(
+        WebDriverWait(driver, 5).until(
             lambda d: d.execute_script("return document.readyState === 'complete'")
         )
         logger.info("Страница полностью загружена")
@@ -372,7 +488,7 @@ def switch_to_frame_and_confirm(driver: WebDriver) -> bool:
         logger.info(f"Iframe {IFRAME_ID} найден в DOM, переключаемся...")
         
         # Переключаемся на iframe с увеличенным таймаутом
-        WebDriverWait(driver, 15).until(
+        WebDriverWait(driver, 5).until(
             EC.frame_to_be_available_and_switch_to_it((By.ID, IFRAME_ID))
         )
         logger.info(f"✅ Успешно переключились на фрейм: {IFRAME_ID}")
@@ -384,9 +500,15 @@ def switch_to_frame_and_confirm(driver: WebDriver) -> bool:
             confirm_button = WebDriverWait(driver, 8).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, ".btn.btn-confirm"))
             )
-            confirm_button.click()
-            logger.info("Кнопка подтверждения в фрейме нажата")
-            time.sleep(0.5)
+            
+            # Используем человеческий клик для кнопки подтверждения
+            success = human_like_click(driver, confirm_button, use_actions=True)
+            
+            if success:
+                logger.info("Кнопка подтверждения в фрейме нажата с человеческим поведением")
+                time.sleep(0.5)
+            else:
+                logger.warning("Не удалось нажать кнопку подтверждения в фрейме")
         except TimeoutException:
             logger.info("Кнопка подтверждения в фрейме не найдена (это нормально)")
         
@@ -411,16 +533,26 @@ def switch_to_frame_and_confirm(driver: WebDriver) -> bool:
 @retry_on_failure(max_attempts=2, delay=0.5)
 def click_breadcrumb(driver: WebDriver) -> bool:
     """
-    Быстрое нажатие breadcrumb.
+    Нажатие breadcrumb с человеческим поведением.
     """
     try:
         breadcrumb = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.ID, "breadcrumb-navigation-title"))
         )
-        breadcrumb.click()
-        logger.info("Клик по breadcrumb")
-        time.sleep(0.3)  # Уменьшено с 0.5
-        return True
+        
+        # Добавляем человеческое поведение
+        add_human_behavior(driver)
+        
+        # Используем человеческий клик
+        success = human_like_click(driver, breadcrumb, use_actions=True)
+        
+        if success:
+            logger.info("Клик по breadcrumb с человеческим поведением")
+            time.sleep(0.3)  # Уменьшено с 0.5
+            return True
+        else:
+            logger.error("Не удалось нажать breadcrumb")
+            return False
     except TimeoutException as e:
         logger.error(f"Ошибка клика по breadcrumb: {str(e)}")
         return False
@@ -428,7 +560,7 @@ def click_breadcrumb(driver: WebDriver) -> bool:
 
 def is_table_empty(driver: WebDriver, selector: str = EMPTY_TABLE_TEXT_SELECTOR) -> bool:
     """
-    Быстрая проверка пустоты таблицы.
+    Проверка пустоты таблицы с человеческим поведением.
     """
     try:
         element = driver.find_element(By.CSS_SELECTOR, selector)
@@ -444,8 +576,13 @@ def is_table_empty(driver: WebDriver, selector: str = EMPTY_TABLE_TEXT_SELECTOR)
 def find_claim_data(driver: WebDriver, claim_number: Optional[str] = None, 
                     vin_number: Optional[str] = None) -> dict:
     """
-    Быстрый поиск данных заявки.
+    Поиск данных заявки с расширенным человеческим поведением для обхода детекции.
     """
+    logger.info("🤖 Начинаем поиск заявки с расширенным человеческим поведением")
+    
+    # Добавляем расширенное человеческое поведение перед поиском заявки
+    add_extended_human_behavior(driver, total_delay=60.0)
+    
     section_selector_map = {"open": OPEN_TABLE_SELECTOR, "outgoing": OUTGOING_TABLE_SELECTOR}
     
     for section in ["open", "outgoing"]:
@@ -468,12 +605,15 @@ def find_claim_data(driver: WebDriver, claim_number: Optional[str] = None,
 @retry_on_failure(max_attempts=3, delay=1.0)
 def get_vin_status(driver: WebDriver) -> str:
     """
-    Определяет активный статус VIN кнопок.
+    Определяет активный статус VIN кнопок с человеческим поведением.
     
     Returns:
         str: "VIN", "VIN лайт" или "Нет"
     """
     logger.info("🔍 Определяем статус VIN кнопок...")
+    
+    # Добавляем человеческое поведение перед определением статуса
+    add_human_behavior(driver)
     
     try:
         vin_query_id = "root.task.basicClaimData.vehicle.vehicleIdentification.VINQuery-VINQueryButton"

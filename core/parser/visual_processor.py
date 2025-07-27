@@ -622,7 +622,7 @@ def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, cla
 
     # Проверяем наличие SVG на странице
     try:
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 5).until(
             EC.visibility_of_element_located((By.TAG_NAME, "svg"))
         )
         time.sleep(0.5)
@@ -682,10 +682,13 @@ def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, cla
         except:
             pass
         
-        # Main SVG всегда сохраняем (это основной чертеж)
-        success, _, _ = save_svg_sync(driver, svg, main_svg_path, claim_number=claim_number, vin=vin, svg_collection=True)
+        # Main SVG сохраняем только если включен сбор SVG
+        success, _, _ = save_svg_sync(driver, svg, main_svg_path, claim_number=claim_number, vin=vin, svg_collection=svg_collection)
         if not success:
             logger.warning("Не удалось сохранить основной SVG")
+            main_svg_relative = ""
+        elif not svg_collection:
+            # Если сбор SVG отключен, устанавливаем пустой путь
             main_svg_relative = ""
             
         return main_screenshot_relative.replace("\\", "/"), main_svg_relative.replace("\\", "/")
@@ -697,7 +700,7 @@ def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, cla
 def extract_zones(driver):
     zones = []
     try:
-        zones_container = WebDriverWait(driver, 10).until(
+        zones_container = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.ID, "tree-navigation-zones-container"))
         )
         zone_containers = zones_container.find_elements(By.CSS_SELECTOR, "div.navigation-tree-zone-container")
@@ -736,12 +739,12 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
 
     for attempt in range(max_retries):
         try:
-            zone_element = WebDriverWait(driver, 10).until(
+            zone_element = WebDriverWait(driver, 5).until(
                 EC.element_to_be_clickable((By.ID, f"tree-navigation-zone-description-{zone['link']}"))
             )
             zone_element.click()
             logger.info(f"Клик по зоне: {zone['title']}")
-            WebDriverWait(driver, 10).until(
+            WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "body"))
             )
             break
@@ -768,16 +771,16 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
         logger.info(f"🔍 Начинаем проверку пиктограмм для зоны {zone['title']}")
         
         # Этап 1: Дожидаемся полной загрузки страницы  
-        WebDriverWait(driver, 15).until(wait_for_document_ready)
+        WebDriverWait(driver, 5).until(wait_for_document_ready)
         logger.debug(f"✅ Документ готов для зоны {zone['title']}")
         
         # Этап 2: Находим main элемент с retry логикой
         main_element = None
         for attempt in range(3):
             try:
-                main_element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "main"))
-        )
+                main_element = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "main"))
+                )
                 break
             except TimeoutException:
                 if attempt < 2:
@@ -806,7 +809,7 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
         logger.debug(f"✅ SVG элементы загружены для зоны {zone['title']}")
         
         # Этап 6: Проверяем стабильность DOM (избегаем race conditions)
-        WebDriverWait(driver, 10).until(wait_for_dom_stability)
+        WebDriverWait(driver, 5).until(wait_for_dom_stability)
         logger.info(f"✅ DOM стабилизирован для зоны {zone['title']}")
         
         # Дополнительная пауза для полной стабилизации
@@ -985,7 +988,9 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
                 return zone_data
             
             # Устанавливаем путь к SVG только если сбор включён
-            if not svg_collection:
+            if svg_collection:
+                zone_svg_relative = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}/zone_{safe_zone_title}.svg".replace("\\", "/")
+            else:
                 zone_svg_relative = ""
 
             zone_data.append({
@@ -1137,7 +1142,7 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
         logger.debug(f"🔍 DEBUG process_pictograms: claim_number='{claim_number}', vin='{vin}'")
         
         # Этап 1: Подтверждаем готовность документа
-        WebDriverWait(driver, 15).until(ensure_document_ready)
+        WebDriverWait(driver, 5).until(ensure_document_ready)
         
                 # Этап 2: Находим main с повышенной надежностью
         main = None
@@ -1163,7 +1168,7 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
             return pictogram_data
         
         # Этап 3: Ищем pictograms-grid с улучшенной логикой
-        WebDriverWait(driver, 15).until(lambda d: find_pictograms_grid_reliable(d) is not None)
+        WebDriverWait(driver, 5).until(lambda d: find_pictograms_grid_reliable(d) is not None)
         grid_div = find_pictograms_grid_reliable(driver)
         
         if not grid_div:
@@ -1212,7 +1217,7 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
                 
                 # Дожидаемся стабилизации работ в секции
                 try:
-                    WebDriverWait(driver, 15).until(lambda d: wait_for_works_in_section(holder))
+                    WebDriverWait(driver, 5).until(lambda d: wait_for_works_in_section(holder))
                 except TimeoutException:
                     logger.warning(f"Таймаут ожидания работ в секции '{section_name}', продолжаем с доступными")
                 
@@ -1284,15 +1289,17 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
                         # Сохраняем SVG только если включен сбор SVG
                         if svg_collection:
                             success, saved_path, _ = save_svg_sync(driver, svg, work_svg_path, claim_number=claim_number, vin=vin, svg_collection=svg_collection)
+                        else:
+                            success = True  # Если сбор отключен, считаем успешным
                         if success:
-                            logger.info(f"SVG пиктограммы сохранён: {work_svg_path}")
+                            logger.info(f"SVG пиктограммы {'сохранён' if svg_collection else 'путь установлен'}: {work_svg_path}")
                             works.append({
                                 "work_name1": work_name1,
                                 "work_name2": work_name2,
-                                "svg_path": work_svg_relative
+                                "svg_path": work_svg_relative if svg_collection else ""
                             })
                         else:
-                            logger.warning(f"Не удалось сохранить SVG для работы '{work_name1}' в секции '{section_name}'")
+                            logger.warning(f"Не удалось обработать SVG для работы '{work_name1}' в секции '{section_name}'")
                             works.append({
                                 "work_name1": work_name1,
                                 "work_name2": work_name2,

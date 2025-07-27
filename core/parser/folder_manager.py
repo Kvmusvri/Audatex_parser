@@ -9,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 from .constants import SCREENSHOT_DIR, SVG_DIR, DATA_DIR, TIMEOUT, CLAIM_NUMBER_SELECTOR, VIN_SELECTOR
-from .actions import get_vin_status, add_human_behavior, check_for_bot_detection, handle_bot_detection
+from .actions import get_vin_status, add_human_behavior, add_extended_human_behavior, check_for_bot_detection, handle_bot_detection
 from .stealth import stealth_open_url, stealth_wait_for_element, check_stealth_detection, handle_stealth_detection
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ def create_folders(claim_number, vin):
     return screenshot_dir, svg_dir, data_dir
 
 
-# Извлекает VIN и claim_number со страницы с логикой обновления при проблемах с прогрузкой
+# Извлекает VIN и claim_number со страницы с расширенным человеческим поведением для обхода детекции
 def extract_vin_and_claim_number(driver, current_url):
     base_url = current_url.split('step')[0][:-1]
     configs = [
@@ -69,6 +69,10 @@ def extract_vin_and_claim_number(driver, current_url):
         {'url': base_url + '&step=Osago+Vehicle+Identification', 'selector': VIN_SELECTOR, 'log_name': 'VIN', 'key': 'vin'}
     ]
     result = {}
+    
+    # Добавляем расширенное человеческое поведение перед началом извлечения данных
+    logger.info("🤖 Начинаем этап извлечения данных с расширенным человеческим поведением")
+    add_extended_human_behavior(driver, total_delay=60.0)
     
     for config in configs:
         max_page_refresh_attempts = 10
@@ -89,7 +93,7 @@ def extract_vin_and_claim_number(driver, current_url):
                 add_human_behavior(driver)
                 
                 # Проверяем готовность страницы
-                WebDriverWait(driver, TIMEOUT).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
+                WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
                 time.sleep(random.uniform(1.5, 3.0))  # Человеческая задержка для прогрузки элементов
                 
                 # Проверяем на детекцию бота и stealth-детекцию
@@ -101,7 +105,7 @@ def extract_vin_and_claim_number(driver, current_url):
                 
                 # Пытаемся найти целевой элемент с stealth-методами
                 logger.info(f"🔎 Ищем элемент по селектору: {config['selector']}")
-                if not stealth_wait_for_element(driver, config['selector'], timeout=TIMEOUT):
+                if not stealth_wait_for_element(driver, config['selector']):
                     logger.error(f"❌ Элемент {config['selector']} не найден скрытно")
                     continue
                 

@@ -14,7 +14,7 @@ SVG_DIR = "static/svgs"
 DATA_DIR = "static/data"
 
 # Таймауты
-TIMEOUT = 15  # Оптимизированный таймаут для быстрой работы
+TIMEOUT = 5  # Оптимизированный таймаут для быстрой работы
 
 # CSS селекторы
 MODAL_BUTTON_SELECTOR = "#btn-confirm"

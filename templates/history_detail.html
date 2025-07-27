@@ -540,15 +540,17 @@
                                 <!-- Добавил кнопку скачивания для "Все зоны" -->
                                 <div class="all-zones-row">
                                     <button class="all-zones-button" data-record="1">Все зоны</button>
+                                    {% if record.main_svg_path and record.main_svg_path.strip() %}
                                     <a href="{{ record.main_svg_path }}" download class="svg-download" title="Скачать основной SVG">
                                 <span class="download-icon">⬇</span>
                             </a>
+                                    {% endif %}
                         </div>
                                 <div class="data-table">
                             {% for zone in record.zone_data %}
                                     <div class="table-section">
                                         <div class="item-row">
-                                {% if not zone.graphics_not_available and zone.svg_path %}
+                                {% if not zone.graphics_not_available and zone.svg_path and zone.svg_path.strip() %}
                                 <a href="{{ zone.svg_path }}" download class="svg-download" title="Скачать SVG">
                                     <span class="download-icon">⬇</span>
                                 </a>
@@ -689,10 +691,19 @@
             `;
             
             options.forEach(option => {
+                // Убираем префикс "AZT -" из названия опции
+                let displayTitle = option.title || "—";
+                let displayCode = option.code || "—";
+                
+                if (displayTitle.startsWith("AZT - ")) {
+                    displayTitle = displayTitle.substring(6); // Убираем "AZT - "
+                    displayCode = "AZT"; // Устанавливаем код AZT
+                }
+                
                 optionsHtml += `
                     <div class="option-item">
-                        ${option.code ? `<span class="option-code">${option.code}</span>` : '<span class="option-code">—</span>'}
-                        <span class="option-title">${option.title || "—"}</span>
+                        <span class="option-code">${displayCode}</span>
+                        <span class="option-title">${displayTitle}</span>
                         <span class="option-status">
                             ${option.selected 
                                 ? '<span class="option-selected">✅</span>' 
@@ -759,9 +770,9 @@
                             detailSection.className = 'table-section';
                             detailSection.innerHTML = `
                                 <div class="item-row">
-                                    <a href="${detail.svg_path}" download class="svg-download" title="Скачать SVG">
+                                    ${detail.svg_path && detail.svg_path.trim() ? `<a href="${detail.svg_path}" download class="svg-download" title="Скачать SVG">
                                     <span class="download-icon">⬇</span>
-                                </a>
+                                </a>` : ''}
                                     <button class="item-button" data-detail-title="${detail.title}">${detail.title}</button>
                                 </div>
                             `;
@@ -787,9 +798,9 @@
                                     pictogramSection.className = 'table-section';
                                     pictogramSection.innerHTML = `
                                         <div class="item-row">
-                                            <a href="${work.svg_path}" download class="svg-download" title="Скачать SVG">
+                                            ${work.svg_path && work.svg_path.trim() ? `<a href="${work.svg_path}" download class="svg-download" title="Скачать SVG">
                                         <span class="download-icon">⬇</span>
-                                    </a>
+                                    </a>` : ''}
                                             <button class="item-button" data-detail-title="${workTitle}">${workTitle}</button>
                                         </div>
                                     `;

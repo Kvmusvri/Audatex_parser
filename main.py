@@ -1,5 +1,6 @@
 import asyncio
 import uvicorn
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -9,7 +10,7 @@ import json
 import os
 from datetime import datetime
 import logging
-from core.database.models import ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, async_session
+from core.database.models import ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, async_session, get_moscow_time
 from pydantic import BaseModel
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -26,13 +27,44 @@ import concurrent.futures
 import threading
 import psutil
 
+# Отключаем retry логику urllib3 для предотвращения WARNING сообщений
+import urllib3
+urllib3.disable_warnings()
+logging.getLogger("urllib3").setLevel(logging.ERROR)
+
+# Глобальные переменные для отслеживания состояния парсера
+parser_running = False
+parser_task = None
+parser_start_time = None
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Управление жизненным циклом приложения"""
+    # Startup
+    try:
+        from core.database.models import start_db
+        await start_db()
+        logger.info("✅ База данных инициализирована")
+    except Exception as e:
+        logger.error(f"❌ Ошибка инициализации БД: {e}")
+    
+    yield
+    
+    # Shutdown
+    try:
+        from core.database.models import close_db
+        await close_db()
+        logger.info("✅ Соединения с БД закрыты")
+    except Exception as e:
+        logger.error(f"❌ Ошибка закрытия БД: {e}")
+
 # Инициализация FastAPI приложения
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -44,18 +76,8 @@ class SearchItem(BaseModel):
 class SearchRequest(BaseModel):
     login: str
     password: str
-    searchList: List[SearchItem]
-    svg_collection: bool = True  # По умолчанию включен сбор SVG
-
-
-def fix_path(path: str, folder: str) -> str:
-    """Исправляет путь, добавляя имя папки, если нужно, и убирает двойные слеши"""
-    if not path:
-        return path
-    parts = path.split('/')
-    if len(parts) >= 4 and parts[3] == '':
-        parts[3] = folder
-    return '/'.join(parts)
+    items: List[SearchItem]
+    svg_collection: bool = True
 
 def normalize_paths(record: dict, folder_name: str) -> dict:
     """Нормализует пути к файлам, добавляя claim_number и vin, исправляя слеши"""
@@ -84,7 +106,7 @@ def normalize_paths(record: dict, folder_name: str) -> dict:
     return record
 
 
-async def process_parser_result_data(claim_number: str, vin_value: str, parser_result: dict) -> bool:
+async def process_parser_result_data(claim_number: str, vin_value: str, parser_result: dict, started_at=None, completed_at=None) -> bool:
     """
     Обрабатывает данные результата парсера: ищет JSON файл и сохраняет в БД
     
@@ -92,6 +114,8 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
         claim_number: Номер заявки
         vin_value: VIN номер
         parser_result: Результат парсера
+        started_at: Время начала парсинга
+        completed_at: Время завершения парсинга
     
     Returns:
         bool: True если обработка прошла успешно
@@ -128,215 +152,498 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
         # Сохраняем обновленный JSON обратно в файл
         save_success = await save_updated_json_to_file(updated_json, file_path)
         if not save_success:
-            logger.error(f"❌ Ошибка сохранения обновленного JSON: {file_path}")
+            logger.error(f"Не удалось сохранить обновленный JSON: {file_path}")
             return False
         
-        # Сохраняем данные в БД
-        db_success = await save_parser_data_to_db(
-            json_data=updated_json,
-            request_id=claim_number,
-            vin=vin_value,
-            is_success=True
-        )
-        
-        if db_success:
-            logger.info(f"✅ Данные успешно сохранены в БД для request_id={claim_number}, vin={vin_value}")
-            return True
-        else:
-            logger.error(f"❌ Ошибка сохранения данных в БД для request_id={claim_number}, vin={vin_value}")
+        # Сохраняем данные в БД с временными метками
+        db_success = await save_parser_data_to_db(updated_json, claim_number, vin_value, is_success=True, started_at=started_at, completed_at=completed_at)
+        if not db_success:
+            logger.error(f"Не удалось сохранить данные в БД: {claim_number}_{vin_value}")
             return False
-            
+        
+        logger.info(f"✅ Обработка завершена успешно: {claim_number}_{vin_value}")
+        return True
+        
     except Exception as e:
-        logger.error(f"❌ Ошибка обработки данных парсера: {e}")
+        logger.error(f"❌ Ошибка обработки данных: {e}")
         return False
 
 
-@app.post("/process_audatex_requests")
-async def import_from_json(request: SearchRequest):
-    logger.info(f"🎛️ API запрос с флагом сбора SVG: {'ВКЛЮЧЕН' if request.svg_collection else 'ОТКЛЮЧЕН'}")
-    results = []
-    try:
-        # Разделяем searchList на группы по 10
-        batch_size = 10
-        search_list = request.searchList
-        for i in range(0, len(search_list), batch_size):
-            batch = search_list[i:i + batch_size]  # Получаем группу до 10 элементов
-            logger.info(f"Обработка группы из {len(batch)} запросов")
-
-            # Обрабатываем каждый запрос в группе последовательно
-            for item in batch:
-                claim_number = str(item.requestId)
-                vin_number = item.vin
-                logger.info(f"Запуск парсера для requestId: {claim_number}, VIN: {vin_number}")
-
-                # Вызываем парсер
-                parser_result = await login_audatex(request.login, request.password, claim_number, vin_number, request.svg_collection)
-
-                if "error" in parser_result:
-                    logger.error(f"Ошибка парсинга для requestId {claim_number}: {parser_result['error']}")
-                    
-                    # Сохраняем данные об ошибке в БД
-                    error_data = {
-                        "folder": f"{claim_number}_{vin_number}",
-                        "vin_value": vin_number,
-                        "zone_data": [],
-                        "error_message": parser_result['error']
-                    }
-                    await save_parser_data_to_db(error_data, claim_number, vin_number, is_success=False)
-                    
-                    results.append({
-                        "requestId": item.requestId,
-                        "vin": vin_number,
-                        "status": "error",
-                        "error": f"Ошибка парсинга: {parser_result['error']}"
-                    })
-                    continue
-
-                # Обрабатываем данные парсера: ищем JSON файл и сохраняем в БД
-                try:
-                    # Извлекаем данные для БД
-                    request_id = str(claim_number)
-                    vin = str(parser_result.get('vin_value', vin_number))
-                    
-                    # Обрабатываем данные через новую функцию
-                    db_success = await process_parser_result_data(request_id, vin, parser_result)
-                    
-                    if db_success:
-                        logger.info(f"✅ Данные успешно обработаны и сохранены в БД для requestId {claim_number}")
-                        results.append({
-                            "requestId": item.requestId,
-                            "vin": vin_number,
-                            "status": "success",
-                            "message": "Данные успешно обработаны и сохранены"
-                        })
-                    else:
-                        logger.error(f"❌ Ошибка обработки данных для requestId {claim_number}")
-                        results.append({
-                            "requestId": item.requestId,
-                            "vin": vin_number,
-                            "status": "error",
-                            "error": "Ошибка обработки данных"
-                        })
-                        
-                except Exception as e:
-                    logger.error(f"❌ Ошибка обработки данных парсера для requestId {claim_number}: {e}")
-                    
-                    # Сохраняем данные об ошибке в БД
-                    error_data = {
-                        "folder": f"{claim_number}_{vin_number}",
-                        "vin_value": vin_number,
-                        "zone_data": [],
-                        "error_message": str(e)
-                    }
-                    await save_parser_data_to_db(error_data, claim_number, vin_number, is_success=False)
-                    
-                    results.append({
-                        "requestId": item.requestId,
-                        "vin": vin_number,
-                        "status": "error",
-                        "error": f"Ошибка обработки данных: {e}"
-                    })
-                    continue
-
-            logger.info(f"✅ Обработка группы завершена")
-
-    except Exception as e:
-        logger.error(f"❌ Общая ошибка обработки: {e}")
-        results.append({
-            "status": "error",
-            "error": f"Общая ошибка: {e}"
-        })
-
-    return {"results": results}
+def fix_path(path: str, folder_name: str) -> str:
+    """Исправляет пути к файлам, добавляя folder_name"""
+    if path and not path.startswith("/"):
+        path = "/" + path
+    
+    if path and path.startswith("/static/"):
+        parts = path.split("/")
+        if len(parts) >= 3:
+            # Вставляем folder_name после /static/
+            parts.insert(2, folder_name)
+            return "/".join(parts)
+    
+    return path
 
 
-# Эндпоинт для главной страницы
+def clean_json_data(data):
+    """Очищает JSON данные от Undefined полей"""
+    if isinstance(data, dict):
+        cleaned = {}
+        for key, value in data.items():
+            if value is not None and str(value) != "Undefined":
+                cleaned[key] = clean_json_data(value)
+        return cleaned
+    elif isinstance(data, list):
+        return [clean_json_data(item) for item in data if item is not None and str(item) != "Undefined"]
+    else:
+        return data if data is not None and str(data) != "Undefined" else ""
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# Эндпоинт для авторизации и поиска с запуском парсера в отдельном процессе через пул
 
-# Глобальный пул для парсер-процессов (можно ограничить max_workers)
-parser_process_pool = concurrent.futures.ProcessPoolExecutor(max_workers=1)
-
-# Для хранения текущего future парсера и его PID
-current_parser_future = None
-current_parser_pid = None
-parser_lock = threading.Lock()
-
-def run_parser_in_subprocess(username, password, claim_number, vin_number, svg_collection):
-    """
-    Обёртка для запуска login_audatex в отдельном процессе.
-    Важно: login_audatex должен быть синхронной функцией или запускаться через asyncio.run.
-    """
-
-    # Ставим низкий приоритет процессу (чтобы его можно было быстро убить через stop_parser)
+@app.get("/history", response_class=HTMLResponse)
+async def history(request: Request):
     try:
-        p = psutil.Process(os.getpid())
-        p.nice(10)  # 10 — ниже обычного, но не idle
+        # Читаем данные из JSON файлов в папке static/data
+        data_dir = "static/data"
+        if not os.path.exists(data_dir):
+            return templates.TemplateResponse("history.html", {
+                "request": request, 
+                "records": []
+            })
+        
+        formatted_records = []
+        
+        # Проходим по всем папкам в static/data
+        for folder_name in os.listdir(data_dir):
+            folder_path = os.path.join(data_dir, folder_name)
+            
+            # Проверяем, что это папка и содержит JSON файлы
+            if not os.path.isdir(folder_path):
+                continue
+                
+            json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
+            if not json_files:
+                continue
+            
+            # Берем самый новый JSON файл
+            latest_json = max(json_files, key=lambda f: os.path.getctime(os.path.join(folder_path, f)))
+            json_path = os.path.join(folder_path, latest_json)
+            
+            try:
+                # Читаем JSON файл
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    json_data = json.load(f)
+                
+                # Очищаем JSON от Undefined полей
+                json_data = clean_json_data(json_data)
+                
+                # Извлекаем данные из JSON
+                claim_number = json_data.get("claim_number", "")
+                vin = json_data.get("vin_value", "")  # Используем vin_value вместо vin
+                
+                # Если нет claim_number в JSON, пробуем извлечь из имени папки
+                if not claim_number and "_" in folder_name:
+                    claim_number = folder_name.split("_")[0]
+                
+                # Если нет vin в JSON, пробуем извлечь из имени папки
+                if not vin and "_" in folder_name:
+                    vin = folder_name.split("_")[1] if len(folder_name.split("_")) > 1 else ""
+                
+                # Получаем метаданные
+                metadata = json_data.get("metadata", {})
+                started_at = metadata.get("started_at", "") if metadata else ""
+                completed_at = metadata.get("completed_at", "") if metadata else ""
+                last_updated = metadata.get("last_updated", "") if metadata else ""
+                json_completed = metadata.get("json_completed", False) if metadata else False
+                db_saved = metadata.get("db_saved", False) if metadata else False
+                options_success = metadata.get("options_success", False) if metadata else False
+                
+                # Определяем статус по флагам из метаданных
+                
+                if json_completed and db_saved and options_success:
+                    status = "Завершена"
+                elif json_completed and not db_saved:
+                    status = "Ошибка БД"
+                elif not json_completed:
+                    status = "В процессе"
+                else:
+                    status = "Неизвестно"
+                
+                # Форматируем время
+                started_time = "—"
+                completed_time = "—"
+                duration = ""
+                
+                if started_at and started_at != "null" and started_at != "None":
+                    try:
+                        # Парсим время из строки "2025-07-27 17:30:00"
+                        start_dt = datetime.strptime(started_at, "%Y-%m-%d %H:%M:%S")
+                        started_time = start_dt.strftime("%H:%M:%S")
+                        
+                        # Используем completed_at если есть и не null, иначе last_updated
+                        end_time_str = completed_at if completed_at and completed_at != "null" and completed_at != "None" else last_updated
+                        if end_time_str and end_time_str != "null" and end_time_str != "None":
+                            end_dt = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+                            completed_time = end_dt.strftime("%H:%M:%S")
+                            
+                            # Вычисляем длительность
+                            duration_seconds = (end_dt - start_dt).total_seconds()
+                            duration = f"{int(duration_seconds // 60)}м {int(duration_seconds % 60)}с"
+                    except Exception as e:
+                        logger.warning(f"⚠️ Ошибка парсинга времени для {claim_number}_{vin}: {e}")
+                        pass
+                
+                # Получаем дату создания из времени файла
+                created_date = datetime.fromtimestamp(os.path.getctime(json_path)).strftime("%d.%m.%Y")
+                
+                # Получаем vin_status из JSON
+                vin_status = json_data.get("vin_status", "Неизвестно")
+                
+                formatted_records.append({
+                    "request_id": claim_number,  # Используем claim_number как request_id для URL
+                    "claim_number": claim_number,  # Добавляем отдельно для шаблона
+                    "vin": vin,
+                    "vin_status": vin_status,
+                    "status": status,
+                    "started_time": started_time,
+                    "completed_time": completed_time,
+                    "duration": duration,
+                    "created_date": created_date,
+                    "folder_name": folder_name
+                })
+                
+            except Exception as e:
+                logger.error(f"Ошибка чтения JSON файла {json_path}: {e}")
+                continue
+        
+        # Сортируем записи по дате создания (новые сверху)
+        formatted_records.sort(key=lambda x: x["created_date"], reverse=True)
+        
+        return templates.TemplateResponse("history.html", {
+            "request": request, 
+            "records": formatted_records
+        })
+        
     except Exception as e:
-        pass
+        logger.error(f"Ошибка при получении истории: {e}")
+        return templates.TemplateResponse("error.html", {
+            "request": request, 
+            "error": f"Ошибка при получении истории: {e}"
+        })
 
-    # Запускаем парсер
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    result = loop.run_until_complete(login_audatex(username, password, claim_number, vin_number, svg_collection))
-    loop.close()
-    return result
+
+@app.get("/history_detail/{folder_name}", response_class=HTMLResponse)
+async def history_detail(request: Request, folder_name: str):
+    try:
+        # Используем полное имя папки напрямую
+        folder_path = os.path.join("static", "data", folder_name)
+        
+        if not os.path.exists(folder_path):
+            return templates.TemplateResponse("error.html", {
+                "request": request, 
+                "error": f"Заявка не найдена. Папка: {folder_name}"
+            })
+        
+        # Ищем JSON файлы в папке
+        json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
+        if not json_files:
+            return templates.TemplateResponse("error.html", {
+                "request": request, 
+                "error": f"JSON файл не найден в папке: {folder_name}"
+            })
+        
+        # Берем самый новый JSON файл
+        latest_json = max(json_files, key=lambda f: os.path.getctime(os.path.join(folder_path, f)))
+        json_path = os.path.join(folder_path, latest_json)
+        
+        # Читаем JSON файл
+        with open(json_path, 'r', encoding='utf-8') as f:
+            json_data = json.load(f)
+        
+        # Очищаем JSON от Undefined полей
+        json_data = clean_json_data(json_data)
+        
+        logger.info(f"JSON загружен успешно. Ключи: {list(json_data.keys())}")
+        
+        # Извлекаем данные из JSON
+        claim_number = json_data.get("claim_number", "")
+        vin_value = json_data.get("vin_value", "")
+        vin_status = json_data.get("vin_status", "Неизвестно")
+        
+        # Если нет данных в JSON, извлекаем из имени папки
+        if not claim_number and "_" in folder_name:
+            claim_number = folder_name.split("_")[0]
+        if not vin_value and "_" in folder_name:
+            vin_value = folder_name.split("_")[1] if len(folder_name.split("_")) > 1 else ""
+        
+        # Получаем метаданные (может отсутствовать)
+        metadata = json_data.get("metadata", {})
+        started_at = metadata.get("started_at", "") if metadata else ""
+        completed_at = metadata.get("completed_at", "") if metadata else ""
+        last_updated = metadata.get("last_updated", "") if metadata else ""
+        json_completed = metadata.get("json_completed", False) if metadata else False
+        db_saved = metadata.get("db_saved", False) if metadata else False
+        
+        # Форматируем временные метки
+        started_time = "—"
+        completed_time = "—"
+        duration = ""
+        
+        if started_at:
+            try:
+                start_dt = datetime.strptime(started_at, "%Y-%m-%d %H:%M:%S")
+                started_time = start_dt.strftime("%H:%M:%S")
+                
+                # Используем completed_at если есть, иначе last_updated
+                end_time_str = completed_at if completed_at else last_updated
+                if end_time_str:
+                    end_dt = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+                    completed_time = end_dt.strftime("%H:%M:%S")
+                    
+                    duration_seconds = (end_dt - start_dt).total_seconds()
+                    duration = f"{int(duration_seconds // 60)}м {int(duration_seconds % 60)}с"
+            except Exception as e:
+                logger.warning(f"⚠️ Ошибка парсинга времени: {e}")
+                pass
+        
+        # Получаем детали из JSON
+        details = []
+        for zone in json_data.get("zone_data", []):
+            zone_title = zone.get("title", "")
+            for detail in zone.get("details", []):
+                detail_title = detail.get("title", "")
+                # Парсим заголовок детали на код и название
+                if " - " in detail_title:
+                    code, title = detail_title.split(" - ", 1)
+                else:
+                    code = ""
+                    title = detail_title
+                
+                details.append({
+                    "group_zone": zone_title,
+                    "code": code,
+                    "title": title
+                })
+        
+        # Получаем опции из JSON
+        options = []
+        options_data = json_data.get("options_data", {})
+        if options_data and options_data.get("success"):
+            for zone in options_data.get("zones", []):
+                zone_title = zone.get("zone_title", "")
+                for option in zone.get("options", []):
+                    options.append({
+                        "zone_name": zone_title,
+                        "option_code": option.get("code", ""),
+                        "option_title": option.get("title", ""),
+                        "is_selected": option.get("selected", False)
+                    })
+        
+        # Определяем статус
+        if json_completed and db_saved:
+            status = "Завершена"
+        elif json_completed and not db_saved:
+            status = "Ошибка БД"
+        elif not json_completed:
+            status = "В процессе"
+        else:
+            status = "Неизвестно"
+        
+        return templates.TemplateResponse("history_detail.html", {
+            "request": request,
+            "record": {
+                "request_id": claim_number,
+                "vin": vin_value,
+                "vin_value": vin_value,  # Добавляем для совместимости с шаблоном
+                "vin_status": vin_status,
+                "status": status,
+                "started_time": started_time,
+                "completed_time": completed_time,
+                "duration": duration,
+                "created_date": datetime.fromtimestamp(os.path.getctime(json_path)).strftime("%d.%m.%Y"),
+                "created": datetime.fromtimestamp(os.path.getctime(json_path)).strftime("%d.%m.%Y"),  # Для совместимости
+                "folder": folder_name,  # Добавляем имя папки
+                "main_screenshot_path": json_data.get("main_screenshot_path", ""),
+                "main_svg_path": json_data.get("main_svg_path", ""),
+                "zone_data": json_data.get("zone_data", []),
+                "options_data": json_data.get("options_data", {}),
+                "zones_table": json_data.get("zones_table", []),
+                "all_svgs_zip": json_data.get("all_svgs_zip", "")
+            },
+            "details": details,
+            "options": options
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при получении деталей заявки: {e}")
+        return templates.TemplateResponse("error.html", {
+            "request": request, 
+            "error": f"Ошибка при получении деталей: {e}"
+        })
+
+
+@app.post("/process_audatex_requests")
+async def import_from_json(request: SearchRequest):
+    global parser_start_time
+    results = []
+    
+    for item in request.items:
+        try:
+            claim_number = str(item.requestId)
+            vin_number = item.vin
+            logger.info(f"Запуск парсера для requestId: {claim_number}, VIN: {vin_number}")
+
+            # Устанавливаем время начала для каждого запроса
+            parser_start_time = get_moscow_time()
+
+            # Вызываем парсер с временными метками
+            parser_result = await login_audatex(request.login, request.password, claim_number, vin_number, request.svg_collection, parser_start_time)
+
+            if "error" in parser_result:
+                logger.error(f"Ошибка парсинга для requestId {claim_number}: {parser_result['error']}")
+                
+                # Сохраняем данные об ошибке в БД
+                error_data = {
+                    "folder": f"{claim_number}_{vin_number}",
+                    "vin_value": vin_number,
+                    "zone_data": [],
+                    "error_message": parser_result['error']
+                }
+                await save_parser_data_to_db(error_data, claim_number, vin_number, is_success=False)
+                
+                results.append({
+                    "requestId": item.requestId,
+                    "vin": vin_number,
+                    "status": "error",
+                    "error": f"Ошибка парсинга: {parser_result['error']}"
+                })
+                continue
+
+            # Обрабатываем успешный результат
+            success = await process_parser_result_data(claim_number, vin_number, parser_result, parser_result.get('started_at'), parser_result.get('completed_at'))
+            
+            if success:
+                # Логируем время работы для batch запросов
+                if parser_start_time and parser_result.get('completed_at'):
+                    try:
+                        completed_time = parser_result.get('completed_at')
+                        if isinstance(completed_time, str):
+                            completed_time = datetime.strptime(completed_time, "%Y-%m-%d %H:%M:%S")
+                        
+                        duration_seconds = (completed_time - parser_start_time).total_seconds()
+                        duration_minutes = int(duration_seconds // 60)
+                        duration_secs = int(duration_seconds % 60)
+                        
+                        logger.info(f"⏱️ Парсер {claim_number}_{vin_number} завершен. Время работы: {duration_minutes}м {duration_secs}с")
+                    except Exception as e:
+                        logger.warning(f"⚠️ Ошибка расчета времени работы для {claim_number}_{vin_number}: {e}")
+
+                results.append({
+                    "requestId": item.requestId,
+                    "vin": vin_number,
+                    "status": "success",
+                    "message": "Данные успешно обработаны и сохранены"
+                })
+            else:
+                results.append({
+                    "requestId": item.requestId,
+                    "vin": vin_number,
+                    "status": "error",
+                    "error": "Ошибка обработки данных"
+                })
+        except Exception as e:
+            logger.error(f"Ошибка обработки заявки {item.requestId}: {e}")
+            results.append({
+                "requestId": item.requestId,
+                "vin": item.vin,
+                "status": "error",
+                "error": f"Внутренняя ошибка: {str(e)}"
+            })
+
+    # Сбрасываем время начала
+    parser_start_time = None
+
+    return JSONResponse(content={"results": results})
+
 
 @app.post("/login", response_class=HTMLResponse)
 async def login(request: Request, username: str = Form(...), password: str = Form(...),
                 claim_number: str = Form(default=""), vin_number: str = Form(default=""),
                 svg_collection: str = Form(default="")):
-    global current_parser_future, current_parser_pid
+    global parser_running, parser_task, parser_start_time
 
-    start_time = time.time()
-    
-    # Обрабатываем checkbox: если есть значение (любое) - значит включен, если пустое - отключен
-    svg_collection_bool = bool(svg_collection and svg_collection.lower() not in ['false', '0', ''])
-    logger.info(f"🎛️ Получен флаг сбора SVG с формы: '{svg_collection}' -> {'ВКЛЮЧЕН' if svg_collection_bool else 'ОТКЛЮЧЕН'}")
+    if not claim_number and not vin_number:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Необходимо указать номер дела или VIN номер"
+        })
 
-    # Проверяем, не запущен ли уже парсер
-    with parser_lock:
-        if current_parser_future and not current_parser_future.done():
-            logger.warning("Парсер уже запущен, ожидаем завершения предыдущего процесса")
+    try:
+        logger.info(f"Запуск парсера для claim_number: {claim_number}, VIN: {vin_number}")
+        # Если checkbox отмечен, приходит "on", если не отмечен - пустая строка
+        svg_collection_bool = svg_collection == "on"
+        logger.info(f"🎛️ Сбор SVG: {'ВКЛЮЧЕН' if svg_collection_bool else 'ОТКЛЮЧЕН'}")
+
+        # Проверяем, не запущен ли уже парсер
+        if parser_running:
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error": "Парсер уже запущен. Пожалуйста, дождитесь завершения предыдущего запроса или остановите его."
+                "error": "Парсер уже запущен. Дождитесь завершения или остановите его."
             })
+        
+        # Устанавливаем флаг запуска и время начала
+        parser_running = True
+        parser_start_time = get_moscow_time()
+        logger.info(f"🕐 Парсер запущен в: {parser_start_time.strftime('%H:%M:%S')}")
 
-        # Запускаем парсер в отдельном процессе через пул
-        future = parser_process_pool.submit(run_parser_in_subprocess, username, password, claim_number, vin_number, svg_collection_bool)
-        current_parser_future = future
-
-        # Получаем PID процесса парсера (через _process, это внутреннее API, но работает)
+        # Запускаем парсер в отдельной задаче с передачей времени начала
+        async def run_parser_with_time():
+            return await login_audatex(username, password, claim_number, vin_number, svg_collection_bool, parser_start_time)
+        
+        parser_task = asyncio.create_task(run_parser_with_time())
+        
         try:
-            current_parser_pid = future._process.pid
-            logger.info(f"Парсер запущен в процессе PID={current_parser_pid}")
+            # Ждем завершения парсера
+            parser_result = await parser_task
+        except asyncio.CancelledError:
+            logger.info("Задача парсера была отменена")
+            parser_running = False
+            parser_task = None
+            parser_start_time = None
+            # Рендерим страницу логина с пустой формой
+            return templates.TemplateResponse("index.html", {"request": request})
         except Exception as e:
-            current_parser_pid = None
-            logger.warning(f"Не удалось получить PID процесса парсера: {e}")
-
-    # Ожидаем завершения парсера (асинхронно, чтобы не блокировать event loop)
-    loop = asyncio.get_event_loop()
-    parser_result = await loop.run_in_executor(None, current_parser_future.result)
-
-    # После завершения сбрасываем PID
-    with parser_lock:
-        current_parser_pid = None
+            logger.error(f"Ошибка парсинга: {e}")
+            parser_running = False
+            parser_task = None
+            parser_start_time = None
+            # Рендерим страницу логина с пустой формой
+            return templates.TemplateResponse("index.html", {"request": request})
+    finally:
+        # Сбрасываем флаг запуска
+        parser_running = False
+        parser_task = None
+        parser_start_time = None
 
     if "error" in parser_result:
         logger.error(f"Ошибка парсинга: {parser_result['error']}")
-        return templates.TemplateResponse("error.html", {"request": request, "error": parser_result['error']})
+        parser_running = False
+        parser_task = None
+        parser_start_time = None
+        # Рендерим страницу логина с пустой формой
+        return templates.TemplateResponse("index.html", {"request": request})
 
     zone_data = parser_result.get("zone_data", [])
     if not zone_data:
         logger.warning("Зоны не найдены для указанного номера дела или VIN")
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": "Зоны не найдены для указанного номера дела или VIN"
-        })
+        parser_running = False
+        parser_task = None
+        parser_start_time = None
+        # Рендерим страницу логина с пустой формой
+        return templates.TemplateResponse("index.html", {"request": request})
 
     # Формируем folder_name
     folder_name = f"{parser_result.get('claim_number')}_{parser_result.get('vin_value')}"
@@ -357,172 +664,83 @@ async def login(request: Request, username: str = Form(...), password: str = For
     # Нормализуем пути
     record = normalize_paths(record, folder_name)
 
-    # Обрабатываем данные парсера: ищем JSON файл и сохраняем в БД
-    try:
-        # Извлекаем данные для БД
-        request_id = str(parser_result.get('claim_number', claim_number))
-        vin = str(parser_result.get('vin_value', vin_number))
-        
-        # Обрабатываем данные через новую функцию
-        db_success = await process_parser_result_data(request_id, vin, parser_result)
-        
-        if db_success:
-            logger.info(f"✅ Данные успешно обработаны и сохранены в БД для request_id={request_id}, vin={vin}")
-        else:
-            logger.error(f"❌ Ошибка обработки данных для request_id={request_id}, vin={vin}")
-    except Exception as e:
-        logger.error(f"❌ Ошибка обработки данных парсера: {e}")
+    # Обрабатываем данные с временными метками
+    success = await process_parser_result_data(
+        parser_result.get('claim_number'), 
+        parser_result.get('vin_value'), 
+        parser_result,
+        parser_start_time,
+        parser_result.get('completed_at')
+    )
 
-    logger.info("Парсинг успешно завершен, отображаем результаты")
+    if not success:
+        parser_running = False
+        parser_task = None
+        # Рендерим страницу логина с пустой формой
+        return templates.TemplateResponse("index.html", {"request": request})
 
-    end_time = time.time()
-    duration_sec = end_time - start_time
-    duration_min = duration_sec / 60
-    logger.info(f"Обработка заняла {duration_sec:.2f} секунд\n({duration_min:.2f} минут)")
-
-    return templates.TemplateResponse("history_detail.html", {
-        "request": request,
-        "record": record
-    })
-
-# Эндпоинт для истории
-@app.get("/history", response_class=HTMLResponse)
-async def history(request: Request):
-    history_data = []
-    data_base_dir = "static/data"
-
-    logger.debug(f"Сканирование директории: {data_base_dir}")
-    if not os.path.exists(data_base_dir):
-        logger.error(f"Директория {data_base_dir} не существует")
-        return templates.TemplateResponse("history.html", {
-            "request": request,
-            "history": True,
-            "history_data": []
-        })
-
-    for root, dirs, files in os.walk(data_base_dir):
-        json_files = [f for f in files if f.endswith(".json")]
-        if not json_files:
-            logger.debug(f"JSON-файлы не найдены в {root}")
-            continue
-        latest_json = max(json_files, key=lambda f: os.path.getctime(os.path.join(root, f)))
-        file_path = os.path.join(root, latest_json)
-        folder = os.path.relpath(root, data_base_dir).replace(os.sep, "/")
-        logger.debug(f"Чтение JSON: {file_path}")
+    # Сбрасываем флаги
+    parser_running = False
+    parser_task = None
+    
+    # Логируем итоговое время работы парсера
+    if parser_start_time and parser_result.get('completed_at'):
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            file_stat = os.stat(file_path)
-            history_data.append({
-                "folder": folder,
-                "vin_value": data.get("vin_value", folder),
-                "created": datetime.fromtimestamp(file_stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
-            })
-            logger.debug(f"Успешно загружен JSON: {file_path}")
+            completed_time = parser_result.get('completed_at')
+            if isinstance(completed_time, str):
+                completed_time = datetime.strptime(completed_time, "%Y-%m-%d %H:%M:%S")
+            
+            duration_seconds = (completed_time - parser_start_time).total_seconds()
+            duration_minutes = int(duration_seconds // 60)
+            duration_secs = int(duration_seconds % 60)
+            
+            logger.info(f"⏱️ Парсер завершен. Время работы: {duration_minutes}м {duration_secs}с")
+            logger.info(f"🕐 Начало: {parser_start_time.strftime('%H:%M:%S')}, Завершение: {completed_time.strftime('%H:%M:%S')}")
         except Exception as e:
-            logger.error(f"Ошибка при чтении {file_path}: {e}")
+            logger.warning(f"⚠️ Ошибка расчета времени работы: {e}")
+    
+    parser_start_time = None
+    
+    # Формируем folder_name для редиректа
+    folder_name = f"{parser_result.get('claim_number')}_{parser_result.get('vin_value')}"
+    
+    # Редиректим на history_detail вместо success.html
+    return RedirectResponse(url=f"/history_detail/{folder_name}", status_code=302)
 
-    logger.info(f"Найдено записей истории: {len(history_data)}")
-    return templates.TemplateResponse("history.html", {
-        "request": request,
-        "history": True,
-        "history_data": history_data
-    })
 
-# Эндпоинт для данных конкретной папки
-@app.get("/history/{folder:path}", response_class=HTMLResponse)
-async def history_detail(request: Request, folder: str):
-    print(f"folder::{folder}")
-    data_base_dir = "static/data"
-    folder_path = os.path.join(data_base_dir, folder)
-    logger.debug(f"Загрузка данных для папки: {folder_path}")
-    print(f"Загрузка данных для папки: {folder_path}")
-
-    if not os.path.isdir(folder_path):
-        logger.error(f"Папка {folder_path} не существует")
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": "Папка не найдена"
-        })
-
-    json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
-    if not json_files:
-        logger.error(f"JSON-файлы не найдены в {folder_path}")
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": "Данные не найдены"
-        })
-
-    latest_json = max(json_files, key=lambda f: os.path.getctime(os.path.join(folder_path, f)))
-    file_path = os.path.join(folder_path, latest_json)
-    logger.debug(f"Чтение JSON: {file_path}")
+@app.post("/terminate")
+async def terminate_parser():
+    global parser_running, parser_task, parser_start_time
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        file_stat = os.stat(file_path)
-
-        record = {
-            "folder": folder,
-            "vin_value": data.get("vin_value", folder),
-            "zone_data": data.get("zone_data", []),
-            "main_screenshot_path": data.get("main_screenshot_path", ""),
-            "main_svg_path": data.get("main_svg_path", ""),
-            "all_svgs_zip": data.get("all_svgs_zip", ""),
-            "options_data": data.get("options_data", {"success": False, "zones": []}),
-            "created": datetime.fromtimestamp(file_stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
-        }
-
-        # Нормализуем пути
-        record = normalize_paths(record, folder)
-
-        logger.debug(f"Успешно загружен JSON: {file_path}")
-        return templates.TemplateResponse("history_detail.html", {
-            "request": request,
-            "record": record
-        })
+        logger.info("🛑 Получен запрос на остановку парсера")
+        
+        # Сбрасываем флаги сразу
+        parser_running = False
+        parser_start_time = None
+        
+        # Отменяем задачу парсера, если она запущена
+        if parser_task and not parser_task.done():
+            parser_task.cancel()
+            try:
+                await asyncio.wait_for(parser_task, timeout=2.0)
+            except (asyncio.CancelledError, asyncio.TimeoutError):
+                logger.info("✅ Задача парсера отменена или время ожидания истекло")
+        
+        # Завершаем процессы браузера
+        result = terminate_all_processes_and_restart()
+        
+        # Очищаем ссылку на задачу
+        parser_task = None
+        
+        logger.info(f"✅ Парсер остановлен: {result}")
+        return JSONResponse(content={"status": "success", "message": "Парсер успешно остановлен"})
     except Exception as e:
-        logger.error(f"Ошибка при чтении {file_path}: {e}")
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": f"Ошибка загрузки данных: {e}"
-        })
-
-
-@app.post("/stop_parser")
-async def stop_parser_endpoint():
-    global current_parser_future, current_parser_pid
-    try:
-        logger.warning("Получен запрос на остановку парсера. Запущена процедура завершения всех процессов и перезапуска приложения.")
-
-        # Если есть запущенный процесс парсера — убиваем его
-
-        killed = False
-        with parser_lock:
-            if current_parser_pid:
-                try:
-                    proc = psutil.Process(current_parser_pid)
-                    proc.terminate()
-                    try:
-                        proc.wait(timeout=5)
-                        logger.warning(f"Процесс парсера PID={current_parser_pid} успешно завершён.")
-                    except psutil.TimeoutExpired:
-                        proc.kill()
-                        logger.warning(f"Процесс парсера PID={current_parser_pid} был принудительно убит.")
-                    killed = True
-                except Exception as e:
-                    logger.error(f"Не удалось завершить процесс парсера PID={current_parser_pid}: {e}")
-                current_parser_pid = None
-                current_parser_future = None
-
-        # Возвращаем редирект на главную страницу сразу, чтобы пользователь не видел ошибку соединения
-        response = RedirectResponse(url="/")
-        # Запускаем завершение процессов и перезапуск приложения в фоне, чтобы не блокировать редирект
-        # Передаём current_url как относительный путь, функция сама определит правильный хост
-        threading.Thread(target=terminate_all_processes_and_restart, args=("/",), daemon=True).start()
-        return response
-    except Exception as e:
-        logger.error(f"Ошибка при попытке остановки парсера: {e}")
-        return JSONResponse(content={"success": False, "message": f"Ошибка при остановке парсера: {e}"})
+        logger.error(f"❌ Ошибка при завершении парсера: {e}")
+        # Сбрасываем флаги даже при ошибке
+        parser_running = False
+        parser_task = None
+        parser_start_time = None
+        return JSONResponse(content={"status": "error", "error": str(e)})
 
 
 if __name__ == "__main__":

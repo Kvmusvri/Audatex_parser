@@ -42,14 +42,54 @@ def init_browser():
         print(f"ПЛАТФОРМА - {system}")
 
         options = uc.ChromeOptions()
+        
+        # Основные настройки для обхода детекции
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_argument("--disable-images")
-        options.add_argument(
-            f"user-agent=Mozilla/5.0 ({'Windows NT 10.0; Win64; x64' if system == 'Windows' else 'X11; Linux x86_64'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.7151.122 Safari/537.36"
-        )
-        options.add_argument('--headless=new')  # Включаем headless-режим
-        options.add_argument('--no-sandbox')    # Для стабильной работы на Ubuntu
-        options.add_argument('--disable-dev-shm-usage')  # Для избежания проблем с памятью
+        options.add_argument('--headless=new')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        
+        # Настройки для маскировки headless режима
+        options.add_argument('--disable-web-security')
+        options.add_argument('--disable-features=VizDisplayCompositor')
+        options.add_argument('--disable-background-timer-throttling')
+        options.add_argument('--disable-backgrounding-occluded-windows')
+        options.add_argument('--disable-renderer-backgrounding')
+        options.add_argument('--disable-field-trial-config')
+        options.add_argument('--disable-ipc-flooding-protection')
+        options.add_argument('--disable-hang-monitor')
+        options.add_argument('--disable-prompt-on-repost')
+        options.add_argument('--disable-client-side-phishing-detection')
+        options.add_argument('--disable-component-extensions-with-background-pages')
+        options.add_argument('--disable-default-apps')
+        options.add_argument('--disable-extensions')
+        options.add_argument('--disable-sync')
+        options.add_argument('--disable-translate')
+        options.add_argument('--hide-scrollbars')
+        options.add_argument('--mute-audio')
+        options.add_argument('--no-first-run')
+        options.add_argument('--safebrowsing-disable-auto-update')
+        options.add_argument('--disable-background-networking')
+        options.add_argument('--metrics-recording-only')
+        options.add_argument('--no-default-browser-check')
+        options.add_argument('--no-pings')
+        options.add_argument('--password-store=basic')
+        options.add_argument('--use-mock-keychain')
+        
+        # Настройки окна для headless режима
+        options.add_argument('--window-size=1920,1080')
+        
+        # User-Agent для разных платформ
+        if system == 'Windows':
+            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.7151.122 Safari/537.36"
+        else:
+            user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.7151.122 Safari/537.36"
+        
+        options.add_argument(f'--user-agent={user_agent}')
+        
+        # Настройки для обхода детекции (без experimental options для undetected-chromedriver)
+        options.add_argument('--disable-blink-features=AutomationControlled')
 
         # Определяем пути для ChromeDriver в зависимости от платформы
         base_tmp_dir = "tmp" if system == "Windows" else "/tmp"
@@ -80,7 +120,49 @@ def init_browser():
         else:
             logger.info(f"Используется существующий ChromeDriver: {driver_path}")
 
-        driver = uc.Chrome(driver_executable_path=driver_path, options=options, use_subprocess=True)
+        driver = uc.Chrome(driver_executable_path=driver_path, options=options, use_subprocess=True, headless=True)
+        
+        # Дополнительные настройки для маскировки headless режима
+        try:
+            # Маскируем webdriver (undetected-chromedriver уже делает это автоматически)
+            driver.execute_script("""
+                // Дополнительная маскировка для headless режима
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['ru-RU', 'ru', 'en-US', 'en'],
+                });
+                
+                Object.defineProperty(navigator, 'permissions', {
+                    get: () => ({
+                        query: () => Promise.resolve({ state: 'granted' }),
+                    }),
+                });
+                
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => [1, 2, 3, 4, 5],
+                });
+                
+                Object.defineProperty(navigator, 'connection', {
+                    get: () => ({
+                        effectiveType: '4g',
+                        rtt: 50,
+                        downlink: 10,
+                    }),
+                });
+                
+                Object.defineProperty(navigator, 'hardwareConcurrency', {
+                    get: () => 8,
+                });
+                
+                Object.defineProperty(navigator, 'deviceMemory', {
+                    get: () => 8,
+                });
+            """)
+            
+            logger.info("✅ Настройки маскировки headless режима применены")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка при применении настроек маскировки: {e}")
+        
         logger.info(f"Используется ChromeDriver: {driver_path}")
         return driver
     except Exception as e:

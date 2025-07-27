@@ -14,6 +14,93 @@ from selenium.common.exceptions import TimeoutException, WebDriverException
 logger = logging.getLogger(__name__)
 
 
+def apply_headless_masking(driver: WebDriver):
+    """
+    Применяет дополнительные настройки для маскировки headless режима
+    """
+    try:
+        driver.execute_script("""
+            // Маскируем headless режим
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined,
+            });
+            
+            // Маскируем chrome
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['ru-RU', 'ru', 'en-US', 'en'],
+            });
+            
+            // Маскируем permissions
+            Object.defineProperty(navigator, 'permissions', {
+                get: () => ({
+                    query: () => Promise.resolve({ state: 'granted' }),
+                }),
+            });
+            
+            // Маскируем plugins
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5],
+            });
+            
+            // Маскируем connection
+            Object.defineProperty(navigator, 'connection', {
+                get: () => ({
+                    effectiveType: '4g',
+                    rtt: 50,
+                    downlink: 10,
+                }),
+            });
+            
+            // Маскируем hardwareConcurrency
+            Object.defineProperty(navigator, 'hardwareConcurrency', {
+                get: () => 8,
+            });
+            
+            // Маскируем deviceMemory
+            Object.defineProperty(navigator, 'deviceMemory', {
+                get: () => 8,
+            });
+            
+            // Удаляем признаки автоматизации
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+            
+            // Маскируем screen
+            Object.defineProperty(screen, 'width', {
+                get: () => 1920,
+            });
+            Object.defineProperty(screen, 'height', {
+                get: () => 1080,
+            });
+            Object.defineProperty(screen, 'availWidth', {
+                get: () => 1920,
+            });
+            Object.defineProperty(screen, 'availHeight', {
+                get: () => 1040,
+            });
+            
+            // Маскируем window
+            Object.defineProperty(window, 'outerWidth', {
+                get: () => 1920,
+            });
+            Object.defineProperty(window, 'outerHeight', {
+                get: () => 1080,
+            });
+            Object.defineProperty(window, 'innerWidth', {
+                get: () => 1920,
+            });
+            Object.defineProperty(window, 'innerHeight', {
+                get: () => 937,
+            });
+        """)
+        
+        logger.debug("✅ Дополнительная маскировка headless режима применена")
+        
+    except Exception as e:
+        logger.warning(f"⚠️ Ошибка при применении маскировки headless: {e}")
+
+
 def stealth_open_url(driver: WebDriver, url: str, reconnect_time: Optional[float] = None) -> bool:
     """
     Скрытное открытие URL с методами обхода детекции
@@ -21,43 +108,27 @@ def stealth_open_url(driver: WebDriver, url: str, reconnect_time: Optional[float
     try:
         logger.info(f"🔒 Скрытное открытие URL: {url}")
         
-        # Добавляем случайные заголовки
-        driver.execute_script("""
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined,
-            });
-        """)
-        
-        # Устанавливаем случайный user-agent
-        user_agents = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        ]
-        
-        driver.execute_script(f"""
-            Object.defineProperty(navigator, 'userAgent', {{
-                get: () => '{random.choice(user_agents)}',
-            }});
-        """)
+        # Применяем расширенную маскировку для headless режима
+        apply_headless_masking(driver)
         
         # Открываем URL
         driver.get(url)
         
-        # Человеческая задержка
+        # Ждем загрузки DOM модели
+        WebDriverWait(driver, 5).until(
+            lambda d: d.execute_script("return document.readyState === 'complete'")
+        )
+        
+        # Человеческая задержка только если указана
         if reconnect_time:
             time.sleep(reconnect_time)
-        else:
-            time.sleep(random.uniform(3.0, 6.0))
-        
-        # Проверяем на детекцию
-        if check_stealth_detection(driver):
-            logger.warning("🚨 Обнаружена детекция при открытии URL")
-            return handle_stealth_detection(driver, url)
         
         logger.info("✅ URL успешно открыт скрытно")
         return True
         
+    except TimeoutException:
+        logger.error(f"❌ Страница не загрузилась за 10 секунд: {url}")
+        return False
     except Exception as e:
         logger.error(f"❌ Ошибка при скрытном открытии URL: {e}")
         return False
@@ -70,8 +141,8 @@ def stealth_click(driver: WebDriver, selector: str, use_actions: bool = True) ->
     try:
         logger.info(f"🔒 Скрытный клик по селектору: {selector}")
         
-        # Ждем элемент
-        element = WebDriverWait(driver, 10).until(
+        # Ждем элемент с WebDriverWait без хардкод таймаута
+        element = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
         )
         
@@ -94,6 +165,9 @@ def stealth_click(driver: WebDriver, selector: str, use_actions: bool = True) ->
         logger.info("✅ Скрытный клик выполнен")
         return True
         
+    except TimeoutException:
+        logger.error(f"❌ Элемент не найден для клика: {selector}")
+        return False
     except Exception as e:
         logger.error(f"❌ Ошибка при скрытном клике: {e}")
         return False
@@ -104,12 +178,19 @@ def add_stealth_behavior(driver: WebDriver):
     Добавляет stealth-поведение для обхода детекции
     """
     try:
-        # Случайные движения мыши
-        for _ in range(random.randint(2, 4)):
-            x = random.randint(50, 700)
-            y = random.randint(50, 500)
-            driver.execute_script(f"window.scrollTo({x}, {y});")
-            time.sleep(random.uniform(0.1, 0.3))
+        # Случайные движения мыши в пределах окна
+        try:
+            window_size = driver.get_window_size()
+            max_x = window_size['width'] - 100
+            max_y = window_size['height'] - 100
+            
+            for _ in range(random.randint(2, 4)):
+                x = random.randint(50, max(100, max_x))
+                y = random.randint(50, max(100, max_y))
+                driver.execute_script(f"window.scrollTo({x}, {y});")
+                time.sleep(random.uniform(0.1, 0.3))
+        except Exception as e:
+            logger.debug(f"Ошибка движения мыши в stealth: {e}")
         
         # Случайный скролл
         scroll_amount = random.randint(-200, 200)
@@ -152,16 +233,14 @@ def check_stealth_detection(driver: WebDriver) -> bool:
 
 def handle_stealth_detection(driver: WebDriver, url: Optional[str] = None) -> bool:
     """
-    Обрабатывает детекцию stealth-методов
+    Обрабатывает детекцию stealth-методов с расширенным человеческим поведением
     """
     logger.warning("🚨 Обрабатываем stealth-детекцию...")
     
     try:
-        # Длительная пауза
-        time.sleep(random.uniform(8.0, 15.0))
-        
-        # Добавляем stealth-поведение
-        add_stealth_behavior(driver)
+        # Добавляем расширенное человеческое поведение
+        from .actions import add_extended_human_behavior
+        add_extended_human_behavior(driver, total_delay=60.0)
         
         # Пробуем обновить страницу
         if url:
@@ -169,7 +248,13 @@ def handle_stealth_detection(driver: WebDriver, url: Optional[str] = None) -> bo
         else:
             driver.refresh()
         
-        time.sleep(random.uniform(4.0, 7.0))
+        # Ждем загрузки DOM модели
+        WebDriverWait(driver, 5).until(
+            lambda d: d.execute_script("return document.readyState === 'complete'")
+        )
+        
+        # Применяем маскировку headless режима
+        apply_headless_masking(driver)
         add_stealth_behavior(driver)
         
         # Проверяем снова
@@ -192,8 +277,8 @@ def stealth_type(driver: WebDriver, selector: str, text: str) -> bool:
     try:
         logger.info(f"🔒 Скрытный ввод в селектор: {selector}")
         
-        # Ждем элемент
-        element = WebDriverWait(driver, 10).until(
+        # Ждем элемент с WebDriverWait без хардкод таймаута
+        element = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
         )
         
@@ -209,41 +294,43 @@ def stealth_type(driver: WebDriver, selector: str, text: str) -> bool:
         logger.info("✅ Скрытный ввод выполнен")
         return True
         
+    except TimeoutException:
+        logger.error(f"❌ Элемент не найден для ввода: {selector}")
+        return False
     except Exception as e:
         logger.error(f"❌ Ошибка при скрытном вводе: {e}")
         return False
 
 
-def stealth_wait_for_element(driver: WebDriver, selector: str, timeout: int = 15) -> bool:
+def stealth_wait_for_element(driver: WebDriver, selector: str) -> bool:
     """
     Скрытное ожидание элемента с проверкой детекции
     """
     try:
         logger.info(f"🔒 Скрытное ожидание элемента: {selector}")
         
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            try:
-                # Проверяем на детекцию
-                if check_stealth_detection(driver):
-                    logger.warning("🚨 Обнаружена детекция при ожидании элемента")
-                    if not handle_stealth_detection(driver):
-                        return False
-                
-                # Проверяем элемент
-                element = driver.find_element(By.CSS_SELECTOR, selector)
-                if element.is_displayed():
-                    logger.info("✅ Элемент найден скрытно")
-                    return True
-                    
-            except Exception:
-                pass
+        # Применяем маскировку headless режима
+        apply_headless_masking(driver)
+        
+        # Ждем DOM модель с WebDriverWait без хардкод таймаута
+        try:
+            # Используем короткий таймаут для быстрой проверки
+            element = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+            )
             
-            time.sleep(random.uniform(0.5, 1.0))
-        
-        logger.error(f"❌ Элемент не найден за {timeout} секунд")
-        return False
-        
+            # Дополнительно проверяем, что элемент видим
+            if element.is_displayed():
+                logger.info("✅ Элемент найден скрытно")
+                return True
+            else:
+                logger.warning("⚠️ Элемент найден, но не видим")
+                return False
+                
+        except TimeoutException:
+            logger.error(f"❌ Элемент не найден: {selector}")
+            return False
+            
     except Exception as e:
         logger.error(f"❌ Ошибка при скрытном ожидании элемента: {e}")
         return False 

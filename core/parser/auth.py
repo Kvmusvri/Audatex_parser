@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-from .constants import TIMEOUT, COOKIES_FILE
+from .constants import TIMEOUT, COOKIES_FILE, BASE_URL
 from .browser import kill_chrome_processes, init_browser
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ def perform_login(driver, username, password, cookies_file):
             logger.info("Пользователь уже авторизован, пропускаем логин")
             return True
 
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.NAME, "username"))
         )
         logger.info("Поле username найдено")
@@ -132,7 +132,7 @@ def perform_login(driver, username, password, cookies_file):
         password_input.send_keys(password)
         logger.info("Введен пароль")
         
-        submit_button = WebDriverWait(driver, 10).until(
+        submit_button = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "input[type='submit']"))
         )
         submit_button.click()
@@ -143,7 +143,7 @@ def perform_login(driver, username, password, cookies_file):
         
         # Проверяем успешность авторизации
         try:
-            WebDriverWait(driver, 10).until(
+            WebDriverWait(driver, 5).until(
                 EC.any_of(
                     EC.url_contains("breclient/ui"),
                     EC.presence_of_element_located((By.CSS_SELECTOR, "#BREForm")),
