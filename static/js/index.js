@@ -27,7 +27,7 @@ document.getElementById('add-request-btn').addEventListener('click', function() 
     const vinNumber = document.getElementById('vin_number').value.trim();
     
     if (!claimNumber && !vinNumber) {
-        alert('Введите номер дела или VIN номер');
+        showErrorModal('Введите номер дела или VIN номер');
         return;
     }
     
@@ -40,7 +40,7 @@ document.getElementById('add-request-btn').addEventListener('click', function() 
     );
     
     if (isDuplicate) {
-        alert('Такая заявка уже добавлена!');
+        showErrorModal('Такая заявка уже добавлена!');
         return;
     }
     
@@ -57,6 +57,86 @@ document.getElementById('add-request-btn').addEventListener('click', function() 
     // Очищаем поля формы
     document.getElementById('claim_number').value = '';
     document.getElementById('vin_number').value = '';
+});
+
+// Обработчик отправки формы
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const username = formData.get('username');
+    const password = formData.get('password');
+    const svgCollection = formData.get('svg_collection');
+    
+    // Проверяем, что есть заявки в списке
+    if (addedRequests.length === 0) {
+        showErrorModal('Очередь пуста. Добавьте заявки перед отправкой.');
+        return;
+    }
+    
+    try {
+        // Показываем индикатор прогресса
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Отправка заявок...';
+        
+        // Отправляем все заявки из списка
+        for (let i = 0; i < addedRequests.length; i++) {
+            const request = addedRequests[i];
+            
+            // Обновляем текст кнопки с прогрессом
+            submitBtn.textContent = `Отправка заявки ${i + 1} из ${addedRequests.length}...`;
+            
+            // Создаем FormData для каждой заявки
+            const requestFormData = new FormData();
+            requestFormData.append('username', username);
+            requestFormData.append('password', password);
+            requestFormData.append('claim_number', request.claimNumber === 'Не задано' ? '' : request.claimNumber);
+            requestFormData.append('vin_number', request.vinNumber === 'Не задано' ? '' : request.vinNumber);
+            requestFormData.append('svg_collection', svgCollection);
+            
+            // Отправляем заявку на сервер
+            const response = await fetch('/login', {
+                method: 'POST',
+                body: requestFormData
+            });
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                showErrorModal(`Ошибка добавления заявки ${i + 1}: ${data.error}`);
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+            
+            // Небольшая задержка между заявками
+            if (i < addedRequests.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        showNotification(`Все ${addedRequests.length} заявок добавлены в очередь и начали обрабатываться`, 'success');
+        
+        // Очищаем список заявок после успешной отправки
+        addedRequests = [];
+        updateRequestsList();
+        updateTotalTime();
+        
+        // Восстанавливаем кнопку
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        
+    } catch (error) {
+        console.error('Ошибка отправки формы:', error);
+        showErrorModal('Ошибка соединения с сервером');
+        
+        // Восстанавливаем кнопку при ошибке
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Войти';
+    }
 });
 
 // Удаление заявки
@@ -223,6 +303,72 @@ document.getElementById('stop-parser-btn').addEventListener('click', async funct
     btn.textContent = 'Остановить парсер';
     window.open('/', '_self');
 });
+
+// Функции для работы с модальным окном ошибок
+function showErrorModal(message) {
+    const modal = document.getElementById('error-modal');
+    const errorMessage = document.getElementById('error-message');
+    
+    errorMessage.textContent = message;
+    modal.classList.add('show');
+    
+    // Закрытие по клику вне модального окна
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeErrorModal();
+        }
+    });
+    
+    // Закрытие по Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeErrorModal();
+        }
+    });
+}
+
+function closeErrorModal() {
+    const modal = document.getElementById('error-modal');
+    modal.classList.remove('show');
+}
+
+// Функция для показа уведомлений
+function showNotification(message, type) {
+    // Создаем элемент уведомления
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 16px;
+        border-radius: 6px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        ${type === 'success' ? 'background: #059669;' : 'background: #dc2626;'}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Анимация появления
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Автоматическое удаление через 3 секунды
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 300);
+    }, 3000);
+}
 
 // Обработчик переключателя сбора SVG
 document.getElementById('svg_collection').addEventListener('change', function() {

@@ -150,8 +150,14 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
     Если svg_collection=False, извлекает только данные без сохранения файлов.
     ГАРАНТИРУЕТ извлечение деталей из любого SVG файла зоны.
     """
+    # Очищаем строки от лишних пробелов и символов табуляции
+    clean_claim_number = claim_number.strip() if claim_number else ""
+    clean_vin = vin.strip() if vin else ""
+    
     logger.info(f"🔧 НАЧИНАЕМ разбиение SVG файла: {svg_file}")
     logger.info(f"🎛️ Режим сохранения SVG: {'ВКЛЮЧЕН' if svg_collection else 'ОТКЛЮЧЕН'}")
+    logger.info(f"🔍 Исходные данные: claim_number='{claim_number}', vin='{vin}'")
+    logger.info(f"🔍 Очищенные данные: clean_claim_number='{clean_claim_number}', clean_vin='{clean_vin}'")
     
     try:
         # Проверяем существование файла
@@ -241,7 +247,7 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
             if len(safe_name) <= max_filename_length:
                 # Обычный случай - имя не слишком длинное
                 output_path = os.path.normpath(os.path.join(output_dir, f"{safe_name}.svg"))
-                relative_base = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}"
+                relative_base = f"/static/svgs/{clean_claim_number.replace('/', '_')}_{clean_vin}"
                 output_path_relative = f"{relative_base}/{safe_name}.svg".replace("\\", "/")
 
                 detail_data = {
@@ -294,7 +300,7 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
                             
                             group_filename = f"{group_safe_name}_group{part_num}.svg"
                             group_output_path = os.path.normpath(os.path.join(output_dir, group_filename))
-                            relative_base = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}"
+                            relative_base = f"/static/svgs/{clean_claim_number.replace('/', '_')}_{clean_vin}"
                             group_output_path_relative = f"{relative_base}/{group_filename}".replace("\\", "/")
                             
                             detail_data = {
@@ -330,7 +336,7 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
                     
                     group_filename = f"{group_safe_name}_group{part_num}.svg"
                     group_output_path = os.path.normpath(os.path.join(output_dir, group_filename))
-                    relative_base = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}"
+                    relative_base = f"/static/svgs/{clean_claim_number.replace('/', '_')}_{clean_vin}"
                     group_output_path_relative = f"{relative_base}/{group_filename}".replace("\\", "/")
                     
                     detail_data = {
@@ -615,10 +621,14 @@ svg * {{
 
 # Сохраняет основной скриншот и SVG
 def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, claim_number, vin, svg_collection=True):
+    # Очищаем строки от лишних пробелов и символов табуляции
+    clean_claim_number = claim_number.strip() if claim_number else ""
+    clean_vin = vin.strip() if vin else ""
+    
     main_screenshot_path = os.path.join(screenshot_dir, f"main_screenshot.png")
-    main_screenshot_relative = f"/static/screenshots/{claim_number.replace('/', '_')}_{vin}/main_screenshot.png"
+    main_screenshot_relative = f"/static/screenshots/{clean_claim_number.replace('/', '_')}_{clean_vin}/main_screenshot.png"
     main_svg_path = os.path.join(svg_dir, f"main.svg")
-    main_svg_relative = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}/main.svg"
+    main_svg_relative = f"/static/svgs/{clean_claim_number.replace('/', '_')}_{clean_vin}/main.svg"
 
     # Проверяем наличие SVG на странице
     try:
@@ -727,6 +737,10 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
     Обрабатывает одну зону, включая сохранение скриншота, SVG и пиктограмм.
     max_retries: максимальное количество повторных попыток при ошибке сессии.
     """
+    # Очищаем строки от лишних пробелов и символов табуляции
+    clean_claim_number = claim_number.strip() if claim_number else ""
+    clean_vin = vin.strip() if vin else ""
+    
     zone_data = []
 
     # Проверяем валидность zone
@@ -736,6 +750,7 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
 
     logger.debug(f"Обработка зоны: {zone}")
     logger.debug(f"🔍 DEBUG process_zone начало: claim_number='{claim_number}', vin='{vin}'")
+    logger.debug(f"🔍 DEBUG process_zone очищенные: clean_claim_number='{clean_claim_number}', clean_vin='{clean_vin}'")
 
     for attempt in range(max_retries):
         try:
@@ -761,10 +776,10 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
                                'ru', reversed=True).replace(" ", "_").replace("/", "_").lower().replace("'", "")
     safe_zone_title = re.sub(r'\.+', '', safe_zone_title)
     zone_screenshot_path = os.path.join(screenshot_dir, f"zone_{safe_zone_title}.png")
-    zone_screenshot_relative = f"/static/screenshots/{claim_number.replace('/', '_')}_{vin}/zone_{safe_zone_title}.png".replace(
+    zone_screenshot_relative = f"/static/screenshots/{clean_claim_number.replace('/', '_')}_{clean_vin}/zone_{safe_zone_title}.png".replace(
         "\\", "/")
     zone_svg_path = os.path.join(svg_dir, f"zone_{safe_zone_title}.svg")
-    zone_svg_relative = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}/zone_{safe_zone_title}.svg".replace("\\", "/")
+    zone_svg_relative = f"/static/svgs/{clean_claim_number.replace('/', '_')}_{clean_vin}/zone_{safe_zone_title}.svg".replace("\\", "/")
 
     # Проверяем наличие пиктограмм с надежными стратегиями ожидания
     try:

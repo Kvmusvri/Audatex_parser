@@ -32,7 +32,6 @@ import requests
 import zipfile
 import platform
 import sys
-import signal
 
 # Импорт констант и функций
 from .constants import *
@@ -58,6 +57,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+
+
 # Основная функция
 def search_and_extract(driver, claim_number, vin_number, svg_collection=True, started_at=None):
     logger.info(f"🎛️ Флаг сбора SVG: {'ВКЛЮЧЕН' if svg_collection else 'ОТКЛЮЧЕН'}")
@@ -76,8 +77,19 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
     time.sleep(0.5)
     current_url = driver.current_url
     logger.info(f"Текущий URL: {current_url}")
-    claim_number, vin_number, vin_status = extract_vin_and_claim_number(driver, current_url)
-    screenshot_dir, svg_dir, data_dir = create_folders(claim_number, vin_number)
+    try:
+        claim_number, vin_number, vin_status = extract_vin_and_claim_number(driver, current_url)
+        logger.info(f"🔍 Извлеченные данные: claim_number='{claim_number}', vin_number='{vin_number}', vin_status='{vin_status}'")
+        
+        # Проверяем, что данные не пустые
+        if not claim_number.strip() and not vin_number.strip():
+            logger.error("❌ Извлеченные данные пустые - claim_number и vin_number отсутствуют")
+            return {"error": "Не удалось извлечь данные VIN и номер дела"}
+        
+        screenshot_dir, svg_dir, data_dir = create_folders(claim_number, vin_number)
+    except Exception as e:
+        logger.error(f"❌ Ошибка при извлечении данных: {e}")
+        return {"error": f"Ошибка извлечения данных: {str(e)}"}
     
     # Формируем URL страницы повреждений для повторного использования
     base_url = current_url.split('step')[0][:-1] + '&step=Damage+capturing'
@@ -129,16 +141,46 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
     
     # ЗАТЕМ ОБРАБАТЫВАЕМ ЗОНЫ И SVG
     logger.info("🎨 ЭТАП 2: Обработка зон и SVG")
+    
+    # Промежуточное сохранение JSON перед обработкой зон
+    logger.info("💾 Промежуточное сохранение JSON перед обработкой зон")
+    intermediate_json_path = save_data_to_json(
+        vin_number, [], main_screenshot_relative, main_svg_relative, 
+        "", "", data_dir, claim_number, options_result, vin_status,
+        started_at=started_at, completed_at=datetime.datetime.now(), is_intermediate=True
+    )
+    if intermediate_json_path:
+        logger.info(f"✅ Промежуточный JSON сохранен: {intermediate_json_path}")
+    else:
+        logger.warning("⚠️ Не удалось сохранить промежуточный JSON")
+    
     for zone in zones:
-        # Проверяем, не была ли задача отменена
         try:
-            if asyncio.current_task().cancelled():
-                logger.info("🛑 Задача парсера была отменена во время обработки зон")
-                return {"error": "Парсер был остановлен пользователем"}
-        except RuntimeError:
-            # Если мы не в async контексте, пропускаем проверку
-            pass
-        zone_data.extend(process_zone(driver, zone, screenshot_dir, svg_dir, claim_number=claim_number, vin=vin_number, svg_collection=svg_collection))
+            # Проверяем, что браузер еще работает
+            try:
+                driver.current_url
+            except Exception as browser_error:
+                logger.error(f"❌ Браузер закрыт во время обработки зоны {zone.get('title', 'Unknown')}: {browser_error}")
+                return {"error": "Браузер был закрыт во время выполнения", "browser_closed": True}
+                
+            zone_result = process_zone(driver, zone, screenshot_dir, svg_dir, claim_number=claim_number, vin=vin_number, svg_collection=svg_collection)
+            zone_data.extend(zone_result)
+            
+            # Промежуточное сохранение после каждой зоны
+            logger.info(f"💾 Промежуточное сохранение после зоны: {zone.get('title', 'Unknown')}")
+            intermediate_json_path = save_data_to_json(
+                vin_number, zone_data, main_screenshot_relative, main_svg_relative, 
+                "", "", data_dir, claim_number, options_result, vin_status,
+                started_at=started_at, completed_at=datetime.datetime.now(), is_intermediate=True
+            )
+            if intermediate_json_path:
+                logger.info(f"✅ Промежуточный JSON обновлен после зоны {zone.get('title', 'Unknown')}")
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка при обработке зоны {zone.get('title', 'Unknown')}: {e}")
+            # Продолжаем обработку других зон
+            continue
+    
     driver.switch_to.default_content()
     
     # ГАРАНТИРУЕМ извлечение деталей из всех зон
@@ -156,6 +198,13 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
         zones_table, "", data_dir, claim_number, options_result, vin_status,
         started_at=started_at, completed_at=completed_at
     )
+    
+    # Проверяем, что JSON файл был успешно сохранен
+    if not json_path:
+        logger.error("❌ Не удалось сохранить JSON файл")
+        return {"error": "Ошибка сохранения данных"}
+    
+    logger.info(f"✅ JSON файл успешно сохранен: {json_path}")
     
     return {
         "success": "Задача открыта", 
@@ -200,7 +249,11 @@ async def login_audatex(username: str, password: str, claim_number: str, vin_num
         
         # Выполняем поиск и извлечение данных в отдельном потоке
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, lambda: search_and_extract(driver, claim_number, vin_number, svg_collection, started_at))
+        try:
+            result = await loop.run_in_executor(None, lambda: search_and_extract(driver, claim_number, vin_number, svg_collection, started_at))
+        except Exception as e:
+            logger.error(f"❌ Ошибка выполнения парсера: {e}")
+            return {"error": f"Ошибка выполнения парсера: {str(e)}"}
         
         # Сохраняем cookies после успешного выполнения
         if "success" in result:
@@ -214,9 +267,6 @@ async def login_audatex(username: str, password: str, claim_number: str, vin_num
         
         return result
         
-    except asyncio.CancelledError:
-        logger.info("🛑 Задача парсера была отменена")
-        return {"error": "Парсер был остановлен пользователем"}
     except Exception as e:
         logger.error(f"❌ Ошибка в login_audatex: {e}")
         return {"error": f"Ошибка парсинга: {str(e)}"}
@@ -231,16 +281,53 @@ async def login_audatex(username: str, password: str, claim_number: str, vin_num
 # Функция для завершения всех процессов браузера
 def terminate_all_processes_and_restart(current_url=None):
     logger.critical("🛑 Завершение всех процессов браузера инициировано!")
-    try:
-        for proc in psutil.process_iter(['name', 'pid']):
-            if proc.info['name'] in ['chrome.exe', 'chromedriver.exe', 'chrome', 'chromedriver']:
-                try:
-                    proc.kill()
-                    logger.critical(f"✅ Завершён процесс браузера: {proc.info['name']} (pid={proc.info['pid']})")
-                except Exception as e:
-                    logger.error(f"❌ Ошибка при завершении процесса {proc.info['name']}: {e}")
-    except Exception as e:
-        logger.error(f"❌ Ошибка при завершении процессов Chrome/Chromedriver: {e}")
+    killed_processes = []
     
-    logger.critical("✅ Все процессы браузера завершены")
-    return "Все процессы браузера успешно завершены"
+    try:
+        # Первый проход - мягкое завершение
+        for proc in psutil.process_iter(['name', 'pid', 'cmdline']):
+            try:
+                proc_name = proc.info['name']
+                if proc_name in ['chrome.exe', 'chromedriver.exe', 'chrome', 'chromedriver']:
+                    logger.critical(f"🔄 Завершаем процесс: {proc_name} (pid={proc.info['pid']})")
+                    proc.terminate()
+                    killed_processes.append(proc.info['pid'])
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+            except Exception as e:
+                logger.error(f"❌ Ошибка при мягком завершении процесса: {e}")
+        
+        # Ждем немного для мягкого завершения
+        time.sleep(2)
+        
+        # Второй проход - принудительное завершение
+        for proc in psutil.process_iter(['name', 'pid']):
+            try:
+                proc_name = proc.info['name']
+                if proc_name in ['chrome.exe', 'chromedriver.exe', 'chrome', 'chromedriver']:
+                    if proc.info['pid'] not in killed_processes:
+                        logger.critical(f"💀 Принудительно завершаем процесс: {proc_name} (pid={proc.info['pid']})")
+                        proc.kill()
+                        killed_processes.append(proc.info['pid'])
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+            except Exception as e:
+                logger.error(f"❌ Ошибка при принудительном завершении процесса: {e}")
+        
+        # Дополнительная проверка через taskkill для Windows
+        import platform
+        if platform.system() == "Windows":
+            try:
+                import subprocess
+                subprocess.run(['taskkill', '/f', '/im', 'chrome.exe'], capture_output=True, timeout=5)
+                subprocess.run(['taskkill', '/f', '/im', 'chromedriver.exe'], capture_output=True, timeout=5)
+                logger.critical("✅ Дополнительное завершение через taskkill выполнено")
+            except Exception as e:
+                logger.warning(f"⚠️ Ошибка taskkill: {e}")
+        
+        logger.critical(f"✅ Все процессы браузера завершены. Завершено процессов: {len(killed_processes)}")
+        return f"Все процессы браузера успешно завершены. Завершено процессов: {len(killed_processes)}"
+        
+    except Exception as e:
+        logger.error(f"❌ Критическая ошибка при завершении процессов Chrome/Chromedriver: {e}")
+        return f"Ошибка при завершении процессов: {e}"

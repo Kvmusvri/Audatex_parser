@@ -21,6 +21,8 @@ from core.database.requests import (
     update_json_with_claim_number,
     save_updated_json_to_file,
 )
+from core.queue.api_endpoints import router as queue_router
+from core.queue.redis_manager import redis_manager
 
 import time
 import concurrent.futures
@@ -53,6 +55,15 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Ошибка инициализации БД: {e}")
     
+    # Проверяем подключение к Redis
+    try:
+        if redis_manager.test_connection():
+            logger.info("✅ Redis подключен")
+        else:
+            logger.warning("⚠️ Redis недоступен, очередь будет работать в памяти")
+    except Exception as e:
+        logger.error(f"❌ Ошибка подключения к Redis: {e}")
+    
     yield
     
     # Shutdown
@@ -62,11 +73,20 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Соединения с БД закрыты")
     except Exception as e:
         logger.error(f"❌ Ошибка закрытия БД: {e}")
+    
+    try:
+        redis_manager.close()
+        logger.info("✅ Соединение с Redis закрыто")
+    except Exception as e:
+        logger.error(f"❌ Ошибка закрытия Redis: {e}")
 
 # Инициализация FastAPI приложения
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+# Подключаем роутер очереди
+app.include_router(queue_router)
 
 # Модели для валидации входного JSON
 class SearchItem(BaseModel):
@@ -121,8 +141,23 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
         bool: True если обработка прошла успешно
     """
     try:
+        # Проверяем, есть ли ошибка в результате
+        if "error" in parser_result:
+            logger.error(f"❌ Парсер вернул ошибку: {parser_result['error']}")
+            return False
+        
+        # Получаем извлеченные данные из результата парсера
+        extracted_claim_number = parser_result.get("claim_number", claim_number)
+        extracted_vin_value = parser_result.get("vin_value", vin_value)
+        
+        # Очищаем строки от лишних пробелов и символов табуляции
+        clean_claim_number = extracted_claim_number.strip() if extracted_claim_number else ""
+        clean_vin_value = extracted_vin_value.strip() if extracted_vin_value else ""
+        
+        logger.info(f"🔍 Используем извлеченные данные: claim_number='{extracted_claim_number}' -> '{clean_claim_number}', vin='{extracted_vin_value}' -> '{clean_vin_value}'")
+        
         # Формируем имя папки
-        folder_name = f"{claim_number}_{vin_value}"
+        folder_name = f"{clean_claim_number}_{clean_vin_value}"
         folder_path = os.path.join("static", "data", folder_name)
         
         # Проверяем существование папки
@@ -140,14 +175,16 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
         latest_json = max(json_files, key=lambda f: os.path.getctime(os.path.join(folder_path, f)))
         file_path = os.path.join(folder_path, latest_json)
         
+        logger.info(f"✅ Найден JSON файл: {file_path}")
+        
         logger.info(f"📁 Обрабатываем JSON файл: {file_path}")
         
         # Читаем JSON файл
         with open(file_path, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
         
-        # Обновляем JSON с claim_number
-        updated_json = update_json_with_claim_number(json_data, claim_number)
+        # Обновляем JSON с извлеченным claim_number
+        updated_json = update_json_with_claim_number(json_data, clean_claim_number)
         
         # Сохраняем обновленный JSON обратно в файл
         save_success = await save_updated_json_to_file(updated_json, file_path)
@@ -156,12 +193,12 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
             return False
         
         # Сохраняем данные в БД с временными метками
-        db_success = await save_parser_data_to_db(updated_json, claim_number, vin_value, is_success=True, started_at=started_at, completed_at=completed_at)
+        db_success = await save_parser_data_to_db(updated_json, clean_claim_number, clean_vin_value, is_success=True, started_at=started_at, completed_at=completed_at)
         if not db_success:
-            logger.error(f"Не удалось сохранить данные в БД: {claim_number}_{vin_value}")
+            logger.error(f"Не удалось сохранить данные в БД: {clean_claim_number}_{clean_vin_value}")
             return False
         
-        logger.info(f"✅ Обработка завершена успешно: {claim_number}_{vin_value}")
+        logger.info(f"✅ Обработка завершена успешно: {clean_claim_number}_{clean_vin_value}")
         return True
         
     except Exception as e:
@@ -216,6 +253,12 @@ def clean_json_data(data):
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/queue", response_class=HTMLResponse)
+async def queue_monitor(request: Request):
+    """Страница мониторинга очереди"""
+    return templates.TemplateResponse("queue_monitor.html", {"request": request})
 
 
 @app.get("/history", response_class=HTMLResponse)
@@ -617,143 +660,82 @@ async def import_from_json(request: SearchRequest):
     return JSONResponse(content={"results": results})
 
 
-@app.post("/login", response_class=HTMLResponse)
+@app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...),
                 claim_number: str = Form(default=""), vin_number: str = Form(default=""),
                 svg_collection: str = Form(default="")):
-    global parser_running, parser_task, parser_start_time
-
-    if not claim_number and not vin_number:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": "Необходимо указать номер дела или VIN номер"
-        })
-
+    """Обработка входа и добавление заявки в очередь"""
     try:
-        logger.info(f"Запуск парсера для claim_number: {claim_number}, VIN: {vin_number}")
-        # Если checkbox отмечен, приходит "on", если не отмечен - пустая строка
-        svg_collection_bool = svg_collection == "on"
-        logger.info(f"🎛️ Сбор SVG: {'ВКЛЮЧЕН' if svg_collection_bool else 'ОТКЛЮЧЕН'}")
-
-        # Проверяем, не запущен ли уже парсер
-        if parser_running:
-            return templates.TemplateResponse("error.html", {
-                "request": request,
-                "error": "Парсер уже запущен. Дождитесь завершения или остановите его."
-            })
+        # Проверяем, что хотя бы одно поле заполнено
+        if not claim_number and not vin_number:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "success": False,
+                    "error": "Необходимо указать номер дела или VIN номер."
+                }
+            )
         
-        # Устанавливаем флаг запуска и время начала
-        parser_running = True
-        parser_start_time = get_moscow_time()
-        logger.info(f"🕐 Парсер запущен в: {parser_start_time.strftime('%H:%M:%S')}")
-
-        # Запускаем парсер в отдельной задаче с передачей времени начала
-        async def run_parser_with_time():
-            return await login_audatex(username, password, claim_number, vin_number, svg_collection_bool, parser_start_time)
+        # Проверяем подключение к Redis
+        if not redis_manager.test_connection():
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "success": False,
+                    "error": "Redis недоступен. Очередь не может быть обработана."
+                }
+            )
         
-        parser_task = asyncio.create_task(run_parser_with_time())
+        # Добавляем заявку в очередь
+        request_data = {
+            "claim_number": claim_number,
+            "vin_number": vin_number,
+            "svg_collection": svg_collection == "on",
+            "username": username,
+            "password": password
+        }
         
-        try:
-            # Ждем завершения парсера
-            parser_result = await parser_task
-        except asyncio.CancelledError:
-            logger.info("Задача парсера была отменена")
-            parser_running = False
-            parser_task = None
-            parser_start_time = None
-            # Рендерим страницу логина с пустой формой
-            return templates.TemplateResponse("index.html", {"request": request})
-        except Exception as e:
-            logger.error(f"Ошибка парсинга: {e}")
-            parser_running = False
-            parser_task = None
-            parser_start_time = None
-            # Рендерим страницу логина с пустой формой
-            return templates.TemplateResponse("index.html", {"request": request})
-    finally:
-        # Сбрасываем флаг запуска
-        parser_running = False
-        parser_task = None
-        parser_start_time = None
-
-    if "error" in parser_result:
-        logger.error(f"Ошибка парсинга: {parser_result['error']}")
-        parser_running = False
-        parser_task = None
-        parser_start_time = None
-        # Рендерим страницу логина с пустой формой
-        return templates.TemplateResponse("index.html", {"request": request})
-
-    zone_data = parser_result.get("zone_data", [])
-    if not zone_data:
-        logger.warning("Зоны не найдены для указанного номера дела или VIN")
-        parser_running = False
-        parser_task = None
-        parser_start_time = None
-        # Рендерим страницу логина с пустой формой
-        return templates.TemplateResponse("index.html", {"request": request})
-
-    # Формируем folder_name
-    folder_name = f"{parser_result.get('claim_number')}_{parser_result.get('vin_value')}"
-
-    # Формируем record
-    record = {
-        "folder": folder_name,
-        "vin_value": parser_result.get("vin_value", vin_number or claim_number),
-        "vin_status": parser_result.get("vin_status", "Неизвестно"),
-        "zone_data": parser_result.get("zone_data", []),
-        "main_screenshot_path": parser_result.get("main_screenshot_path", ""),
-        "main_svg_path": parser_result.get("main_svg_path", ""),
-        "all_svgs_zip": parser_result.get("all_svgs_zip", ""),
-        "options_data": parser_result.get("options_data", {"success": False, "zones": []}),
-        "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
-
-    # Нормализуем пути
-    record = normalize_paths(record, folder_name)
-
-    # Обрабатываем данные с временными метками
-    success = await process_parser_result_data(
-        parser_result.get('claim_number'), 
-        parser_result.get('vin_value'), 
-        parser_result,
-        parser_start_time,
-        parser_result.get('completed_at')
-    )
-
-    if not success:
-        parser_running = False
-        parser_task = None
-        # Рендерим страницу логина с пустой формой
-        return templates.TemplateResponse("index.html", {"request": request})
-
-    # Сбрасываем флаги
-    parser_running = False
-    parser_task = None
-    
-    # Логируем итоговое время работы парсера
-    if parser_start_time and parser_result.get('completed_at'):
-        try:
-            completed_time = parser_result.get('completed_at')
-            if isinstance(completed_time, str):
-                completed_time = datetime.strptime(completed_time, "%Y-%m-%d %H:%M:%S")
-            
-            duration_seconds = (completed_time - parser_start_time).total_seconds()
-            duration_minutes = int(duration_seconds // 60)
-            duration_secs = int(duration_seconds % 60)
-            
-            logger.info(f"⏱️ Парсер завершен. Время работы: {duration_minutes}м {duration_secs}с")
-            logger.info(f"🕐 Начало: {parser_start_time.strftime('%H:%M:%S')}, Завершение: {completed_time.strftime('%H:%M:%S')}")
-        except Exception as e:
-            logger.warning(f"⚠️ Ошибка расчета времени работы: {e}")
-    
-    parser_start_time = None
-    
-    # Формируем folder_name для редиректа
-    folder_name = f"{parser_result.get('claim_number')}_{parser_result.get('vin_value')}"
-    
-    # Редиректим на history_detail вместо success.html
-    return RedirectResponse(url=f"/history_detail/{folder_name}", status_code=302)
+        logger.info(f"📝 Добавление заявки в очередь: Номер дела: {claim_number}, VIN: {vin_number}")
+        
+        success = redis_manager.add_request_to_queue(request_data)
+        if not success:
+            logger.error(f"❌ Ошибка добавления заявки в очередь: {claim_number}, {vin_number}")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "success": False,
+                    "error": "Ошибка добавления заявки в очередь."
+                }
+            )
+        
+        # Запускаем обработку очереди если она еще не запущена
+        from core.queue.queue_processor import queue_processor
+        if not queue_processor.is_running:
+            asyncio.create_task(queue_processor.start_processing())
+        
+        queue_length = redis_manager.get_queue_length()
+        
+        logger.info(f"✅ Заявка успешно добавлена в очередь. Позиция: {queue_length}")
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "message": f"Заявка добавлена в очередь. Номер дела: {claim_number}, VIN: {vin_number}",
+                "queue_length": queue_length,
+                "queue_info": f"Позиция в очереди: {queue_length}. Обработка запущена автоматически."
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки входа: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Произошла ошибка: {str(e)}"
+            }
+        )
 
 
 @app.post("/terminate")
@@ -762,26 +744,32 @@ async def terminate_parser():
     try:
         logger.info("🛑 Получен запрос на остановку парсера")
         
-        # Сбрасываем флаги сразу
+        # Сбрасываем старые флаги (для обратной совместимости)
         parser_running = False
         parser_start_time = None
         
-        # Отменяем задачу парсера, если она запущена
+        # Отменяем старую задачу парсера, если она запущена
         if parser_task and not parser_task.done():
             parser_task.cancel()
             try:
                 await asyncio.wait_for(parser_task, timeout=2.0)
             except (asyncio.CancelledError, asyncio.TimeoutError):
-                logger.info("✅ Задача парсера отменена или время ожидания истекло")
+                logger.info("✅ Старая задача парсера отменена")
+        
+        # Очищаем ссылку на старую задачу
+        parser_task = None
+        
+        # Останавливаем queue processor
+        from core.queue.queue_processor import queue_processor
+        if queue_processor.is_running:
+            logger.info("🛑 Останавливаем queue processor")
+            queue_processor.stop_processing()
         
         # Завершаем процессы браузера
         result = terminate_all_processes_and_restart()
         
-        # Очищаем ссылку на задачу
-        parser_task = None
-        
-        logger.info(f"✅ Парсер остановлен: {result}")
-        return JSONResponse(content={"status": "success", "message": "Парсер успешно остановлен"})
+        logger.info(f"✅ Парсер и очередь остановлены: {result}")
+        return JSONResponse(content={"status": "success", "message": "Парсер и очередь успешно остановлены"})
     except Exception as e:
         logger.error(f"❌ Ошибка при завершении парсера: {e}")
         # Сбрасываем флаги даже при ошибке

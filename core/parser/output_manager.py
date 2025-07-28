@@ -26,9 +26,26 @@ def create_zones_table(zone_data):
 
 
 # Сохраняет данные в JSON
-def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path, zones_table, all_svgs_zip, data_dir, claim_number, options_data=None, vin_status="Нет", started_at=None, completed_at=None):
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    json_path = os.path.join(data_dir, f"data_{timestamp}.json")
+def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path, zones_table, all_svgs_zip, data_dir, claim_number, options_data=None, vin_status="Нет", started_at=None, completed_at=None, is_intermediate=False):
+    # Проверяем, что папка существует
+    if not os.path.exists(data_dir):
+        logger.error(f"❌ Папка {data_dir} не существует, создаем её")
+        try:
+            os.makedirs(data_dir, exist_ok=True)
+            logger.info(f"✅ Папка {data_dir} создана")
+        except Exception as e:
+            logger.error(f"❌ Не удалось создать папку {data_dir}: {e}")
+            return None
+    
+    # Для промежуточных сохранений используем фиксированное имя файла
+    if is_intermediate:
+        json_path = os.path.join(data_dir, f"data_intermediate_{claim_number}.json")
+        logger.info(f"💾 Сохраняем промежуточный JSON в: {json_path}")
+    else:
+        # Для финального сохранения используем timestamp
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        json_path = os.path.join(data_dir, f"data_{timestamp}.json")
+        logger.info(f"💾 Сохраняем финальный JSON в: {json_path}")
     
     # Определяем статус завершения
     json_completed = True  # JSON полностью собран

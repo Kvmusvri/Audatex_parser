@@ -38,9 +38,20 @@ def safe_remove_directory(path):
 
 # Создаёт папки для сохранения данных с перезаписью существующих
 def create_folders(claim_number, vin):
+    # Очищаем строки от лишних пробелов и символов табуляции
+    clean_claim_number = claim_number.strip() if claim_number else ""
+    clean_vin = vin.strip() if vin else ""
+    
     # Заменяем / на _ чтобы избежать создания подпапок
-    safe_claim_number = claim_number.replace("/", "_")
-    folder_name = f"{safe_claim_number}_{vin}"
+    safe_claim_number = clean_claim_number.replace("/", "_")
+    
+    # Проверяем, что данные не пустые
+    if not safe_claim_number and not clean_vin:
+        logger.error("❌ Невозможно создать папку: claim_number и vin пустые")
+        raise ValueError("claim_number и vin не могут быть пустыми одновременно")
+    
+    folder_name = f"{safe_claim_number}_{clean_vin}"
+    logger.info(f"📁 Создаем папку с именем: '{folder_name}'")
     
     screenshot_dir = os.path.join(SCREENSHOT_DIR, folder_name)
     svg_dir = os.path.join(SVG_DIR, folder_name)
@@ -53,12 +64,20 @@ def create_folders(claim_number, vin):
     
     # Создаем новые папки
     logger.info(f"📁 Создаем папки для: {folder_name}")
-    os.makedirs(screenshot_dir, exist_ok=True)
-    os.makedirs(svg_dir, exist_ok=True)
-    os.makedirs(data_dir, exist_ok=True)
+    logger.info(f"🔍 Исходные данные: claim_number='{claim_number}', vin='{vin}'")
+    logger.info(f"🔍 Очищенные данные: clean_claim_number='{clean_claim_number}', clean_vin='{clean_vin}'")
     
-    logger.info(f"✅ Папки успешно созданы: screenshots={screenshot_dir}, svg={svg_dir}, data={data_dir}")
-    return screenshot_dir, svg_dir, data_dir
+    try:
+        os.makedirs(screenshot_dir, exist_ok=True)
+        os.makedirs(svg_dir, exist_ok=True)
+        os.makedirs(data_dir, exist_ok=True)
+        
+        logger.info(f"✅ Папки успешно созданы: screenshots={screenshot_dir}, svg={svg_dir}, data={data_dir}")
+        return screenshot_dir, svg_dir, data_dir
+    except Exception as e:
+        logger.error(f"❌ Ошибка создания папок: {e}")
+        logger.error(f"❌ Пути: screenshot_dir={screenshot_dir}, svg_dir={svg_dir}, data_dir={data_dir}")
+        raise
 
 
 # Извлекает VIN и claim_number со страницы с расширенным человеческим поведением для обхода детекции

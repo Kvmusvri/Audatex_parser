@@ -11,7 +11,10 @@
     <div class="container">
         <div class="form-wrapper">
             <h1>Вход в систему</h1>
-            <button onclick="window.location.href='/history'" class="history-button">Посмотреть историю</button>
+            <div class="header-buttons">
+                <button onclick="window.location.href='/queue'" class="queue-button">Мониторинг очереди</button>
+                <button onclick="window.location.href='/history'" class="history-button">Посмотреть историю</button>
+            </div>
             <form action="/login" method="post" id="login-form">
                 <div class="form-group">
                     <label for="username">Логин:</label>
@@ -76,6 +79,20 @@
             </div>
         </div>
     </div>
+    
+    <!-- Модальное окно для ошибок -->
+    <div id="error-modal" class="error-modal">
+        <div class="error-modal-content">
+            <div class="error-modal-header">
+                <h3>Ошибка</h3>
+                <button class="error-modal-close" onclick="closeErrorModal()">&times;</button>
+            </div>
+            <div class="error-modal-body">
+                <p id="error-message"></p>
+            </div>
+        </div>
+    </div>
+    
     <script src="/static/js/index.js"></script>
 </body>
 </html>

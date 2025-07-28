@@ -31,40 +31,40 @@
                 
                 <!-- Содержимое вкладки SVG -->
                 <div id="tab-svg" class="tab-content active">
-                    <div class="content-wrapper">
-                        <div class="left-column">
+            <div class="content-wrapper">
+                <div class="left-column">
                             <!-- Зоны -->
-                            <div class="zones-container">
-                                <h2>Зоны</h2>
+                    <div class="zones-container">
+                        <h2>Зоны</h2>
                                 <!-- Кнопка скачивания для "Все зоны" -->
                                 <div class="all-zones-row">
                                     <button class="all-zones-button" data-record="1">Все зоны</button>
                                     {% if record.main_svg_path and record.main_svg_path.strip() and record.main_svg_path != '' %}
                                         <a href="{{ record.main_svg_path or '' }}" download class="svg-download" title="Скачать основной SVG">
-                                            <span class="download-icon">⬇</span>
-                                        </a>
+                                <span class="download-icon">⬇</span>
+                            </a>
                                     {% endif %}
-                                </div>
+                        </div>
                                 <div class="data-table">
-                                    {% for zone in record.zone_data %}
-                                        <div class="table-section">
-                                            <div class="item-row">
+                            {% for zone in record.zone_data %}
+                                    <div class="table-section">
+                                        <div class="item-row">
                                                 {% if zone.svg_path and zone.svg_path.strip() and zone.svg_path != '' %}
                                                     <a href="{{ zone.svg_path or '' }}" download class="svg-download" title="Скачать SVG">
-                                                        <span class="download-icon">⬇</span>
-                                                    </a>
+                                    <span class="download-icon">⬇</span>
+                                </a>
+                                {% endif %}
+                                            <button class="item-button zone-button" data-zone-title="{{ zone.title }}" data-record="1">
+                                                {{ zone.title }}
+                                                {% if zone.has_pictograms %}
+                                                <span class="pictogram-icon">🖼️</span>
                                                 {% endif %}
-                                                <button class="item-button zone-button" data-zone-title="{{ zone.title }}" data-record="1">
-                                                    {{ zone.title }}
-                                                    {% if zone.has_pictograms %}
-                                                        <span class="pictogram-icon">🖼️</span>
-                                                    {% endif %}
-                                                </button>
-                                            </div>
+                                            </button>
                                         </div>
-                                    {% endfor %}
-                                </div>
                             </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                             
                             <!-- Детали и пиктограммы -->
                             <div class="sidebar wide-sidebar">
@@ -73,14 +73,14 @@
                                     <div id="details-list" class="details-list"></div>
                                 </div>
                             </div>
-                        </div>
+                </div>
                         
-                        <div class="right-column">
-                            <div class="image-container">
-                                <div class="screenshot-container">
+                <div class="right-column">
+                    <div class="image-container">
+                        <div class="screenshot-container">
                                     <img id="main-screenshot" src="{{ record.main_screenshot_path or '' }}" alt="Скриншот зон" data-original-src="{{ record.main_screenshot_path or '' }}">
-                                </div>
-                            </div>
+                        </div>
+                    </div>
                         </div>
                     </div>
                 </div>
@@ -103,12 +103,12 @@
                                     <h2>Зоны опций</h2>
                                     <div class="data-table">
                                         {% for zone in record.options_data.zones %}
-                                            <div class="table-section">
+                                        <div class="table-section">
                                                 <div class="section-header" data-zone-index="{{ loop.index0 }}" data-zone-title="{{ zone.zone_title }}">
-                                                    <span>{{ zone.zone_title }}</span>
-                                                    <span class="section-info">{{ zone.selected_count }}/{{ zone.total_options }}</span>
-                                                </div>
+                                                <span>{{ zone.zone_title }}</span>
+                                                <span class="section-info">{{ zone.selected_count }}/{{ zone.total_options }}</span>
                                             </div>
+                                        </div>
                                         {% endfor %}
                                     </div>
                                 </div>
@@ -139,22 +139,27 @@
         </div>
     </div>
 
-    <!-- Передаем данные в JavaScript -->
-    <script>
-        // Глобальные переменные с данными
+    <!-- Данные для JavaScript -->
+    <script type="application/json" id="zone-data">
         {% if record.zone_data %}
-        window.zoneData = {{ record.zone_data | tojson | safe }};
+        {{ record.zone_data | tojson | safe }}
         {% else %}
-        window.zoneData = [];
-        {% endif %}
-        
-        {% if record.options_data and record.options_data.zones %}
-        window.optionsData = {{ record.options_data.zones | tojson | safe }};
-        {% else %}
-        window.optionsData = [];
+        []
         {% endif %}
     </script>
     
+    <script type="application/json" id="options-data">
+        {% if record.options_data and record.options_data.zones %}
+        {{ record.options_data.zones | tojson | safe }}
+        {% else %}
+        []
+        {% endif %}
+    </script>
+    
+    <!-- Загружаем инициализацию данных -->
+    <script src="/static/js/template-data.js"></script>
+    
+    <!-- Основной JavaScript -->
     <script src="/static/js/history_detail.js"></script>
 </body>
 </html>

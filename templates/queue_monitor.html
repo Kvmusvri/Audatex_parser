@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг очереди</title>
+    <link rel="stylesheet" href="/static/css/queue_monitor.css">
+    <link rel="icon" href="data:," />
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Мониторинг очереди заявок</h1>
+            <a href="/" class="back-button">Назад к форме</a>
+        </div>
+        
+        <div class="status-panel">
+            <div class="status-item">
+                <span class="status-label">Статус обработки:</span>
+                <span class="status-value" id="processing-status">Проверка...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Заявок в очереди:</span>
+                <span class="status-value" id="queue-length">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">В обработке:</span>
+                <span class="status-value" id="processing-count">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Обработано:</span>
+                <span class="status-value" id="processed-count">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Ошибок:</span>
+                <span class="status-value" id="failed-count">0</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="start-btn" class="control-btn start">Запустить обработку</button>
+            <button id="stop-btn" class="control-btn stop">Остановить обработку</button>
+            <button id="clear-btn" class="control-btn clear">Очистить очередь</button>
+            <button id="refresh-btn" class="control-btn refresh">Обновить</button>
+        </div>
+        
+        <div class="queues">
+            <div class="queue-section">
+                <h2>Очередь заявок</h2>
+                <div id="queue-list" class="queue-list">
+                    <div class="empty-message">Очередь пуста</div>
+                </div>
+            </div>
+            
+            <div class="queue-section">
+                <h2>В обработке</h2>
+                <div id="processing-list" class="queue-list">
+                    <div class="empty-message">Нет заявок в обработке</div>
+                </div>
+            </div>
+            
+            <div class="queue-section">
+                <h2>Завершенные</h2>
+                <div id="completed-list" class="queue-list">
+                    <div class="empty-message">Нет завершенных заявок</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/queue_monitor.js"></script>
+</body>
+</html> 
