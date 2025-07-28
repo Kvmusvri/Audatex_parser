@@ -171,17 +171,32 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
 
 def fix_path(path: str, folder_name: str) -> str:
     """Исправляет пути к файлам, добавляя folder_name"""
-    if path and not path.startswith("/"):
-        path = "/" + path
+    if not path:
+        return ""
     
-    if path and path.startswith("/static/"):
-        parts = path.split("/")
-        if len(parts) >= 3:
-            # Вставляем folder_name после /static/
-            parts.insert(2, folder_name)
-            return "/".join(parts)
+    # Убираем лишние слеши в начале
+    path = path.lstrip("/")
     
-    return path
+    # Если путь уже содержит folder_name, возвращаем как есть
+    if folder_name in path:
+        return "/" + path
+    
+    # Проверяем, начинается ли путь с static/
+    if path.startswith("static/"):
+        # Убираем "static/" из начала
+        path_without_static = path[7:]  # len("static/") = 7
+        
+        # Если путь уже содержит screenshots/ или svgs/, добавляем folder_name после них
+        if path_without_static.startswith("screenshots/"):
+            return f"/static/screenshots/{folder_name}/{path_without_static[12:]}"  # len("screenshots/") = 12
+        elif path_without_static.startswith("svgs/"):
+            return f"/static/svgs/{folder_name}/{path_without_static[5:]}"  # len("svgs/") = 5
+        else:
+            # Если нет специальных папок, добавляем folder_name после static/
+            return f"/static/{folder_name}/{path_without_static}"
+    
+    # Если путь не начинается с static/, добавляем static/ и folder_name
+    return f"/static/{folder_name}/{path}"
 
 
 def clean_json_data(data):
@@ -260,15 +275,16 @@ async def history(request: Request):
                 json_completed = metadata.get("json_completed", False) if metadata else False
                 db_saved = metadata.get("db_saved", False) if metadata else False
                 options_success = metadata.get("options_success", False) if metadata else False
+                total_zones = len(json_data.get("zone_data", [])) if json_data else 0
                 
                 # Определяем статус по флагам из метаданных
                 
-                if json_completed and db_saved and options_success:
+                if json_completed and db_saved and options_success and total_zones > 0:
                     status = "Завершена"
-                elif json_completed and not db_saved:
-                    status = "Ошибка БД"
                 elif not json_completed:
                     status = "В процессе"
+                elif json_completed and (not db_saved or not options_success or total_zones == 0):
+                    status = "Ошибка"
                 else:
                     status = "Неизвестно"
                 
@@ -312,7 +328,11 @@ async def history(request: Request):
                     "completed_time": completed_time,
                     "duration": duration,
                     "created_date": created_date,
-                    "folder_name": folder_name
+                    "folder_name": folder_name,
+                    "json_completed": json_completed,
+                    "db_saved": db_saved,
+                    "options_success": options_success,
+                    "total_zones": total_zones
                 })
                 
             except Exception as e:
@@ -411,36 +431,48 @@ async def history_detail(request: Request, folder_name: str):
         
         # Получаем детали из JSON
         details = []
-        for zone in json_data.get("zone_data", []):
-            zone_title = zone.get("title", "")
-            for detail in zone.get("details", []):
-                detail_title = detail.get("title", "")
-                # Парсим заголовок детали на код и название
-                if " - " in detail_title:
-                    code, title = detail_title.split(" - ", 1)
-                else:
-                    code = ""
-                    title = detail_title
-                
-                details.append({
-                    "group_zone": zone_title,
-                    "code": code,
-                    "title": title
-                })
+        zone_data = json_data.get("zone_data", [])
+        if isinstance(zone_data, list):
+            for zone in zone_data:
+                if isinstance(zone, dict):
+                    zone_title = zone.get("title", "")
+                    zone_details = zone.get("details", [])
+                    if isinstance(zone_details, list):
+                        for detail in zone_details:
+                            if isinstance(detail, dict):
+                                detail_title = detail.get("title", "")
+                                # Парсим заголовок детали на код и название
+                                if " - " in detail_title:
+                                    code, title = detail_title.split(" - ", 1)
+                                else:
+                                    code = ""
+                                    title = detail_title
+                                
+                                details.append({
+                                    "group_zone": zone_title,
+                                    "code": code,
+                                    "title": title
+                                })
         
         # Получаем опции из JSON
         options = []
         options_data = json_data.get("options_data", {})
-        if options_data and options_data.get("success"):
-            for zone in options_data.get("zones", []):
-                zone_title = zone.get("zone_title", "")
-                for option in zone.get("options", []):
-                    options.append({
-                        "zone_name": zone_title,
-                        "option_code": option.get("code", ""),
-                        "option_title": option.get("title", ""),
-                        "is_selected": option.get("selected", False)
-                    })
+        if isinstance(options_data, dict) and options_data.get("success"):
+            zones = options_data.get("zones", [])
+            if isinstance(zones, list):
+                for zone in zones:
+                    if isinstance(zone, dict):
+                        zone_title = zone.get("zone_title", "")
+                        zone_options = zone.get("options", [])
+                        if isinstance(zone_options, list):
+                            for option in zone_options:
+                                if isinstance(option, dict):
+                                    options.append({
+                                        "zone_name": zone_title,
+                                        "option_code": option.get("code", ""),
+                                        "option_title": option.get("title", ""),
+                                        "is_selected": option.get("selected", False)
+                                    })
         
         # Определяем статус
         if json_completed and db_saved:
@@ -466,16 +498,32 @@ async def history_detail(request: Request, folder_name: str):
                 "created_date": datetime.fromtimestamp(os.path.getctime(json_path)).strftime("%d.%m.%Y"),
                 "created": datetime.fromtimestamp(os.path.getctime(json_path)).strftime("%d.%m.%Y"),  # Для совместимости
                 "folder": folder_name,  # Добавляем имя папки
-                "main_screenshot_path": json_data.get("main_screenshot_path", ""),
-                "main_svg_path": json_data.get("main_svg_path", ""),
+                "folder_name": folder_name,  # Добавляем для совместимости
+                "main_screenshot_path": fix_path(json_data.get("main_screenshot_path", ""), folder_name),
+                "main_svg_path": fix_path(json_data.get("main_svg_path", ""), folder_name),
                 "zone_data": json_data.get("zone_data", []),
-                "options_data": json_data.get("options_data", {}),
+                "options_data": {
+                    "success": json_data.get("options_data", {}).get("success", False) if isinstance(json_data.get("options_data"), dict) else False,
+                    "zones": json_data.get("options_data", {}).get("zones", []) if isinstance(json_data.get("options_data"), dict) else [],
+                    "statistics": json_data.get("options_data", {}).get("statistics", {
+                        "total_zones": 0,
+                        "total_options": 0,
+                        "total_selected": 0
+                    }) if isinstance(json_data.get("options_data"), dict) else {
+                        "total_zones": 0,
+                        "total_options": 0,
+                        "total_selected": 0
+                    },
+                    "error": json_data.get("options_data", {}).get("error", "") if isinstance(json_data.get("options_data"), dict) else ""
+                },
                 "zones_table": json_data.get("zones_table", []),
                 "all_svgs_zip": json_data.get("all_svgs_zip", "")
             },
             "details": details,
             "options": options
         })
+        
+
         
     except Exception as e:
         logger.error(f"Ошибка при получении деталей заявки: {e}")

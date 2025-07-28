@@ -4,143 +4,108 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>История запросов</title>
-    <link rel="stylesheet" href="/static/success.css">
-    <style>
-        .container {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .form-wrapper {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
-            padding: 30px;
-        }
-
-        h1 {
-            color: #495057;
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 25px;
-            text-align: center;
-        }
-
-        .back-button {
-            background: #6c757d;
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 500;
-            transition: background 0.2s ease;
-            display: inline-block;
-            margin-bottom: 25px;
-        }
-
-        .back-button:hover {
-            background: #5a6268;
-        }
-
-        .search-container {
-            margin-bottom: 25px;
-        }
-
-        #history-search {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.2s ease;
-            background: #f8f9fa;
-            box-sizing: border-box;
-        }
-
-        #history-search:focus {
-            outline: none;
-            border-color: #007bff;
-            background: white;
-        }
-
-        .history-buttons {
-            display: grid;
-            gap: 12px;
-        }
-
-        .history-button {
-            display: block;
-            padding: 15px 20px;
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 500;
-            transition: background 0.2s ease;
-            border: none;
-            cursor: pointer;
-            text-align: left;
-        }
-
-        .history-button:hover {
-            background: #0056b3;
-        }
-
-        .history-button:active {
-            background: #004085;
-        }
-
-        /* Адаптивность */
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .form-wrapper {
-                padding: 20px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/history.css">
+    <link rel="icon" href="data:," />
 </head>
 <body>
     <div class="container">
         <div class="form-wrapper">
             <h1>История запросов</h1>
-            <a href="/" class="back-button">Назад</a>
-            <div class="search-container">
-                <input type="text" id="history-search" placeholder="Поиск по номеру дела или VIN">
-            </div>
-            <div class="history-buttons">
-                {% for record in records %}
-                <a href="/history_detail/{{ record.folder_name }}" class="history-button">
-                    <strong>Номер дела: {{ record.claim_number }}</strong><br>
-                    <strong>VIN: {{ record.vin }}</strong><br>
-                    Статус: {{ record.status }} | Время: {{ record.started_time }} - {{ record.completed_time }} | Длительность: {{ record.duration }}
-                </a>
-                {% endfor %}
+            <a href="/" class="back-button">Назад к форме</a>
+            
+            <!-- Счетчики статусов -->
+            <div class="status-summary">
+                <span class="status-count completed">Завершено: <span id="completed-count">0</span></span>
+                <span class="status-count in-process">В процессе: <span id="in-process-count">0</span></span>
+                <span class="status-count error">Ошибки: <span id="error-count">0</span></span>
+                <div class="stats-info">
+                    <div class="stat-item">
+                        <span class="stat-label">Среднее время обработки одной заявки:</span>
+                        <span class="stat-value" id="average-time">—</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Всего завершенных заявок:</span>
+                        <span class="stat-value" id="total-completed">0</span>
+                    </div>
+                </div>
             </div>
             
-            {% if not records %}
-            <div style="text-align: center; color: #6c757d; padding: 40px;">
-                <p>История запросов пуста</p>
+
+            
+            <!-- Кнопки фильтров -->
+            <div class="history-buttons">
+                <button class="history-button active" data-filter="all">Все</button>
+                <button class="history-button" data-filter="completed">Завершено</button>
+                <button class="history-button" data-filter="in-process">В процессе</button>
+                <button class="history-button" data-filter="error">Ошибки</button>
             </div>
-            {% endif %}
+            
+            <!-- Таблица истории -->
+            <div class="history-table">
+                {% if records %}
+                    {% for record in records %}
+                           <div class="history-record"
+            data-vin="{{ record.vin or '' }}"
+            data-claim="{{ record.claim_number or '' }}"
+            data-status="{{ record.status or '' }}"
+            data-json-completed="{{ 'true' if record.json_completed else 'false' }}"
+            data-db-saved="{{ 'true' if record.db_saved else 'false' }}"
+            data-options-success="{{ 'true' if record.options_success else 'false' }}"
+            data-total-zones="{{ record.total_zones or '0' }}">
+                        <div class="record-header">
+                            <div class="record-title">
+                                <h3>VIN: {{ record.vin or 'Неизвестный VIN' }}</h3>
+                                <span class="claim-number">Номер дела: {{ record.claim_number or 'Без номера дела' }}</span>
+                            </div>
+                                                        <div class="status-indicators">
+                                {% if record.json_completed and record.db_saved and record.options_success and record.total_zones > 0 %}
+                                    <span class="status-badge status-completed">
+                                        {{ record.status or 'Завершена' }}
+                                    </span>
+                                {% elif record.status == 'в процессе' %}
+                                    <span class="status-badge status-in-process">
+                                        {{ record.status or 'В процессе' }}
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge status-error clickable-error" 
+                                          onclick="handleErrorClick(this.closest('.history-record'), this)"
+                                          title="Нажмите для получения подробной информации об ошибке">
+                                        {{ record.status or 'Ошибка' }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="record-details">
+                            <div class="detail-row">
+                                <span class="detail-label">VIN Статус:</span>
+                                <span class="detail-value">{{ record.vin_status or 'Неизвестно' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Время:</span>
+                                <span class="detail-value">{{ record.started_time }} - {{ record.completed_time or 'В процессе' }}</span>
+                            </div>
+                            {% if record.duration %}
+                            <div class="detail-row">
+                                <span class="detail-label">Длительность:</span>
+                                <span class="detail-value">{{ record.duration }}</span>
+                            </div>
+                            {% endif %}
+
+                        </div>
+                        <div class="record-actions">
+                            <a href="/history_detail/{{ record.folder_name }}" class="detail-link">Подробнее</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-records">
+                        <p>История запросов пуста</p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
-
-    <script>
-        // Поиск по номеру дела или VIN
-        const searchInput = document.getElementById('history-search');
-        searchInput.addEventListener('input', () => {
-            const query = searchInput.value.toLowerCase();
-            document.querySelectorAll('.history-button').forEach(button => {
-                const text = button.textContent.toLowerCase();
-                button.style.display = text.includes(query) ? 'block' : 'none';
-            });
-        });
-    </script>
+    
+    <script src="/static/js/history.js"></script>
 </body>
 </html>
