@@ -742,6 +742,112 @@ async def terminate_parser():
         parser_start_time = None
         return JSONResponse(content={"status": "error", "error": str(e)})
 
+@app.get("/api/processing-stats")
+async def get_processing_stats():
+    """Получает статистику времени обработки заявок из истории"""
+    try:
+        data_dir = "static/data"
+        if not os.path.exists(data_dir):
+            logger.info("📁 Папка static/data не найдена")
+            return JSONResponse(content={
+                "average_time": "0м 0с",
+                "total_completed": 0,
+                "total_time": "0м 0с"
+            })
+        
+        completed_requests = []
+        total_duration_seconds = 0
+        
+        # Проходим по всем папкам в static/data
+        for folder_name in os.listdir(data_dir):
+            folder_path = os.path.join(data_dir, folder_name)
+            
+            if not os.path.isdir(folder_path):
+                continue
+                
+            json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
+            if not json_files:
+                continue
+            
+            # Берем самый новый JSON файл
+            latest_json = max(json_files, key=lambda f: os.path.getctime(os.path.join(folder_path, f)))
+            json_path = os.path.join(folder_path, latest_json)
+            
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    json_data = json.load(f)
+                
+                json_data = clean_json_data(json_data)
+                metadata = json_data.get("metadata", {})
+                
+                # Проверяем, что заявка завершена
+                json_completed = metadata.get("json_completed", False)
+                db_saved = metadata.get("db_saved", False)
+                options_success = metadata.get("options_success", False)
+                
+                logger.info(f"📊 Проверяем {folder_name}: json_completed={json_completed}, db_saved={db_saved}, options_success={options_success}")
+                
+                if json_completed and db_saved and options_success:
+                    started_at = metadata.get("started_at", "")
+                    completed_at = metadata.get("completed_at", "")
+                    last_updated = metadata.get("last_updated", "")
+                    
+                    logger.info(f"⏰ Время для {folder_name}: started_at={started_at}, completed_at={completed_at}")
+                    
+                    if started_at and started_at != "null" and started_at != "None":
+                        try:
+                            start_dt = datetime.strptime(started_at, "%Y-%m-%d %H:%M:%S")
+                            end_time_str = completed_at if completed_at and completed_at != "null" and completed_at != "None" else last_updated
+                            
+                            if end_time_str and end_time_str != "null" and end_time_str != "None":
+                                end_dt = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+                                duration_seconds = (end_dt - start_dt).total_seconds()
+                                
+                                if duration_seconds > 0:
+                                    completed_requests.append(duration_seconds)
+                                    total_duration_seconds += duration_seconds
+                                    logger.info(f"✅ Добавлено время для {folder_name}: {duration_seconds}с")
+                        except Exception as e:
+                            logger.warning(f"⚠️ Ошибка парсинга времени для {folder_name}: {e}")
+                            continue
+                            
+            except Exception as e:
+                logger.warning(f"⚠️ Ошибка чтения JSON файла {json_path}: {e}")
+                continue
+        
+        logger.info(f"📈 Найдено завершенных заявок: {len(completed_requests)}")
+        
+        # Вычисляем статистику
+        if completed_requests:
+            average_seconds = total_duration_seconds / len(completed_requests)
+            average_minutes = int(average_seconds // 60)
+            average_secs = int(average_seconds % 60)
+            average_time = f"{average_minutes}м {average_secs}с"
+            
+            total_minutes = int(total_duration_seconds // 60)
+            total_secs = int(total_duration_seconds % 60)
+            total_time = f"{total_minutes}м {total_secs}с"
+            
+            logger.info(f"📊 Статистика: среднее время={average_time}, общее время={total_time}")
+        else:
+            average_time = "0м 0с"
+            total_time = "0м 0с"
+            logger.info("📊 Нет завершенных заявок для расчета статистики")
+        
+        return JSONResponse(content={
+            "average_time": average_time,
+            "total_completed": len(completed_requests),
+            "total_time": total_time
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка при получении статистики: {e}")
+        return JSONResponse(content={
+            "average_time": "0м 0с",
+            "total_completed": 0,
+            "total_time": "0м 0с"
+        })
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
