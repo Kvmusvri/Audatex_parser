@@ -21,13 +21,15 @@ function setupEventListeners() {
 // Загрузка статуса очереди
 async function loadQueueStatus() {
     try {
-        const [statusResponse, requestsResponse] = await Promise.all([
+        const [statusResponse, requestsResponse, scheduleResponse] = await Promise.all([
             fetch('/api/queue/status'),
-            fetch('/api/queue/requests')
+            fetch('/api/queue/requests'),
+            fetch('/api/schedule/status')
         ]);
         
         const statusData = await statusResponse.json();
         const requestsData = await requestsResponse.json();
+        const scheduleData = await scheduleResponse.json();
         
         if (statusData.success) {
             updateStatusDisplay(statusData.data);
@@ -35,7 +37,12 @@ async function loadQueueStatus() {
         
         if (requestsData.success) {
             updateQueuesDisplay(requestsData.data);
+            // Обновляем счетчики из данных заявок
+            updateCountersFromRequests(requestsData.data);
         }
+        
+        // Обновляем статус времени работы парсера
+        updateScheduleStatus(scheduleData);
         
     } catch (error) {
         console.error('Ошибка загрузки статуса очереди:', error);
@@ -67,9 +74,48 @@ function updateStatusDisplay(stats) {
     failedCountElement.textContent = stats.failed_count || 0;
 }
 
+// Обновление счетчиков из данных заявок
+function updateCountersFromRequests(data) {
+    const queueLengthElement = document.getElementById('queue-length');
+    const processingCountElement = document.getElementById('processing-count');
+    const processedCountElement = document.getElementById('processed-count');
+    
+    // Обновляем счетчики из актуальных данных
+    queueLengthElement.textContent = data.pending_count || 0;
+    processingCountElement.textContent = data.processing_count || 0;
+    
+    // Подсчитываем успешно завершенные заявки
+    const completedRequests = data.completed_requests || [];
+    const successfulCount = completedRequests.filter(req => req.success !== false).length;
+    const failedCount = completedRequests.filter(req => req.success === false).length;
+    
+    processedCountElement.textContent = successfulCount;
+    document.getElementById('failed-count').textContent = failedCount;
+}
+
+// Обновление статуса времени работы парсера
+function updateScheduleStatus(scheduleData) {
+    const scheduleStatusElement = document.getElementById('schedule-status');
+    
+    if (!scheduleStatusElement) return;
+    
+    if (scheduleData.status === 'active') {
+        scheduleStatusElement.textContent = `Активен (${scheduleData.settings.start_time}-${scheduleData.settings.end_time})`;
+        scheduleStatusElement.className = 'status-value running';
+    } else if (scheduleData.status === 'waiting') {
+        const hours = Math.floor(scheduleData.time_to_start_minutes / 60);
+        const minutes = scheduleData.time_to_start_minutes % 60;
+        scheduleStatusElement.textContent = `Ожидание (${scheduleData.settings.start_time}-${scheduleData.settings.end_time}, через ${hours}ч ${minutes}м)`;
+        scheduleStatusElement.className = 'status-value waiting';
+    } else {
+        scheduleStatusElement.textContent = 'Не настроено';
+        scheduleStatusElement.className = 'status-value stopped';
+    }
+}
+
 // Обновление отображения очередей
 function updateQueuesDisplay(data) {
-    updateQueueList('queue-list', data.processing_requests || [], 'pending');
+    updateQueueList('queue-list', data.pending_requests || [], 'pending');
     updateQueueList('processing-list', data.processing_requests || [], 'processing');
     updateQueueList('completed-list', data.completed_requests || [], 'completed');
 }
@@ -79,7 +125,15 @@ function updateQueueList(containerId, requests, status) {
     const container = document.getElementById(containerId);
     
     if (requests.length === 0) {
-        container.innerHTML = '<div class="empty-message">Нет заявок</div>';
+        let emptyMessage = 'Нет заявок';
+        if (containerId === 'queue-list') {
+            emptyMessage = 'Очередь пуста';
+        } else if (containerId === 'processing-list') {
+            emptyMessage = 'Нет заявок в обработке';
+        } else if (containerId === 'completed-list') {
+            emptyMessage = 'Нет завершенных заявок';
+        }
+        container.innerHTML = `<div class="empty-message">${emptyMessage}</div>`;
         return;
     }
     

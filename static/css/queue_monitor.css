@@ -105,6 +105,10 @@ body {
     color: #dc2626;
 }
 
+.status-value.waiting {
+    color: #d97706;
+}
+
 /* Кнопки управления */
 .controls {
     display: flex;

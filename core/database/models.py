@@ -88,6 +88,20 @@ class ParserCarOptions(Base):
     source_from: Mapped[str] = mapped_column(String(50), nullable=False)
     created_date: Mapped[date] = mapped_column(Date, default=func.current_date())
 
+class ParserScheduleSettings(Base):
+    __tablename__ = 'parser_schedule_settings'
+    __table_args__ = (
+        Index('idx_schedule_settings_active', 'is_active'),
+        Index('idx_schedule_settings_updated', 'updated_at'),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    start_time: Mapped[str] = mapped_column(String(5), nullable=False)  # HH:MM
+    end_time: Mapped[str] = mapped_column(String(5), nullable=False)    # HH:MM
+    is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
 async def start_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

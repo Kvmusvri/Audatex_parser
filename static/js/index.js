@@ -1,10 +1,16 @@
 // Глобальные переменные
 let addedRequests = [];
 let processingStats = null;
+let scheduleSettings = null;
+let currentTimeInterval = null;
 
 // Загрузка статистики при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
     await loadProcessingStats();
+    await loadScheduleSettings();
+    startTimeUpdates();
+    setupTimeValidation();
+    restoreTimeToStart();
 });
 
 // Загрузка статистики времени обработки
@@ -18,6 +24,334 @@ async function loadProcessingStats() {
         updateTotalTime();
     } catch (error) {
         console.error('Ошибка загрузки статистики:', error);
+    }
+}
+
+// Загрузка настроек расписания
+async function loadScheduleSettings() {
+    try {
+        const response = await fetch('/api/schedule/settings');
+        if (response.ok) {
+            const data = await response.json();
+            scheduleSettings = data;
+            
+            // Заполняем поля времени
+            if (data.start_time) {
+                document.getElementById('start-time').value = data.start_time;
+            }
+            if (data.end_time) {
+                document.getElementById('end-time').value = data.end_time;
+            }
+            
+            updateScheduleStatus();
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки настроек расписания:', error);
+    }
+}
+
+// Сохранение настроек расписания
+async function saveScheduleSettings() {
+    const startTime = document.getElementById('start-time').value;
+    const endTime = document.getElementById('end-time').value;
+    
+    if (!startTime || !endTime) {
+        return false;
+    }
+    
+    try {
+        const response = await fetch('/api/schedule/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                start_time: startTime,
+                end_time: endTime
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            scheduleSettings = data;
+            updateScheduleStatus();
+            return true;
+        }
+    } catch (error) {
+        console.error('Ошибка сохранения настроек расписания:', error);
+    }
+    
+    return false;
+}
+
+// Запуск обновления времени
+function startTimeUpdates() {
+    updateCurrentTime();
+    currentTimeInterval = setInterval(updateCurrentTime, 1000);
+}
+
+// Обновление текущего времени
+function updateCurrentTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: 'Europe/Moscow'
+    });
+    
+    const currentTimeElement = document.getElementById('current-time');
+    if (currentTimeElement) {
+        currentTimeElement.textContent = timeString;
+    }
+    updateScheduleStatus();
+}
+
+// Настройка валидации времени
+function setupTimeValidation() {
+    const startTimeInput = document.getElementById('start-time');
+    const endTimeInput = document.getElementById('end-time');
+    
+    startTimeInput.addEventListener('change', validateTimeInputs);
+    endTimeInput.addEventListener('change', validateTimeInputs);
+    
+    // Автоматическое сохранение при изменении
+    startTimeInput.addEventListener('blur', async function() {
+        if (validateTimeInputs()) {
+            await saveScheduleSettings();
+        }
+    });
+    
+    endTimeInput.addEventListener('blur', async function() {
+        if (validateTimeInputs()) {
+            await saveScheduleSettings();
+        }
+    });
+}
+
+// Валидация полей времени
+function validateTimeInputs() {
+    const startTime = document.getElementById('start-time').value;
+    const endTime = document.getElementById('end-time').value;
+    const startValidation = document.getElementById('start-validation');
+    const endValidation = document.getElementById('end-validation');
+    
+    // Очищаем предыдущие сообщения
+    startValidation.textContent = '';
+    startValidation.className = 'time-validation';
+    endValidation.textContent = '';
+    endValidation.className = 'time-validation';
+    
+    // Проверяем, что оба поля заполнены
+    if (!startTime || !endTime) {
+        return false;
+    }
+    
+    // Парсим время
+    const startParts = startTime.split(':').map(Number);
+    const endParts = endTime.split(':').map(Number);
+    
+    // Проверяем корректность времени
+    if (startParts[0] < 0 || startParts[0] > 23 || startParts[1] < 0 || startParts[1] > 59) {
+        startValidation.textContent = 'Некорректное время';
+        startValidation.className = 'time-validation error';
+        return false;
+    }
+    
+    if (endParts[0] < 0 || endParts[0] > 23 || endParts[1] < 0 || endParts[1] > 59) {
+        endValidation.textContent = 'Некорректное время';
+        endValidation.className = 'time-validation error';
+        return false;
+    }
+    
+    // Проверяем, что время начала меньше времени окончания
+    const startMinutes = startParts[0] * 60 + startParts[1];
+    const endMinutes = endParts[0] * 60 + endParts[1];
+    
+    if (startMinutes >= endMinutes) {
+        startValidation.textContent = 'Время начала должно быть раньше окончания';
+        startValidation.className = 'time-validation error';
+        endValidation.textContent = 'Время окончания должно быть позже начала';
+        endValidation.className = 'time-validation error';
+        return false;
+    }
+    
+    // Показываем успешную валидацию
+    startValidation.textContent = '✓ Валидно';
+    startValidation.className = 'time-validation success';
+    endValidation.textContent = '✓ Валидно';
+    endValidation.className = 'time-validation success';
+    
+    return true;
+}
+
+// Обновление статуса расписания
+function updateScheduleStatus() {
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const timeToStartElement = document.getElementById('time-to-start');
+    
+    if (!scheduleSettings || !scheduleSettings.start_time || !scheduleSettings.end_time) {
+        if (statusDot && statusText) {
+            statusDot.className = 'status-dot inactive';
+            statusText.textContent = 'Парсер неактивен';
+            statusText.className = 'status-text inactive';
+        }
+        if (timeToStartElement) {
+            timeToStartElement.style.display = 'none';
+        }
+        return;
+    }
+    
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Moscow'
+    });
+    
+    const startTime = scheduleSettings.start_time;
+    const endTime = scheduleSettings.end_time;
+    
+    // Проверяем, находимся ли мы в рабочем времени
+    const isInWorkingHours = isTimeInRange(currentTime, startTime, endTime);
+    
+    if (!statusDot || !statusText) return;
+    
+    if (isInWorkingHours) {
+        statusDot.className = 'status-dot active';
+        statusText.textContent = 'Парсер активен';
+        statusText.className = 'status-text active';
+        
+        if (timeToStartElement) {
+            timeToStartElement.style.display = 'none';
+        }
+    } else {
+        // Проверяем, ждем ли мы начала или уже закончили
+        const timeToStart = getTimeToStart(currentTime, startTime);
+        const timeToEnd = getTimeToEnd(currentTime, endTime);
+        
+        if (timeToStart > 0) {
+            const timeToStartFormatted = formatTimeToStart(timeToStart);
+            statusDot.className = 'status-dot waiting';
+            statusText.textContent = 'Ожидание начала';
+            statusText.className = 'status-text waiting';
+            
+            // Обновляем время до запуска
+            if (timeToStartElement) {
+                timeToStartElement.style.display = 'block';
+                timeToStartElement.textContent = `${timeToStartFormatted.hours}ч ${timeToStartFormatted.minutes}м`;
+                
+                // Сохраняем время до запуска в localStorage
+                localStorage.setItem('timeToStart', JSON.stringify({
+                    hours: timeToStartFormatted.hours,
+                    minutes: timeToStartFormatted.minutes,
+                    timestamp: Date.now()
+                }));
+            }
+        } else {
+            statusDot.className = 'status-dot inactive';
+            statusText.textContent = 'Парсер неактивен';
+            statusText.className = 'status-text inactive';
+            
+            if (timeToStartElement) {
+                timeToStartElement.style.display = 'none';
+            }
+        }
+    }
+}
+
+// Проверка, находится ли время в диапазоне
+function isTimeInRange(currentTime, startTime, endTime) {
+    const current = timeToMinutes(currentTime);
+    const start = timeToMinutes(startTime);
+    const end = timeToMinutes(endTime);
+    
+    if (start <= end) {
+        // Обычный случай: 09:00 - 18:00
+        return current >= start && current <= end;
+    } else {
+        // Переход через полночь: 22:00 - 06:00
+        return current >= start || current <= end;
+    }
+}
+
+// Получение времени до начала работы
+function getTimeToStart(currentTime, startTime) {
+    const current = timeToMinutes(currentTime);
+    const start = timeToMinutes(startTime);
+    
+    if (current < start) {
+        return start - current;
+    } else {
+        // До следующего дня
+        return (24 * 60) - current + start;
+    }
+}
+
+// Получение времени до окончания работы
+function getTimeToEnd(currentTime, endTime) {
+    const current = timeToMinutes(currentTime);
+    const end = timeToMinutes(endTime);
+    
+    if (current <= end) {
+        return end - current;
+    } else {
+        // До следующего дня
+        return (24 * 60) - current + end;
+    }
+}
+
+// Конвертация времени в минуты
+function timeToMinutes(timeString) {
+    const parts = timeString.split(':').map(Number);
+    return parts[0] * 60 + parts[1];
+}
+
+// Форматирование времени в часы и минуты
+function formatTimeToStart(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return { hours, minutes: mins };
+}
+
+// Восстановление времени до запуска из localStorage
+function restoreTimeToStart() {
+    const timeToStartElement = document.getElementById('time-to-start');
+    if (!timeToStartElement) return;
+    
+    const savedTime = localStorage.getItem('timeToStart');
+    if (savedTime) {
+        try {
+            const timeData = JSON.parse(savedTime);
+            const now = Date.now();
+            const timeDiff = now - timeData.timestamp;
+            
+            // Если прошло больше 5 минут, считаем данные устаревшими
+            if (timeDiff > 5 * 60 * 1000) {
+                localStorage.removeItem('timeToStart');
+                timeToStartElement.style.display = 'none';
+                return;
+            }
+            
+            // Показываем сохраненное время
+            timeToStartElement.style.display = 'block';
+            timeToStartElement.textContent = `${timeData.hours}ч ${timeData.minutes}м`;
+            
+            // Обновляем статус
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            
+            if (statusDot && statusText) {
+                statusDot.className = 'status-dot waiting';
+                statusText.textContent = 'Ожидание начала';
+                statusText.className = 'status-text waiting';
+            }
+            
+        } catch (error) {
+            console.error('Ошибка восстановления времени до запуска:', error);
+            localStorage.removeItem('timeToStart');
+        }
     }
 }
 
@@ -74,6 +408,20 @@ document.getElementById('login-form').addEventListener('submit', async function(
         return;
     }
     
+    // Проверяем настройки времени работы
+            const startTime = document.getElementById('start-time').value;
+        const endTime = document.getElementById('end-time').value;
+    
+    if (!startTime || !endTime) {
+        showErrorModal('Настройте время работы парсера перед отправкой заявок.');
+        return;
+    }
+    
+    if (!validateTimeInputs()) {
+        showErrorModal('Проверьте корректность настроек времени работы.');
+        return;
+    }
+    
     try {
         // Показываем индикатор прогресса
         const submitBtn = this.querySelector('button[type="submit"]');
@@ -111,13 +459,38 @@ document.getElementById('login-form').addEventListener('submit', async function(
                 return;
             }
             
+            // Если парсер не в рабочем времени, показываем дополнительную информацию
+            if (!data.is_working_hours && data.time_to_start_minutes > 0) {
+                const hours = Math.floor(data.time_to_start_minutes / 60);
+                const minutes = data.time_to_start_minutes % 60;
+                
+                showNotification(
+                    `⏰ Обработка начнется в ${data.start_time} (через ${hours}ч ${minutes}м)`,
+                    'info'
+                );
+            }
+            
             // Небольшая задержка между заявками
             if (i < addedRequests.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
         }
         
-        showNotification(`Все ${addedRequests.length} заявок добавлены в очередь и начали обрабатываться`, 'success');
+        // Проверяем, есть ли информация о времени начала обработки
+        const lastResponse = await fetch('/api/schedule/status');
+        const scheduleStatus = await lastResponse.json();
+        
+        if (scheduleStatus.status === 'waiting' && scheduleStatus.time_to_start_minutes > 0) {
+            const hours = Math.floor(scheduleStatus.time_to_start_minutes / 60);
+            const minutes = scheduleStatus.time_to_start_minutes % 60;
+            
+            showNotification(
+                `✅ Все ${addedRequests.length} заявок добавлены в очередь. Обработка начнется в ${scheduleStatus.settings.start_time} (через ${hours}ч ${minutes}м)`,
+                'success'
+            );
+        } else {
+            showNotification(`✅ Все ${addedRequests.length} заявок добавлены в очередь и начали обрабатываться`, 'success');
+        }
         
         // Очищаем список заявок после успешной отправки
         addedRequests = [];
@@ -369,6 +742,13 @@ function showNotification(message, type) {
         }, 300);
     }, 3000);
 }
+
+// Очистка интервала при уходе со страницы
+window.addEventListener('beforeunload', function() {
+    if (currentTimeInterval) {
+        clearInterval(currentTimeInterval);
+    }
+});
 
 // Обработчик переключателя сбора SVG
 document.getElementById('svg_collection').addEventListener('change', function() {

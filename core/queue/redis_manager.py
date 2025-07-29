@@ -122,6 +122,16 @@ class RedisQueueManager:
             logger.error(f"❌ Ошибка получения завершенных заявок: {e}")
             return []
     
+    def get_pending_requests(self) -> List[Dict[str, Any]]:
+        """Получение списка заявок в очереди (ожидающих обработки)"""
+        try:
+            # Получаем все заявки из очереди (список)
+            queue_data = self.redis_client.lrange(self.queue_key, 0, -1)
+            return [json.loads(data) for data in queue_data]
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения заявок в очереди: {e}")
+            return []
+    
     def clear_queue(self) -> bool:
         """Очистка всей очереди, включая заявки в обработке и завершенные"""
         try:

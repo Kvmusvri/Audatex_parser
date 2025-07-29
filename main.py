@@ -20,6 +20,11 @@ from core.database.requests import (
     save_parser_data_to_db,
     update_json_with_claim_number,
     save_updated_json_to_file,
+    get_schedule_settings,
+    save_schedule_settings,
+    is_time_in_working_hours,
+    get_time_to_start,
+    get_time_to_end,
 )
 from core.parser.output_manager import restore_started_at_from_db, restore_last_updated_from_db, restore_completed_at_from_db
 from core.queue.api_endpoints import router as queue_router
@@ -98,6 +103,10 @@ class SearchRequest(BaseModel):
     login: str
     password: str
     items: List[SearchItem]
+
+class ScheduleSettingsRequest(BaseModel):
+    start_time: str
+    end_time: str
     svg_collection: bool = True
 
 def normalize_paths(record: dict, folder_name: str) -> dict:
@@ -261,6 +270,11 @@ async def queue_monitor(request: Request):
     """Страница мониторинга очереди"""
     return templates.TemplateResponse("queue_monitor.html", {"request": request})
 
+
+@app.get("/success", response_class=HTMLResponse)
+async def success(request: Request):
+    """Страница успешного добавления заявок"""
+    return templates.TemplateResponse("success.html", {"request": request})
 
 @app.get("/history", response_class=HTMLResponse)
 async def history(request: Request):
@@ -781,6 +795,24 @@ async def login(request: Request, username: str = Form(...), password: str = For
                 }
             )
         
+        # Проверяем настройки времени работы парсера
+        async with async_session() as session:
+            settings = await get_schedule_settings(session)
+            
+            # Определяем статус работы парсера
+            is_working_hours = False
+            time_to_start = 0
+            start_time = "09:00"
+            end_time = "18:00"
+            
+            if settings.get('is_active'):
+                start_time = settings['start_time']
+                end_time = settings['end_time']
+                is_working_hours = is_time_in_working_hours(start_time, end_time)
+                
+                if not is_working_hours:
+                    time_to_start = get_time_to_start(start_time)
+        
         # Проверяем подключение к Redis
         if not redis_manager.test_connection():
             return JSONResponse(
@@ -822,13 +854,26 @@ async def login(request: Request, username: str = Form(...), password: str = For
         
         logger.info(f"✅ Заявка успешно добавлена в очередь. Позиция: {queue_length}")
         
+        # Формируем сообщение в зависимости от статуса работы парсера
+        if is_working_hours:
+            message = f"Заявка добавлена в очередь. Номер дела: {claim_number}, VIN: {vin_number}"
+            queue_info = f"Позиция в очереди: {queue_length}. Обработка запущена автоматически."
+        else:
+            hours = time_to_start // 60
+            minutes = time_to_start % 60
+            message = f"Заявка добавлена в очередь. Номер дела: {claim_number}, VIN: {vin_number}"
+            queue_info = f"Позиция в очереди: {queue_length}. Обработка начнется в {start_time} (через {hours}ч {minutes}м)."
+        
         return JSONResponse(
             status_code=200,
             content={
                 "success": True,
-                "message": f"Заявка добавлена в очередь. Номер дела: {claim_number}, VIN: {vin_number}",
+                "message": message,
                 "queue_length": queue_length,
-                "queue_info": f"Позиция в очереди: {queue_length}. Обработка запущена автоматически."
+                "queue_info": queue_info,
+                "is_working_hours": is_working_hours,
+                "start_time": start_time,
+                "time_to_start_minutes": time_to_start
             }
         )
         
@@ -1054,6 +1099,140 @@ async def get_processing_stats():
             "total_completed": 0,
             "total_time": "0м 0с"
         })
+
+
+# API эндпоинты для работы с настройками расписания парсера
+
+@app.get("/api/schedule/settings")
+async def get_schedule_settings_api():
+    """Получает текущие настройки расписания парсера"""
+    try:
+        async with async_session() as session:
+            settings = await get_schedule_settings(session)
+            logger.info(f"📋 Получены настройки расписания: {settings}")
+            return JSONResponse(content=settings)
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения настроек расписания: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Ошибка получения настроек расписания"}
+        )
+
+@app.post("/api/schedule/settings")
+async def save_schedule_settings_api(request: ScheduleSettingsRequest):
+    """Сохраняет настройки расписания парсера"""
+    try:
+        # Валидация времени
+        if not request.start_time or not request.end_time:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Время начала и окончания обязательны"}
+            )
+        
+        # Проверяем формат времени (HH:MM)
+        time_pattern = r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+        if not re.match(time_pattern, request.start_time) or not re.match(time_pattern, request.end_time):
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Неверный формат времени. Используйте HH:MM"}
+            )
+        
+        # Проверяем, что время начала меньше времени окончания
+        start_minutes = int(request.start_time.split(':')[0]) * 60 + int(request.start_time.split(':')[1])
+        end_minutes = int(request.end_time.split(':')[0]) * 60 + int(request.end_time.split(':')[1])
+        
+        if start_minutes >= end_minutes:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Время начала должно быть раньше времени окончания"}
+            )
+        
+        async with async_session() as session:
+            success = await save_schedule_settings(session, request.start_time, request.end_time)
+            
+            if success:
+                # Получаем обновленные настройки
+                settings = await get_schedule_settings(session)
+                logger.info(f"✅ Настройки расписания сохранены: {request.start_time} - {request.end_time}")
+                return JSONResponse(content=settings)
+            else:
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": "Ошибка сохранения настроек"}
+                )
+                
+    except Exception as e:
+        logger.error(f"❌ Ошибка сохранения настроек расписания: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Внутренняя ошибка сервера"}
+        )
+
+@app.get("/api/schedule/status")
+async def get_schedule_status_api():
+    """Получает текущий статус расписания парсера"""
+    try:
+        async with async_session() as session:
+            settings = await get_schedule_settings(session)
+            
+            if not settings.get('is_active'):
+                return JSONResponse(content={
+                    "status": "inactive",
+                    "message": "Парсер неактивен - настройки не заданы",
+                    "current_time": get_moscow_time().strftime('%H:%M'),
+                    "settings": settings
+                })
+            
+            start_time = settings['start_time']
+            end_time = settings['end_time']
+            
+            # Проверяем, находимся ли в рабочем времени
+            is_working = is_time_in_working_hours(start_time, end_time)
+            
+            if is_working:
+                time_to_end = get_time_to_end(end_time)
+                return JSONResponse(content={
+                    "status": "active",
+                    "message": "Парсер активен",
+                    "current_time": get_moscow_time().strftime('%H:%M'),
+                    "time_to_end_minutes": time_to_end,
+                    "settings": settings
+                })
+            else:
+                time_to_start = get_time_to_start(start_time)
+                return JSONResponse(content={
+                    "status": "waiting",
+                    "message": "Ожидание начала работы",
+                    "current_time": get_moscow_time().strftime('%H:%M'),
+                    "time_to_start_minutes": time_to_start,
+                    "settings": settings
+                })
+                
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения статуса расписания: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Ошибка получения статуса расписания"}
+        )
+
+@app.get("/api/queue/status")
+async def get_queue_status_api():
+    """Получает статус очереди заявок"""
+    try:
+        queue_length = redis_manager.get_queue_length()
+        
+        return JSONResponse(content={
+            "total": queue_length,
+            "position": queue_length,  # Позиция последней добавленной заявки
+            "is_processing": queue_processor.is_running if 'queue_processor' in globals() else False
+        })
+                
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения статуса очереди: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Ошибка получения статуса очереди"}
+        )
 
 
 if __name__ == "__main__":

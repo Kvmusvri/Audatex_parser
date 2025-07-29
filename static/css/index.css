@@ -727,4 +727,207 @@ input:checked + .svg-slider:before {
         margin: 20px;
         width: calc(100% - 40px);
     }
+}
+
+/* Стили для секции настройки времени работы */
+.schedule-section {
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: border-color 0.2s ease;
+}
+
+.schedule-section:hover {
+    border-color: #d1d5db;
+}
+
+.schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.schedule-header h3 {
+    margin: 0;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.current-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #3b82f6;
+    color: #ffffff;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+.time-fields {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.time-field {
+    flex: 1;
+    max-width: 120px;
+}
+
+.time-field label {
+    display: block;
+    margin-bottom: 4px;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.time-field input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    background: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.time-field input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.time-field input.error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.time-validation {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.time-validation.success {
+    color: #059669;
+}
+
+.time-validation.error {
+    color: #dc2626;
+}
+
+.schedule-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: #f9fafb;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    position: relative;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-dot.active {
+    background: #10b981;
+}
+
+.status-dot.waiting {
+    background: #f59e0b;
+}
+
+.status-dot.inactive {
+    background: #6b7280;
+}
+
+.status-text {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.status-text.active {
+    color: #059669;
+}
+
+.status-text.waiting {
+    color: #d97706;
+}
+
+.status-text.inactive {
+    color: #6b7280;
+}
+
+.time-to-start {
+    margin-left: auto;
+    padding: 4px 8px;
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    border: 1px solid #f59e0b;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .time-fields {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .time-field {
+        max-width: none;
+    }
+    
+    .schedule-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .schedule-status {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .time-to-start {
+        margin-left: 0;
+        margin-top: 4px;
+        width: 100%;
+        text-align: center;
+    }
 } 

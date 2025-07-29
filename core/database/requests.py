@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from core.database.models import (
     ParserCarRequestStatus, ParserCarDetailGroupZone, 
-    ParserCarDetail, ParserCarOptions, DatabaseSession, get_moscow_time
+    ParserCarDetail, ParserCarOptions, ParserScheduleSettings, DatabaseSession, get_moscow_time
 )
 
 logger = logging.getLogger(__name__)
@@ -357,8 +357,147 @@ async def save_updated_json_to_file(json_data: Dict[str, Any], file_path: str) -
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(json_data, f, ensure_ascii=False, indent=2)
-        logger.info(f"✅ JSON сохранен в файл: {file_path}")
+        logger.info(f"✅ JSON успешно обновлен и сохранен: {file_path}")
         return True
     except Exception as e:
-        logger.error(f"❌ Ошибка сохранения JSON в файл: {e}")
+        logger.error(f"❌ Ошибка сохранения JSON: {e}")
         return False
+
+# Функции для работы с настройками расписания парсера
+
+async def get_schedule_settings(session: AsyncSession) -> Dict[str, Any]:
+    """Получает текущие настройки расписания парсера"""
+    try:
+        result = await session.execute(
+            select(ParserScheduleSettings)
+            .where(ParserScheduleSettings.is_active == True)
+            .order_by(ParserScheduleSettings.updated_at.desc())
+            .limit(1)
+        )
+        
+        settings = result.scalar_one_or_none()
+        
+        if settings:
+            return {
+                'start_time': settings.start_time,
+                'end_time': settings.end_time,
+                'is_active': settings.is_active,
+                'updated_at': settings.updated_at.isoformat() if settings.updated_at else None
+            }
+        else:
+            # Возвращаем дефолтные настройки если нет сохраненных
+            return {
+                'start_time': '09:00',
+                'end_time': '18:00',
+                'is_active': False,
+                'updated_at': None
+            }
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения настроек расписания: {e}")
+        return {
+            'start_time': '09:00',
+            'end_time': '18:00',
+            'is_active': False,
+            'updated_at': None
+        }
+
+async def save_schedule_settings(session: AsyncSession, start_time: str, end_time: str) -> bool:
+    """Сохраняет настройки расписания парсера"""
+    try:
+        # Деактивируем все предыдущие настройки
+        await session.execute(
+            ParserScheduleSettings.__table__.update()
+            .where(ParserScheduleSettings.is_active == True)
+            .values(is_active=False)
+        )
+        
+        # Создаем новые настройки
+        new_settings = ParserScheduleSettings(
+            start_time=start_time,
+            end_time=end_time,
+            is_active=True
+        )
+        
+        session.add(new_settings)
+        await session.commit()
+        
+        logger.info(f"✅ Настройки расписания сохранены: {start_time} - {end_time}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка сохранения настроек расписания: {e}")
+        await session.rollback()
+        return False
+
+def is_time_in_working_hours(start_time: str, end_time: str) -> bool:
+    """Проверяет, находится ли текущее время в рабочем диапазоне"""
+    try:
+        moscow_time = get_moscow_time()
+        current_time = moscow_time.strftime('%H:%M')
+        
+        # Конвертируем время в минуты для сравнения
+        def time_to_minutes(time_str: str) -> int:
+            hours, minutes = map(int, time_str.split(':'))
+            return hours * 60 + minutes
+        
+        current_minutes = time_to_minutes(current_time)
+        start_minutes = time_to_minutes(start_time)
+        end_minutes = time_to_minutes(end_time)
+        
+        if start_minutes <= end_minutes:
+            # Обычный случай: 09:00 - 18:00
+            return start_minutes <= current_minutes <= end_minutes
+        else:
+            # Переход через полночь: 22:00 - 06:00
+            return current_minutes >= start_minutes or current_minutes <= end_minutes
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка проверки рабочего времени: {e}")
+        return False
+
+def get_time_to_start(start_time: str) -> int:
+    """Возвращает количество минут до начала работы"""
+    try:
+        moscow_time = get_moscow_time()
+        current_time = moscow_time.strftime('%H:%M')
+        
+        def time_to_minutes(time_str: str) -> int:
+            hours, minutes = map(int, time_str.split(':'))
+            return hours * 60 + minutes
+        
+        current_minutes = time_to_minutes(current_time)
+        start_minutes = time_to_minutes(start_time)
+        
+        if current_minutes < start_minutes:
+            return start_minutes - current_minutes
+        else:
+            # До следующего дня
+            return (24 * 60) - current_minutes + start_minutes
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка расчета времени до начала: {e}")
+        return 0
+
+def get_time_to_end(end_time: str) -> int:
+    """Возвращает количество минут до окончания работы"""
+    try:
+        moscow_time = get_moscow_time()
+        current_time = moscow_time.strftime('%H:%M')
+        
+        def time_to_minutes(time_str: str) -> int:
+            hours, minutes = map(int, time_str.split(':'))
+            return hours * 60 + minutes
+        
+        current_minutes = time_to_minutes(current_time)
+        end_minutes = time_to_minutes(end_time)
+        
+        if current_minutes <= end_minutes:
+            return end_minutes - current_minutes
+        else:
+            # До следующего дня
+            return (24 * 60) - current_minutes + end_minutes
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка расчета времени до окончания: {e}")
+        return 0

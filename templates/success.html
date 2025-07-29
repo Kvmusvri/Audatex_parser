@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Успешно</title>
+    <link rel="stylesheet" href="/static/css/success.css">
+    <link rel="icon" href="data:," />
+</head>
+<body>
+    <div class="container">
+        <div class="success-wrapper">
+            <div class="success-icon">✅</div>
+            <h1>Заявки успешно добавлены</h1>
+            
+            <div class="status-info">
+                <div id="processing-status" class="status-message">
+                    Заявки добавлены в очередь и обрабатываются...
+                </div>
+                
+                <div id="waiting-status" class="status-message waiting" style="display: none;">
+                    <div class="waiting-icon">⏰</div>
+                    <div class="waiting-text">
+                        <strong>Обработка начнется в <span id="start-time">--:--</span></strong>
+                        <div class="time-remaining">Осталось: <span id="time-remaining">--ч --м</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="queue-info">
+                <div class="info-item">
+                    <span class="label">Позиция в очереди:</span>
+                    <span class="value" id="queue-position">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Всего заявок в очереди:</span>
+                    <span class="value" id="queue-length">-</span>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button onclick="window.location.href='/'" class="btn-primary">Вернуться на главную</button>
+                <button onclick="window.location.href='/queue'" class="btn-secondary">Мониторинг очереди</button>
+                <button onclick="window.location.href='/history'" class="btn-secondary">История</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/success.js"></script>
+</body>
+</html> 

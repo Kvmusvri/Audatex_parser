@@ -122,6 +122,7 @@ async def get_queue_requests():
     """Получение списка заявок в очереди"""
     try:
         queue_length = redis_manager.get_queue_length()
+        pending_requests = redis_manager.get_pending_requests()
         processing_requests = redis_manager.get_processing_requests()
         completed_requests = redis_manager.get_completed_requests()
         
@@ -130,8 +131,10 @@ async def get_queue_requests():
             message="Список заявок получен",
             data={
                 "queue_length": queue_length,
+                "pending_count": len(pending_requests),
                 "processing_count": len(processing_requests),
                 "completed_count": len(completed_requests),
+                "pending_requests": pending_requests,
                 "processing_requests": processing_requests,
                 "completed_requests": completed_requests
             }

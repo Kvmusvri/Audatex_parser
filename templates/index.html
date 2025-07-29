@@ -33,6 +33,36 @@
                     <input type="text" id="vin_number" name="vin_number">
                 </div>
                 
+                <!-- Секция настройки времени работы -->
+                <div class="schedule-section">
+                    <div class="schedule-header">
+                        <h3>Время работы парсера</h3>
+                        <div class="current-time">
+                            <span id="current-time">--:--</span>
+                        </div>
+                    </div>
+                    
+                    <div class="time-fields">
+                        <div class="time-field">
+                            <label for="start-time">Начало</label>
+                            <input type="time" id="start-time" name="start_time" required>
+                            <div id="start-validation" class="time-validation"></div>
+                        </div>
+                        
+                        <div class="time-field">
+                            <label for="end-time">Окончание</label>
+                            <input type="time" id="end-time" name="end_time" required>
+                            <div id="end-validation" class="time-validation"></div>
+                        </div>
+                    </div>
+                    
+                                    <div class="schedule-status">
+                    <div id="status-dot" class="status-dot inactive"></div>
+                    <span id="status-text" class="status-text inactive">Парсер неактивен</span>
+                    <div id="time-to-start" class="time-to-start" style="display: none;"></div>
+                </div>
+                </div>
+                
                 <!-- Переключатель сбора SVG -->
                 <div class="form-group svg-toggle-group">
                     <label class="svg-toggle-label">

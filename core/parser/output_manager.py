@@ -2,7 +2,6 @@
 import logging
 import os
 import json
-import datetime
 from datetime import datetime
 import pytz
 from core.database.models import ParserCarRequestStatus, DatabaseSession, get_moscow_time
@@ -47,7 +46,7 @@ def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path,
         logger.info(f"💾 Сохраняем промежуточный JSON в: {json_path}")
     else:
         # Для финального сохранения используем timestamp
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         json_path = os.path.join(data_dir, f"data_{timestamp}.json")
         logger.info(f"💾 Сохраняем финальный JSON в: {json_path}")
     
@@ -61,22 +60,45 @@ def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path,
         if dt is None:
             return None
         
-        # Если время без часового пояса, считаем его московским
-        if dt.tzinfo is None:
-            moscow_tz = pytz.timezone('Europe/Moscow')
-            dt = moscow_tz.localize(dt)
-        elif dt.tzinfo.utcoffset(dt).total_seconds() == 0:
-            # Если время в UTC, конвертируем в московское
-            moscow_tz = pytz.timezone('Europe/Moscow')
-            dt = dt.astimezone(moscow_tz)
+        # Добавляем подробное логирование для диагностики
+        logger.debug(f"🔍 format_time_with_timezone получил: {dt} (тип: {type(dt)})")
         
-        # Форматируем в московском времени
-        return dt.strftime("%Y-%m-%d %H:%M:%S")
+        # Если передана строка, пытаемся преобразовать в datetime
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
+                logger.debug(f"✅ Строка времени преобразована: {dt}")
+            except Exception as e:
+                logger.warning(f"⚠️ Не удалось преобразовать строку времени '{dt}': {e}")
+                return None
+        
+        # Проверяем, что это объект datetime
+        if not isinstance(dt, datetime):
+            logger.warning(f"⚠️ Неожиданный тип времени: {type(dt)}, значение: {dt}")
+            return None
+        
+        try:
+            # Если время без часового пояса, считаем его московским
+            if dt.tzinfo is None:
+                moscow_tz = pytz.timezone('Europe/Moscow')
+                dt = moscow_tz.localize(dt)
+            elif dt.tzinfo.utcoffset(dt).total_seconds() == 0:
+                # Если время в UTC, конвертируем в московское
+                moscow_tz = pytz.timezone('Europe/Moscow')
+                dt = dt.astimezone(moscow_tz)
+            
+            # Форматируем в московском времени
+            result = dt.strftime("%Y-%m-%d %H:%M:%S")
+            logger.debug(f"✅ Время отформатировано: {result}")
+            return result
+        except Exception as e:
+            logger.error(f"❌ Ошибка при форматировании времени {dt}: {e}")
+            return None
     
     metadata = {
         "started_at": format_time_with_timezone(started_at),
         "completed_at": format_time_with_timezone(completed_at),
-        "last_updated": format_time_with_timezone(datetime.datetime.now()),
+        "last_updated": format_time_with_timezone(datetime.now()),
         "json_completed": json_completed,
         "db_saved": db_saved,
         "total_zones": len(zone_data),

@@ -13,7 +13,7 @@ import pickle
 import psutil
 import os
 import json
-import datetime
+from datetime import datetime
 from lxml import etree
 import urllib3
 import copy
@@ -62,6 +62,24 @@ logger = logging.getLogger(__name__)
 # Основная функция
 def search_and_extract(driver, claim_number, vin_number, svg_collection=True, started_at=None):
     logger.info(f"🎛️ Флаг сбора SVG: {'ВКЛЮЧЕН' if svg_collection else 'ОТКЛЮЧЕН'}")
+    
+    # Проверяем и нормализуем started_at
+    logger.info(f"🔍 search_and_extract получил started_at: {started_at} (тип: {type(started_at)})")
+    
+    if started_at is None:
+        started_at = datetime.now()
+        logger.info(f"✅ started_at установлен как текущее время: {started_at}")
+    elif isinstance(started_at, str):
+        try:
+            started_at = datetime.fromisoformat(started_at.replace('Z', '+00:00'))
+            logger.info(f"✅ started_at преобразован из строки: {started_at}")
+        except Exception as e:
+            logger.warning(f"⚠️ Не удалось преобразовать started_at '{started_at}': {e}")
+            started_at = datetime.now()
+            logger.info(f"✅ started_at установлен как текущее время после ошибки: {started_at}")
+    else:
+        logger.info(f"✅ started_at уже правильного типа: {started_at}")
+    
     zone_data = []
     if not wait_for_table(driver):
         return {"error": "Таблица не загрузилась"}
@@ -73,8 +91,9 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
         return {"error": "Не удалось открыть меню действий"}
     if not open_task(driver):
         return {"error": "Не удалось открыть задачу"}
-    WebDriverWait(driver, 8).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
-    time.sleep(0.5)
+    logger.info("Ожидание загрузки страницы после открытия задачи")
+    WebDriverWait(driver, 30, poll_frequency=0.5).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
+    time.sleep(1)
     current_url = driver.current_url
     logger.info(f"Текущий URL: {current_url}")
     try:
@@ -98,12 +117,13 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
     # Переходим на страницу повреждений для main screenshot
     logger.info(f"Переход на URL повреждений для main screenshot: {base_url}")
     driver.get(base_url)
-    WebDriverWait(driver, 8).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
-    time.sleep(0.5)
+    logger.info("Ожидание загрузки страницы повреждений")
+    WebDriverWait(driver, 30, poll_frequency=0.5).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
+    time.sleep(1)
     if not switch_to_frame_and_confirm(driver):
         driver.switch_to.default_content()
         return {"error": f"Не удалось переключиться на фрейм {IFRAME_ID}"}
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     main_screenshot_relative, main_svg_relative = save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, claim_number, vin_number, svg_collection)
     
     # Исправляем проблему с None при ошибке скриншота
@@ -125,8 +145,9 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
     logger.info("🔄 Возвращаемся к странице повреждений для сбора SVG")
     logger.info(f"Переход на URL повреждений для SVG: {base_url}")
     driver.get(base_url)
-    WebDriverWait(driver, 8).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
-    time.sleep(0.5)
+    logger.info("Ожидание загрузки страницы повреждений для SVG")
+    WebDriverWait(driver, 30, poll_frequency=0.5).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
+    time.sleep(1)
     if not switch_to_frame_and_confirm(driver):
         driver.switch_to.default_content()
         return {"error": f"Не удалось переключиться на фрейм {IFRAME_ID} для SVG"}
@@ -147,7 +168,7 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
     intermediate_json_path = save_data_to_json(
         vin_number, [], main_screenshot_relative, main_svg_relative, 
         "", "", data_dir, claim_number, options_result, vin_status,
-        started_at=started_at, completed_at=datetime.datetime.now(), is_intermediate=True
+        started_at=started_at, completed_at=datetime.now(), is_intermediate=True
     )
     if intermediate_json_path:
         logger.info(f"✅ Промежуточный JSON сохранен: {intermediate_json_path}")
@@ -171,7 +192,7 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
             intermediate_json_path = save_data_to_json(
                 vin_number, zone_data, main_screenshot_relative, main_svg_relative, 
                 "", "", data_dir, claim_number, options_result, vin_status,
-                started_at=started_at, completed_at=datetime.datetime.now(), is_intermediate=True
+                started_at=started_at, completed_at=datetime.now(), is_intermediate=True
             )
             if intermediate_json_path:
                 logger.info(f"✅ Промежуточный JSON обновлен после зоны {zone.get('title', 'Unknown')}")
@@ -190,7 +211,7 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
     zones_table = create_zones_table(zone_data)
     
     # Получаем время завершения
-    completed_at = datetime.datetime.now()
+    completed_at = datetime.now()
     logger.info(f"🕐 Парсер завершен в: {completed_at.strftime('%H:%M:%S')}")
     
     json_path = save_data_to_json(

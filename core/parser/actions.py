@@ -254,37 +254,64 @@ def retry_on_failure(max_attempts: int = 2, delay: float = 0.5):
 @retry_on_failure(max_attempts=2, delay=0.5)
 def wait_for_table(driver: WebDriver, selector: Optional[str] = None) -> bool:
     """
-    Ожидание загрузки таблицы с человеческим поведением.
+    Ожидание загрузки таблицы с явным ожиданием элементов.
     """
     # Добавляем человеческое поведение перед ожиданием таблицы
     add_human_behavior(driver)
     
     selectors_to_check = [selector] if selector else [OPEN_TABLE_SELECTOR, OUTGOING_TABLE_SELECTOR]
-    timeout = 8  # Уменьшен с TIMEOUT
-
+    
+    # Увеличиваем таймаут для медленного сайта
+    timeout = 60  # 60 секунд для полной загрузки
+    
     for sel in selectors_to_check:
         try:
-            WebDriverWait(driver, timeout, poll_frequency=0.3).until(
+            logger.info(f"Ожидание таблицы с селектором: {sel}")
+            
+            # Ждем появления элемента
+            table_element = WebDriverWait(driver, timeout, poll_frequency=0.5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, sel))
             )
-            logger.info(f"Таблица '{sel}' загружена")
-            return True
+            
+            # Дополнительно ждем, что элемент стал видимым и интерактивным
+            WebDriverWait(driver, 10, poll_frequency=0.5).until(
+                EC.visibility_of(table_element)
+            )
+            
+            # Проверяем, что таблица не пустая (есть строки или сообщение о пустоте)
+            try:
+                # Ждем либо строки таблицы, либо сообщения о пустоте
+                WebDriverWait(driver, 10, poll_frequency=0.5).until(
+                    lambda d: (
+                        len(d.find_elements(By.CSS_SELECTOR, ROW_SELECTOR)) > 0 or
+                        len(d.find_elements(By.CSS_SELECTOR, EMPTY_TABLE_TEXT_SELECTOR)) > 0
+                    )
+                )
+                logger.info(f"✅ Таблица '{sel}' полностью загружена и готова")
+                return True
+            except TimeoutException:
+                logger.warning(f"⚠️ Таблица '{sel}' найдена, но содержимое не загрузилось")
+                # Возвращаем True, так как таблица есть, просто может быть пустая
+                return True
+                
         except TimeoutException:
+            logger.warning(f"⚠️ Таблица с селектором '{sel}' не найдена за {timeout} секунд")
             continue
 
-    logger.error("Таблицы не загрузились")
+    logger.error("❌ Ни одна из таблиц не загрузилась")
     return False
 
 
 @retry_on_failure(max_attempts=2, delay=0.5)
 def click_cansel_button(driver: WebDriver) -> bool:
     """
-    Нажатие кнопки отмены с человеческим поведением.
+    Нажатие кнопки отмены с явным ожиданием элемента.
     """
     selector = "#confirm > div > div > div.modal-footer > button"
     
     try:
-        button = WebDriverWait(driver, 5, poll_frequency=0.3).until(
+        # Ждем появления кнопки
+        button = WebDriverWait(driver, 10, poll_frequency=0.5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
         )
         
@@ -295,38 +322,40 @@ def click_cansel_button(driver: WebDriver) -> bool:
         success = human_like_click(driver, button, use_actions=True)
         
         if success:
-            logger.info("Кнопка подтверждения нажата")
+            logger.info("✅ Кнопка подтверждения нажата")
             return True
         else:
-            logger.error("Не удалось нажать кнопку подтверждения")
+            logger.error("❌ Не удалось нажать кнопку подтверждения")
             return False
-        return True
         
     except TimeoutException:
-        logger.info("Кнопка подтверждения не найдена")
+        logger.info("ℹ️ Кнопка подтверждения не найдена (это нормально)")
         return True  # Это нормально
     except Exception as e:
-        logger.error(f"Ошибка клика кнопки подтверждения: {e}")
+        logger.error(f"❌ Ошибка клика кнопки подтверждения: {e}")
         return False
 
 
 @retry_on_failure(max_attempts=2, delay=0.5)
 def click_request_type_button(driver: WebDriver, req_type: str) -> bool:
     """
-    Переключение между типами заявок с человеческим поведением.
+    Переключение между типами заявок с явным ожиданием элементов.
     """
     try:
         if req_type == "open":
-            more_views_link = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "#view-link-worklistgrid_custom_open"))
-            )
+            selector = "#view-link-worklistgrid_custom_open"
         elif req_type == "outgoing":
-            more_views_link = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "#view-link-worklistgrid_custom_sent"))
-            )
+            selector = "#view-link-worklistgrid_custom_sent"
         else:
-            logger.error(f"Неизвестный тип заявки: {req_type}")
+            logger.error(f"❌ Неизвестный тип заявки: {req_type}")
             return False
+        
+        logger.info(f"Ожидание кнопки типа заявки: {req_type}")
+        
+        # Ждем появления и кликабельности кнопки
+        more_views_link = WebDriverWait(driver, 15, poll_frequency=0.5).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+        )
         
         # Добавляем человеческое поведение
         add_human_behavior(driver)
@@ -335,14 +364,14 @@ def click_request_type_button(driver: WebDriver, req_type: str) -> bool:
         success = human_like_click(driver, more_views_link, use_actions=True)
         
         if success:
-            logger.info(f"Клик по кнопке {req_type}")
+            logger.info(f"✅ Клик по кнопке {req_type}")
             return True
         else:
-            logger.error(f"Не удалось кликнуть по кнопке {req_type}")
+            logger.error(f"❌ Не удалось кликнуть по кнопке {req_type}")
             return False
         
     except TimeoutException as e:
-        logger.error(f"Ошибка клика по кнопке {req_type}: {str(e)}")
+        logger.error(f"❌ Ошибка клика по кнопке {req_type}: {str(e)}")
         return False
 
 
@@ -376,10 +405,11 @@ def search_in_table(driver: WebDriver, search_value: str, search_type: str) -> b
         logger.info(f"Введён {search_type}: {search_value}")
         human_like_delay(0.8, 1.2)  # Человеческая задержка
         
-        WebDriverWait(driver, 5).until(
+        logger.info(f"Ожидание результатов поиска по {search_type}")
+        WebDriverWait(driver, 15, poll_frequency=0.5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, ROW_SELECTOR))
         )
-        logger.info(f"Найдены строки по {search_type}")
+        logger.info(f"✅ Найдены строки по {search_type}")
         return True
         
     except TimeoutException:
@@ -390,7 +420,7 @@ def search_in_table(driver: WebDriver, search_value: str, search_type: str) -> b
 @retry_on_failure(max_attempts=2, delay=0.5)
 def click_more_icon(driver: WebDriver) -> bool:
     """
-    Нажатие иконки "Еще" с человеческим поведением. Пробует селекторы для исходящих и открытых дел.
+    Нажатие иконки "Еще" с явным ожиданием элементов.
     """
     # Селекторы для разных типов таблиц
     selectors = [
@@ -400,7 +430,10 @@ def click_more_icon(driver: WebDriver) -> bool:
     
     for i, selector in enumerate(selectors):
         try:
-            more_icon = WebDriverWait(driver, 4).until(
+            logger.info(f"Ожидание иконки 'ещё' с селектором: {selector}")
+            
+            # Ждем появления и кликабельности иконки
+            more_icon = WebDriverWait(driver, 15, poll_frequency=0.5).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
             )
             
@@ -412,35 +445,44 @@ def click_more_icon(driver: WebDriver) -> bool:
             
             if success:
                 table_type = "исходящих" if i == 0 else "открытых"
-                logger.info(f"Клик по иконке 'ещё' в таблице {table_type} дел с человеческим поведением")
+                logger.info(f"✅ Клик по иконке 'ещё' в таблице {table_type} дел")
                 return True
         except TimeoutException:
+            logger.warning(f"⚠️ Иконка 'ещё' не найдена с селектором: {selector}")
             continue
     
-    logger.error("Ошибка клика по иконке 'ещё': не найдена ни в одной таблице")
+    logger.error("❌ Ошибка клика по иконке 'ещё': не найдена ни в одной таблице")
     return False
 
 
 @retry_on_failure(max_attempts=2, delay=0.5)
 def open_task(driver: WebDriver) -> bool:
     """
-    Открытие задачи с человеческим поведением для обхода детекции.
+    Открытие задачи с явным ожиданием элемента.
     """
     try:
         # Добавляем человеческое поведение перед открытием задачи
         add_human_behavior(driver)
         
-        open_task = WebDriverWait(driver, 8).until(
+        logger.info("Ожидание кнопки 'openTask'")
+        
+        # Ждем появления и кликабельности кнопки
+        open_task = WebDriverWait(driver, 15, poll_frequency=0.5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "#openTask"))
         )
         
         # Используем человеческий клик
-        human_like_click(driver, open_task, use_actions=True)
+        success = human_like_click(driver, open_task, use_actions=True)
         
-        logger.info("Кнопка 'openTask' нажата с человеческим поведением")
-        return True
+        if success:
+            logger.info("✅ Кнопка 'openTask' нажата")
+            return True
+        else:
+            logger.error("❌ Не удалось нажать кнопку 'openTask'")
+            return False
+            
     except TimeoutException as e:
-        logger.error(f"Ошибка клика по openTask: {str(e)}")
+        logger.error(f"❌ Ошибка клика по openTask: {str(e)}")
         return False
 
 
@@ -454,13 +496,14 @@ def switch_to_frame_and_confirm(driver: WebDriver) -> bool:
         add_human_behavior(driver)
         
         # Ждём полной загрузки страницы
-        WebDriverWait(driver, 5).until(
+        logger.info("Ожидание полной загрузки страницы")
+        WebDriverWait(driver, 30, poll_frequency=0.5).until(
             lambda d: d.execute_script("return document.readyState === 'complete'")
         )
-        logger.info("Страница полностью загружена")
+        logger.info("✅ Страница полностью загружена")
         
         # Дополнительная пауза для загрузки динамического контента
-        time.sleep(2)
+        time.sleep(3)
         
         # Проверяем наличие iframe в DOM
         iframe_exists = driver.execute_script(f"""
@@ -488,16 +531,18 @@ def switch_to_frame_and_confirm(driver: WebDriver) -> bool:
         logger.info(f"Iframe {IFRAME_ID} найден в DOM, переключаемся...")
         
         # Переключаемся на iframe с увеличенным таймаутом
-        WebDriverWait(driver, 5).until(
+        logger.info(f"Ожидание готовности iframe: {IFRAME_ID}")
+        WebDriverWait(driver, 30, poll_frequency=0.5).until(
             EC.frame_to_be_available_and_switch_to_it((By.ID, IFRAME_ID))
         )
         logger.info(f"✅ Успешно переключились на фрейм: {IFRAME_ID}")
         
         # Ждём загрузки содержимого iframe
-        time.sleep(1)
+        time.sleep(2)
         
         try:
-            confirm_button = WebDriverWait(driver, 8).until(
+            logger.info("Ожидание кнопки подтверждения в iframe")
+            confirm_button = WebDriverWait(driver, 15, poll_frequency=0.5).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, ".btn.btn-confirm"))
             )
             
@@ -505,12 +550,12 @@ def switch_to_frame_and_confirm(driver: WebDriver) -> bool:
             success = human_like_click(driver, confirm_button, use_actions=True)
             
             if success:
-                logger.info("Кнопка подтверждения в фрейме нажата с человеческим поведением")
+                logger.info("✅ Кнопка подтверждения в фрейме нажата")
                 time.sleep(0.5)
             else:
-                logger.warning("Не удалось нажать кнопку подтверждения в фрейме")
+                logger.warning("⚠️ Не удалось нажать кнопку подтверждения в фрейме")
         except TimeoutException:
-            logger.info("Кнопка подтверждения в фрейме не найдена (это нормально)")
+            logger.info("ℹ️ Кнопка подтверждения в фрейме не найдена (это нормально)")
         
         return True
         
@@ -533,10 +578,11 @@ def switch_to_frame_and_confirm(driver: WebDriver) -> bool:
 @retry_on_failure(max_attempts=2, delay=0.5)
 def click_breadcrumb(driver: WebDriver) -> bool:
     """
-    Нажатие breadcrumb с человеческим поведением.
+    Нажатие breadcrumb с явным ожиданием элемента.
     """
     try:
-        breadcrumb = WebDriverWait(driver, 5).until(
+        logger.info("Ожидание breadcrumb элемента")
+        breadcrumb = WebDriverWait(driver, 15, poll_frequency=0.5).until(
             EC.element_to_be_clickable((By.ID, "breadcrumb-navigation-title"))
         )
         
@@ -547,14 +593,14 @@ def click_breadcrumb(driver: WebDriver) -> bool:
         success = human_like_click(driver, breadcrumb, use_actions=True)
         
         if success:
-            logger.info("Клик по breadcrumb с человеческим поведением")
-            time.sleep(0.3)  # Уменьшено с 0.5
+            logger.info("✅ Клик по breadcrumb выполнен")
+            time.sleep(0.3)
             return True
         else:
-            logger.error("Не удалось нажать breadcrumb")
+            logger.error("❌ Не удалось нажать breadcrumb")
             return False
     except TimeoutException as e:
-        logger.error(f"Ошибка клика по breadcrumb: {str(e)}")
+        logger.error(f"❌ Ошибка клика по breadcrumb: {str(e)}")
         return False
 
 
@@ -619,18 +665,19 @@ def get_vin_status(driver: WebDriver) -> str:
         vin_query_id = "root.task.basicClaimData.vehicle.vehicleIdentification.VINQuery-VINQueryButton"
         vin_lite_id = "root.task.basicClaimData.vehicle.vehicleIdentification.VINQuery-vinDecoderButton"
         
-        # Ищем кнопки с небольшим ожиданием
-        wait = WebDriverWait(driver, 5)
+        # Ищем кнопки с явным ожиданием
+        wait = WebDriverWait(driver, 15, poll_frequency=0.5)
         
         vin_query_enabled = False
         vin_lite_enabled = False
         
         try:
+            logger.info("Ожидание кнопки VIN Запрос")
             vin_query_button = wait.until(EC.presence_of_element_located((By.ID, vin_query_id)))
             vin_query_enabled = vin_query_button.is_enabled()
             logger.info(f"📋 VIN Запрос: {'активна' if vin_query_enabled else 'неактивна'}")
         except TimeoutException:
-            logger.warning("❌ Кнопка VIN Запрос не найдена")
+            logger.warning("⚠️ Кнопка VIN Запрос не найдена")
         
         try:
             vin_lite_button = driver.find_element(By.ID, vin_lite_id)

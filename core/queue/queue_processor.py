@@ -6,7 +6,10 @@ import time
 
 from core.queue.redis_manager import redis_manager
 from core.parser.parser import login_audatex
-from core.database.requests import save_parser_data_to_db, update_json_with_claim_number, save_updated_json_to_file
+from core.database.requests import (
+    save_parser_data_to_db, update_json_with_claim_number, save_updated_json_to_file,
+    get_schedule_settings, is_time_in_working_hours, get_time_to_start
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +50,28 @@ class QueueProcessor:
                     continue
                 
                 logger.info(f"📋 Заявок в очереди: {queue_length}")
+                
+                # Проверяем настройки времени работы парсера
+                from core.database.models import async_session
+                async with async_session() as session:
+                    settings = await get_schedule_settings(session)
+                    
+                    if settings.get('is_active'):
+                        start_time = settings['start_time']
+                        end_time = settings['end_time']
+                        
+                        # Проверяем, находимся ли в рабочем времени
+                        if not is_time_in_working_hours(start_time, end_time):
+                            time_to_start = get_time_to_start(start_time)
+                            hours = time_to_start // 60
+                            minutes = time_to_start % 60
+                            
+                            logger.info(f"⏰ Парсер работает с {start_time} до {end_time}. "
+                                       f"До начала работы осталось {hours}ч {minutes}м. Ожидание...")
+                            
+                            # Ждем 1 минуту перед следующей проверкой
+                            await asyncio.sleep(60)
+                            continue
                 
                 # Берем следующую заявку
                 request_data = redis_manager.get_next_request()
@@ -124,6 +149,30 @@ class QueueProcessor:
         finally:
             # Очищаем ссылку на текущую задачу парсера
             self.current_parser_task = None
+            
+            # Проверяем время работы после обработки заявки
+            try:
+                from core.database.models import async_session
+                async with async_session() as session:
+                    settings = await get_schedule_settings(session)
+                    
+                    if settings.get('is_active'):
+                        start_time = settings['start_time']
+                        end_time = settings['end_time']
+                        
+                        # Проверяем, не вышли ли мы за пределы рабочего времени
+                        if not is_time_in_working_hours(start_time, end_time):
+                            time_to_start = get_time_to_start(start_time)
+                            hours = time_to_start // 60
+                            minutes = time_to_start % 60
+                            
+                            logger.info(f"⏰ Рабочее время закончилось. Парсер работает с {start_time} до {end_time}. "
+                                       f"Следующая обработка начнется через {hours}ч {minutes}м.")
+                            
+                            # Останавливаем обработку до следующего рабочего времени
+                            self.stop_requested = True
+            except Exception as e:
+                logger.error(f"❌ Ошибка проверки времени работы: {e}")
     
     async def _run_parser(self, claim_number: str, vin_number: str, svg_collection: bool, username: str, password: str, started_at: datetime = None) -> Optional[Dict[str, Any]]:
         """Запуск парсера для заявки"""
