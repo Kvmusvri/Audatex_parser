@@ -73,19 +73,20 @@ class QueueProcessor:
         logger.info(f"🔄 Обработка заявки: {claim_number} | VIN: {vin_number}")
         
         try:
-            # Запускаем парсер
-            started_at = datetime.now()
+            # Запускаем парсер с московским временем
+            from core.database.models import get_moscow_time
+            started_at = get_moscow_time()
             
             # Создаем задачу для парсера
             self.current_parser_task = asyncio.create_task(
-                self._run_parser(claim_number, vin_number, svg_collection, username, password)
+                self._run_parser(claim_number, vin_number, svg_collection, username, password, started_at)
             )
             
             # Ждем завершения без таймаута
             try:
                 result = await self.current_parser_task
                 
-                completed_at = datetime.now()
+                completed_at = get_moscow_time()
                 duration = (completed_at - started_at).total_seconds()
                 
                 if result:
@@ -124,11 +125,11 @@ class QueueProcessor:
             # Очищаем ссылку на текущую задачу парсера
             self.current_parser_task = None
     
-    async def _run_parser(self, claim_number: str, vin_number: str, svg_collection: bool, username: str, password: str) -> Optional[Dict[str, Any]]:
+    async def _run_parser(self, claim_number: str, vin_number: str, svg_collection: bool, username: str, password: str, started_at: datetime = None) -> Optional[Dict[str, Any]]:
         """Запуск парсера для заявки"""
         try:
             # Запускаем парсер с учетными данными
-            result = await login_audatex(username, password, claim_number, vin_number, svg_collection)
+            result = await login_audatex(username, password, claim_number, vin_number, svg_collection, started_at)
             return result
             
         except Exception as e:

@@ -21,6 +21,7 @@ from core.database.requests import (
     update_json_with_claim_number,
     save_updated_json_to_file,
 )
+from core.parser.output_manager import restore_started_at_from_db, restore_last_updated_from_db, restore_completed_at_from_db
 from core.queue.api_endpoints import router as queue_router
 from core.queue.redis_manager import redis_manager
 
@@ -320,16 +321,77 @@ async def history(request: Request):
                 options_success = metadata.get("options_success", False) if metadata else False
                 total_zones = len(json_data.get("zone_data", [])) if json_data else 0
                 
+                # Восстанавливаем started_at из БД если он null или неправильный
+                should_restore_started = (started_at is None or started_at == "null" or started_at == "None" or started_at == "")
+                
+                # Также проверяем, если время есть, но оно на 3 часа меньше (признак неправильного времени)
+                if not should_restore_started and started_at:
+                    try:
+                        # Парсим время из JSON
+                        json_time = datetime.strptime(started_at, "%Y-%m-%d %H:%M:%S")
+                        # Проверяем, что время не слишком старое (признак неправильного времени)
+                        current_time = datetime.now()
+                        time_diff = (current_time - json_time).total_seconds()
+                        if time_diff > 86400:  # Если разница больше 24 часов
+                            should_restore_started = True
+                            logger.info(f"🔍 Время в JSON слишком старое для {claim_number}_{vin}: {started_at}")
+                    except:
+                        should_restore_started = True
+                
+                # Восстанавливаем completed_at из БД если он null
+                should_restore_completed = (completed_at is None or completed_at == "null" or completed_at == "None" or completed_at == "")
+                
+                # Восстанавливаем last_updated из БД если он null
+                should_restore_last_updated = (last_updated is None or last_updated == "null" or last_updated == "None" or last_updated == "")
+                
+                if (should_restore_started or should_restore_completed or should_restore_last_updated) and claim_number and vin:
+                    try:
+                        if should_restore_started:
+                            logger.info(f"🔍 Восстанавливаем started_at из БД для {claim_number}_{vin}")
+                            await restore_started_at_from_db(json_path, claim_number, vin)
+                        
+                        if should_restore_completed:
+                            logger.info(f"🔍 Восстанавливаем completed_at из БД для {claim_number}_{vin}")
+                            await restore_completed_at_from_db(json_path, claim_number, vin)
+                        
+                        if should_restore_last_updated:
+                            logger.info(f"🔍 Восстанавливаем last_updated из БД для {claim_number}_{vin}")
+                            await restore_last_updated_from_db(json_path, claim_number, vin)
+                        
+                        # Перечитываем JSON после восстановления
+                        with open(json_path, 'r', encoding='utf-8') as f:
+                            json_data = json.load(f)
+                        metadata = json_data.get("metadata", {})
+                        started_at = metadata.get("started_at", "") if metadata else ""
+                        completed_at = metadata.get("completed_at", "") if metadata else ""
+                        last_updated = metadata.get("last_updated", "") if metadata else ""
+                        logger.info(f"✅ Восстановлено started_at: {started_at}")
+                        logger.info(f"✅ Восстановлено completed_at: {completed_at}")
+                        logger.info(f"✅ Восстановлено last_updated: {last_updated}")
+                    except Exception as e:
+                        logger.warning(f"⚠️ Не удалось восстановить время для {claim_number}_{vin}: {e}")
+                
                 # Определяем статус по флагам из метаданных
                 
-                if json_completed and db_saved and options_success and total_zones > 0:
+                # Добавляем отладочную информацию
+                logger.info(f"🔍 Статус для {claim_number}_{vin}: json_completed={json_completed}, db_saved={db_saved}, options_success={options_success}, total_zones={total_zones}")
+                logger.info(f"🔍 Детали для {claim_number}_{vin}: started_at='{started_at}', completed_at='{completed_at}', last_updated='{last_updated}'")
+                
+                # Основная логика определения статуса
+                if json_completed and db_saved and total_zones > 0:
+                    # Если есть зоны и JSON завершен, считаем успешным даже без options_success
                     status = "Завершена"
                 elif not json_completed:
                     status = "В процессе"
-                elif json_completed and (not db_saved or not options_success or total_zones == 0):
+                elif json_completed and total_zones == 0:
+                    # Если JSON завершен, но зон нет - это ошибка
+                    status = "Ошибка"
+                elif json_completed and not db_saved:
+                    # Если JSON завершен, но БД не сохранена - это ошибка
                     status = "Ошибка"
                 else:
-                    status = "Неизвестно"
+                    # Для всех остальных случаев считаем успешным
+                    status = "Завершена"
                 
                 # Форматируем время
                 started_time = "—"
@@ -449,6 +511,49 @@ async def history_detail(request: Request, folder_name: str):
         last_updated = metadata.get("last_updated", "") if metadata else ""
         json_completed = metadata.get("json_completed", False) if metadata else False
         db_saved = metadata.get("db_saved", False) if metadata else False
+        
+        # Восстанавливаем started_at из БД если он null или неправильный
+        should_restore = (started_at is None or started_at == "null" or started_at == "None" or started_at == "")
+        
+        # Также проверяем, если время есть, но оно неправильное
+        if not should_restore and started_at:
+            try:
+                # Парсим время из JSON
+                json_time = datetime.strptime(started_at, "%Y-%m-%d %H:%M:%S")
+                # Проверяем, что время не слишком старое (признак неправильного времени)
+                current_time = datetime.now()
+                time_diff = (current_time - json_time).total_seconds()
+                if time_diff > 86400:  # Если разница больше 24 часов
+                    should_restore = True
+                    logger.info(f"🔍 Время в JSON слишком старое для {folder_name}: {started_at}")
+            except:
+                should_restore = True
+        
+        if should_restore and claim_number and vin_value:
+            try:
+                logger.info(f"🔍 Восстанавливаем started_at из БД для {claim_number}_{vin_value}")
+                await restore_started_at_from_db(json_path, claim_number, vin_value)
+                
+                # Также восстанавливаем completed_at
+                logger.info(f"🔍 Восстанавливаем completed_at из БД для {claim_number}_{vin_value}")
+                await restore_completed_at_from_db(json_path, claim_number, vin_value)
+                
+                # Также восстанавливаем last_updated
+                logger.info(f"🔍 Восстанавливаем last_updated из БД для {claim_number}_{vin_value}")
+                await restore_last_updated_from_db(json_path, claim_number, vin_value)
+                
+                # Перечитываем JSON после восстановления
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    json_data = json.load(f)
+                metadata = json_data.get("metadata", {})
+                started_at = metadata.get("started_at", "") if metadata else ""
+                completed_at = metadata.get("completed_at", "") if metadata else ""
+                last_updated = metadata.get("last_updated", "") if metadata else ""
+                logger.info(f"✅ Восстановлено started_at: {started_at}")
+                logger.info(f"✅ Восстановлено completed_at: {completed_at}")
+                logger.info(f"✅ Восстановлено last_updated: {last_updated}")
+            except Exception as e:
+                logger.warning(f"⚠️ Не удалось восстановить время для {claim_number}_{vin_value}: {e}")
         
         # Форматируем временные метки
         started_time = "—"
@@ -820,13 +925,79 @@ async def get_processing_stats():
                 json_completed = metadata.get("json_completed", False)
                 db_saved = metadata.get("db_saved", False)
                 options_success = metadata.get("options_success", False)
+                total_zones = len(json_data.get("zone_data", [])) if json_data else 0
                 
-                logger.info(f"📊 Проверяем {folder_name}: json_completed={json_completed}, db_saved={db_saved}, options_success={options_success}")
+                logger.info(f"📊 Проверяем {folder_name}: json_completed={json_completed}, db_saved={db_saved}, options_success={options_success}, total_zones={total_zones}")
                 
-                if json_completed and db_saved and options_success:
+                # Используем ту же логику, что и в эндпоинте /history
+                if json_completed and db_saved and total_zones > 0:
                     started_at = metadata.get("started_at", "")
                     completed_at = metadata.get("completed_at", "")
                     last_updated = metadata.get("last_updated", "")
+                    
+                    # Восстанавливаем started_at из БД если он null или неправильный
+                    should_restore = (started_at is None or started_at == "null" or started_at == "None" or started_at == "")
+                    
+                    # Также проверяем, если время есть, но оно неправильное
+                    if not should_restore and started_at:
+                        try:
+                            # Парсим время из JSON
+                            json_time = datetime.strptime(started_at, "%Y-%m-%d %H:%M:%S")
+                            # Проверяем, что время не слишком старое (признак неправильного времени)
+                            current_time = datetime.now()
+                            time_diff = (current_time - json_time).total_seconds()
+                            if time_diff > 86400:  # Если разница больше 24 часов
+                                should_restore = True
+                                logger.info(f"🔍 Время в JSON слишком старое для {folder_name}: {started_at}")
+                        except:
+                            should_restore = True
+                    
+                    if should_restore:
+                        logger.info(f"🔍 Нужно восстановить started_at для {folder_name}: текущее значение='{started_at}'")
+                        # Извлекаем claim_number и vin из имени папки
+                        if "_" in folder_name:
+                            claim_number = folder_name.split("_")[0]
+                            vin = folder_name.split("_")[1] if len(folder_name.split("_")) > 1 else ""
+                            
+                            logger.info(f"🔍 Извлечено из имени папки: claim_number='{claim_number}', vin='{vin}'")
+                            
+                            if claim_number and vin:
+                                try:
+                                    logger.info(f"🔍 Вызываем restore_started_at_from_db для {json_path}")
+                                    result = await restore_started_at_from_db(json_path, claim_number, vin)
+                                    logger.info(f"🔍 Результат восстановления started_at: {result}")
+                                    
+                                    # Также восстанавливаем completed_at
+                                    logger.info(f"🔍 Вызываем restore_completed_at_from_db для {json_path}")
+                                    result_completed_at = await restore_completed_at_from_db(json_path, claim_number, vin)
+                                    logger.info(f"🔍 Результат восстановления completed_at: {result_completed_at}")
+                                    
+                                    # Также восстанавливаем last_updated
+                                    logger.info(f"🔍 Вызываем restore_last_updated_from_db для {json_path}")
+                                    result_last_updated = await restore_last_updated_from_db(json_path, claim_number, vin)
+                                    logger.info(f"🔍 Результат восстановления last_updated: {result_last_updated}")
+                                    
+                                    if result or result_completed_at or result_last_updated:
+                                        # Перечитываем JSON после восстановления
+                                        with open(json_path, 'r', encoding='utf-8') as f:
+                                            json_data = json.load(f)
+                                        metadata = json_data.get("metadata", {})
+                                        started_at = metadata.get("started_at", "")
+                                        completed_at = metadata.get("completed_at", "")
+                                        last_updated = metadata.get("last_updated", "")
+                                        logger.info(f"🔍 Новое значение started_at: '{started_at}'")
+                                        logger.info(f"🔍 Новое значение completed_at: '{completed_at}'")
+                                        logger.info(f"🔍 Новое значение last_updated: '{last_updated}'")
+                                    else:
+                                        logger.warning(f"⚠️ Восстановление не удалось для {folder_name}")
+                                except Exception as e:
+                                    logger.warning(f"⚠️ Не удалось восстановить время для {folder_name}: {e}")
+                            else:
+                                logger.warning(f"⚠️ Не удалось извлечь claim_number или vin из {folder_name}")
+                        else:
+                            logger.warning(f"⚠️ Неправильный формат имени папки: {folder_name}")
+                    else:
+                        logger.info(f"🔍 started_at уже есть для {folder_name}: '{started_at}'")
                     
                     logger.info(f"⏰ Время для {folder_name}: started_at={started_at}, completed_at={completed_at}")
                     

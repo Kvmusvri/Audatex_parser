@@ -58,7 +58,7 @@
                                 <span class="claim-number">Номер дела: {{ record.claim_number or 'Без номера дела' }}</span>
                             </div>
                                                         <div class="status-indicators">
-                                {% if record.json_completed and record.db_saved and record.options_success and record.total_zones > 0 %}
+                                {% if record.json_completed and record.db_saved and record.total_zones > 0 %}
                                     <span class="status-badge status-completed">
                                         {{ record.status or 'Завершена' }}
                                     </span>
@@ -72,6 +72,13 @@
                                           title="Нажмите для получения подробной информации об ошибке">
                                         {{ record.status or 'Ошибка' }}
                                     </span>
+                                    <!-- Отладочная информация -->
+                                    <div class="debug-info" style="font-size: 10px; color: #666; margin-top: 4px;">
+                                        json_completed: {{ record.json_completed }}, 
+                                        db_saved: {{ record.db_saved }}, 
+                                        options_success: {{ record.options_success }}, 
+                                        total_zones: {{ record.total_zones }}
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>

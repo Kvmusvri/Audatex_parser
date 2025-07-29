@@ -179,7 +179,7 @@ h1 {
 }
 
 /* Цветные границы для статусов */
-.history-record[data-json-completed="true"][data-db-saved="true"][data-options-success="true"][data-total-zones*="1"] {
+.history-record[data-json-completed="true"][data-db-saved="true"][data-total-zones]:not([data-total-zones="0"]) {
     border-left: 4px solid #2DD700;
 }
 
