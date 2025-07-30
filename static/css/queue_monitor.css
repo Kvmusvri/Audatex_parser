@@ -165,6 +165,8 @@ body {
 .control-btn.refresh {
     background-color: #3b82f6;
     color: white;
+    font-weight: 600;
+    position: relative;
 }
 
 .control-btn.refresh:hover {
@@ -173,12 +175,49 @@ body {
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
+.control-btn.refresh:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .control-btn:disabled {
     background-color: #d1d5db;
     color: #9ca3af;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+}
+
+/* Информационный текст */
+.info-text {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    text-align: center;
+    animation: pulse 2s infinite;
+}
+
+.info-text p {
+    color: #92400e;
+    font-size: 0.875rem;
+    margin: 0;
+    font-weight: 600;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+    }
 }
 
 /* Секции очередей */

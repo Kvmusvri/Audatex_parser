@@ -45,11 +45,21 @@ class QueueProcessor:
                 # Проверяем очередь
                 queue_length = redis_manager.get_queue_length()
                 if queue_length == 0:
-                    logger.info("📭 Очередь пуста, ожидание...")
+                    # Логируем только при первом обнаружении пустой очереди
+                    if not hasattr(self, '_empty_queue_logged'):
+                        logger.info("📭 Очередь пуста, ожидание...")
+                        self._empty_queue_logged = True
                     await asyncio.sleep(5)  # Ждем 5 секунд
                     continue
                 
-                logger.info(f"📋 Заявок в очереди: {queue_length}")
+                # Сбрасываем флаг логирования пустой очереди
+                if hasattr(self, '_empty_queue_logged'):
+                    delattr(self, '_empty_queue_logged')
+                
+                # Логируем только при изменении количества заявок
+                if not hasattr(self, '_last_queue_length') or self._last_queue_length != queue_length:
+                    logger.info(f"📋 Заявок в очереди: {queue_length}")
+                    self._last_queue_length = queue_length
                 
                 # Проверяем настройки времени работы парсера
                 from core.database.models import async_session
@@ -66,12 +76,19 @@ class QueueProcessor:
                             hours = time_to_start // 60
                             minutes = time_to_start % 60
                             
-                            logger.info(f"⏰ Парсер работает с {start_time} до {end_time}. "
-                                       f"До начала работы осталось {hours}ч {minutes}м. Ожидание...")
+                            # Логируем только при первом обнаружении нерабочего времени
+                            if not hasattr(self, '_non_working_hours_logged'):
+                                logger.info(f"⏰ Парсер работает с {start_time} до {end_time}. "
+                                           f"До начала работы осталось {hours}ч {minutes}м. Ожидание...")
+                                self._non_working_hours_logged = True
                             
                             # Ждем 1 минуту перед следующей проверкой
                             await asyncio.sleep(60)
                             continue
+                        else:
+                            # Сбрасываем флаг логирования нерабочего времени
+                            if hasattr(self, '_non_working_hours_logged'):
+                                delattr(self, '_non_working_hours_logged')
                 
                 # Берем следующую заявку
                 request_data = redis_manager.get_next_request()

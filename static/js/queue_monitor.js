@@ -1,13 +1,20 @@
 // Глобальные переменные
 let refreshInterval = null;
+let lastKnownData = {
+    queue_length: 0,
+    processing_count: 0,
+    processed_count: 0,
+    failed_count: 0,
+    is_running: false
+};
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     loadQueueStatus();
     setupEventListeners();
     
-    // Автообновление каждые 5 секунд
-    refreshInterval = setInterval(loadQueueStatus, 5000);
+    // Убираем автообновление - данные загружаются только по требованию
+    // refreshInterval = setInterval(loadQueueStatus, 30000);
 });
 
 // Настройка обработчиков событий
@@ -16,11 +23,49 @@ function setupEventListeners() {
     document.getElementById('stop-btn').addEventListener('click', stopProcessing);
     document.getElementById('clear-btn').addEventListener('click', clearQueue);
     document.getElementById('refresh-btn').addEventListener('click', loadQueueStatus);
+    
+    // Обновляем данные при возвращении на страницу
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            // При возвращении на страницу обновляем данные
+            loadQueueStatus();
+        }
+    });
+    
+    // Периодическая проверка расхождений (без запросов к серверу)
+    setInterval(function() {
+        // Проверяем, есть ли расхождения между отображаемыми и сохраненными данными
+        const currentDisplayed = {
+            queue_length: parseInt(document.getElementById('queue-length').textContent) || 0,
+            processing_count: parseInt(document.getElementById('processing-count').textContent) || 0,
+            processed_count: parseInt(document.getElementById('processed-count').textContent) || 0,
+            failed_count: parseInt(document.getElementById('failed-count').textContent) || 0,
+            is_running: document.getElementById('processing-status').textContent === 'Запущена'
+        };
+        
+        const hasDiscrepancy = 
+            currentDisplayed.queue_length !== lastKnownData.queue_length ||
+            currentDisplayed.processing_count !== lastKnownData.processing_count ||
+            currentDisplayed.processed_count !== lastKnownData.processed_count ||
+            currentDisplayed.failed_count !== lastKnownData.failed_count ||
+            currentDisplayed.is_running !== lastKnownData.is_running;
+        
+        if (hasDiscrepancy) {
+            document.getElementById('info-text').style.display = 'block';
+        }
+    }, 10000); // Проверяем каждые 10 секунд
 }
 
 // Загрузка статуса очереди
 async function loadQueueStatus() {
+    const refreshBtn = document.getElementById('refresh-btn');
+    const originalText = refreshBtn.textContent;
+    
     try {
+        // Показываем индикатор загрузки
+        refreshBtn.textContent = 'Обновление...';
+        refreshBtn.disabled = true;
+        
         const [statusResponse, requestsResponse, scheduleResponse] = await Promise.all([
             fetch('/api/queue/status'),
             fetch('/api/queue/requests'),
@@ -44,9 +89,22 @@ async function loadQueueStatus() {
         // Обновляем статус времени работы парсера
         updateScheduleStatus(scheduleData);
         
+        // Проверяем расхождения и скрываем предупреждение
+        checkDataDiscrepancy(statusData.data, requestsData.data);
+        
+        // Скрываем предупреждение после успешного обновления
+        document.getElementById('info-text').style.display = 'none';
+        
+        // Показываем уведомление об успешном обновлении
+        showSuccess('Данные обновлены');
+        
     } catch (error) {
         console.error('Ошибка загрузки статуса очереди:', error);
         showError('Ошибка загрузки данных');
+    } finally {
+        // Восстанавливаем кнопку
+        refreshBtn.textContent = originalText;
+        refreshBtn.disabled = false;
     }
 }
 
@@ -72,6 +130,15 @@ function updateStatusDisplay(stats) {
     processingCountElement.textContent = stats.processing_count || 0;
     processedCountElement.textContent = stats.processed_count || 0;
     failedCountElement.textContent = stats.failed_count || 0;
+    
+    // Сохраняем текущие данные для сравнения
+    lastKnownData = {
+        queue_length: stats.queue_length || 0,
+        processing_count: stats.processing_count || 0,
+        processed_count: stats.processed_count || 0,
+        failed_count: stats.failed_count || 0,
+        is_running: stats.is_running || false
+    };
 }
 
 // Обновление счетчиков из данных заявок
@@ -91,6 +158,48 @@ function updateCountersFromRequests(data) {
     
     processedCountElement.textContent = successfulCount;
     document.getElementById('failed-count').textContent = failedCount;
+}
+
+// Проверка расхождений между отображаемыми и реальными данными
+function checkDataDiscrepancy(statusData, requestsData) {
+    const infoText = document.getElementById('info-text');
+    
+    // Получаем текущие отображаемые значения
+    const currentDisplayed = {
+        queue_length: parseInt(document.getElementById('queue-length').textContent) || 0,
+        processing_count: parseInt(document.getElementById('processing-count').textContent) || 0,
+        processed_count: parseInt(document.getElementById('processed-count').textContent) || 0,
+        failed_count: parseInt(document.getElementById('failed-count').textContent) || 0,
+        is_running: document.getElementById('processing-status').textContent === 'Запущена'
+    };
+    
+    // Получаем реальные данные из ответа сервера
+    const realData = {
+        queue_length: statusData.queue_length || 0,
+        processing_count: statusData.processing_count || 0,
+        processed_count: statusData.processed_count || 0,
+        failed_count: statusData.failed_count || 0,
+        is_running: statusData.is_running || false
+    };
+    
+    // Проверяем расхождения
+    const hasDiscrepancy = 
+        currentDisplayed.queue_length !== realData.queue_length ||
+        currentDisplayed.processing_count !== realData.processing_count ||
+        currentDisplayed.processed_count !== realData.processed_count ||
+        currentDisplayed.failed_count !== realData.failed_count ||
+        currentDisplayed.is_running !== realData.is_running;
+    
+    // Показываем или скрываем предупреждение
+    if (hasDiscrepancy) {
+        infoText.style.display = 'block';
+        console.log('Обнаружено расхождение данных:', {
+            displayed: currentDisplayed,
+            real: realData
+        });
+    } else {
+        infoText.style.display = 'none';
+    }
 }
 
 // Обновление статуса времени работы парсера
@@ -198,6 +307,8 @@ async function startProcessing() {
         
         if (data.success) {
             showSuccess('Обработка очереди запущена');
+            // Показываем предупреждение о возможном расхождении
+            document.getElementById('info-text').style.display = 'block';
             loadQueueStatus();
         } else {
             showError(data.message || 'Ошибка запуска обработки');
@@ -223,6 +334,8 @@ async function stopProcessing() {
         
         if (data.success) {
             showSuccess('Остановка обработки запрошена');
+            // Показываем предупреждение о возможном расхождении
+            document.getElementById('info-text').style.display = 'block';
             loadQueueStatus();
         } else {
             showError(data.message || 'Ошибка остановки обработки');
@@ -252,6 +365,8 @@ async function clearQueue() {
         
         if (data.success) {
             showSuccess(data.message || 'Очередь очищена');
+            // Показываем предупреждение о возможном расхождении
+            document.getElementById('info-text').style.display = 'block';
             // Принудительно обновляем данные через небольшую задержку
             setTimeout(() => {
                 loadQueueStatus();
@@ -313,7 +428,7 @@ function showNotification(message, type) {
     }, 3000);
 }
 
-// Очистка интервала при закрытии страницы
+// Очистка интервала при закрытии страницы (на всякий случай)
 window.addEventListener('beforeunload', function() {
     if (refreshInterval) {
         clearInterval(refreshInterval);

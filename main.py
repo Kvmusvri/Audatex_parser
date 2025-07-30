@@ -29,6 +29,7 @@ from core.database.requests import (
 from core.parser.output_manager import restore_started_at_from_db, restore_last_updated_from_db, restore_completed_at_from_db
 from core.queue.api_endpoints import router as queue_router
 from core.queue.redis_manager import redis_manager
+from core.queue.queue_processor import queue_processor
 
 import time
 import concurrent.futures
@@ -103,6 +104,7 @@ class SearchRequest(BaseModel):
     login: str
     password: str
     items: List[SearchItem]
+    svg_collection: bool = True
 
 class ScheduleSettingsRequest(BaseModel):
     start_time: str
@@ -697,86 +699,143 @@ async def history_detail(request: Request, folder_name: str):
 
 @app.post("/process_audatex_requests")
 async def import_from_json(request: SearchRequest):
-    global parser_start_time
-    results = []
-    
-    for item in request.items:
-        try:
-            claim_number = str(item.requestId)
-            vin_number = item.vin
-            logger.info(f"Запуск парсера для requestId: {claim_number}, VIN: {vin_number}")
-
-            # Устанавливаем время начала для каждого запроса
-            parser_start_time = get_moscow_time()
-
-            # Вызываем парсер с временными метками
-            parser_result = await login_audatex(request.login, request.password, claim_number, vin_number, request.svg_collection, parser_start_time)
-
-            if "error" in parser_result:
-                logger.error(f"Ошибка парсинга для requestId {claim_number}: {parser_result['error']}")
-                
-                # Сохраняем данные об ошибке в БД
-                error_data = {
-                    "folder": f"{claim_number}_{vin_number}",
-                    "vin_value": vin_number,
-                    "zone_data": [],
-                    "error_message": parser_result['error']
+    """Обработка API запросов и добавление заявок в очередь"""
+    try:
+        # Проверяем, что есть заявки для обработки
+        if not request.items:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "success": False,
+                    "error": "Необходимо указать хотя бы одну заявку для обработки."
                 }
-                await save_parser_data_to_db(error_data, claim_number, vin_number, is_success=False)
-                
-                results.append({
-                    "requestId": item.requestId,
-                    "vin": vin_number,
-                    "status": "error",
-                    "error": f"Ошибка парсинга: {parser_result['error']}"
-                })
-                continue
-
-            # Обрабатываем успешный результат
-            success = await process_parser_result_data(claim_number, vin_number, parser_result, parser_result.get('started_at'), parser_result.get('completed_at'))
+            )
+        
+        # Проверяем настройки времени работы парсера
+        async with async_session() as session:
+            settings = await get_schedule_settings(session)
             
-            if success:
-                # Логируем время работы для batch запросов
-                if parser_start_time and parser_result.get('completed_at'):
-                    try:
-                        completed_time = parser_result.get('completed_at')
-                        if isinstance(completed_time, str):
-                            completed_time = datetime.strptime(completed_time, "%Y-%m-%d %H:%M:%S")
-                        
-                        duration_seconds = (completed_time - parser_start_time).total_seconds()
-                        duration_minutes = int(duration_seconds // 60)
-                        duration_secs = int(duration_seconds % 60)
-                        
-                        logger.info(f"⏱️ Парсер {claim_number}_{vin_number} завершен. Время работы: {duration_minutes}м {duration_secs}с")
-                    except Exception as e:
-                        logger.warning(f"⚠️ Ошибка расчета времени работы для {claim_number}_{vin_number}: {e}")
-
+            # Определяем статус работы парсера
+            is_working_hours = False
+            time_to_start = 0
+            start_time = "09:00"
+            end_time = "18:00"
+            
+            if settings.get('is_active'):
+                start_time = settings['start_time']
+                end_time = settings['end_time']
+                is_working_hours = is_time_in_working_hours(start_time, end_time)
+                
+                if not is_working_hours:
+                    time_to_start = get_time_to_start(start_time)
+        
+        # Проверяем подключение к Redis
+        if not redis_manager.test_connection():
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "success": False,
+                    "error": "Redis недоступен. Очередь не может быть обработана."
+                }
+            )
+        
+        results = []
+        added_to_queue = 0
+        
+        # Добавляем каждую заявку в очередь
+        for item in request.items:
+            try:
+                claim_number = str(item.requestId)
+                vin_number = item.vin
+                
+                # Проверяем, что хотя бы одно поле заполнено
+                if not claim_number and not vin_number:
+                    results.append({
+                        "requestId": item.requestId,
+                        "vin": vin_number,
+                        "status": "error",
+                        "error": "Необходимо указать номер дела или VIN номер."
+                    })
+                    continue
+                
+                # Добавляем заявку в очередь
+                request_data = {
+                    "claim_number": claim_number,
+                    "vin_number": vin_number,
+                    "svg_collection": getattr(request, 'svg_collection', True),
+                    "username": request.login,
+                    "password": request.password
+                }
+                
+                logger.info(f"📝 Добавление заявки в очередь: Номер дела: {claim_number}, VIN: {vin_number}")
+                
+                success = redis_manager.add_request_to_queue(request_data)
+                if success:
+                    added_to_queue += 1
+                    results.append({
+                        "requestId": item.requestId,
+                        "vin": vin_number,
+                        "status": "queued",
+                        "message": "Заявка добавлена в очередь"
+                    })
+                else:
+                    results.append({
+                        "requestId": item.requestId,
+                        "vin": vin_number,
+                        "status": "error",
+                        "error": "Ошибка добавления заявки в очередь"
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Ошибка обработки заявки {item.requestId}: {e}")
                 results.append({
                     "requestId": item.requestId,
-                    "vin": vin_number,
-                    "status": "success",
-                    "message": "Данные успешно обработаны и сохранены"
-                })
-            else:
-                results.append({
-                    "requestId": item.requestId,
-                    "vin": vin_number,
+                    "vin": item.vin,
                     "status": "error",
-                    "error": "Ошибка обработки данных"
+                    "error": f"Внутренняя ошибка: {str(e)}"
                 })
-        except Exception as e:
-            logger.error(f"Ошибка обработки заявки {item.requestId}: {e}")
-            results.append({
-                "requestId": item.requestId,
-                "vin": item.vin,
-                "status": "error",
-                "error": f"Внутренняя ошибка: {str(e)}"
-            })
-
-    # Сбрасываем время начала
-    parser_start_time = None
-
-    return JSONResponse(content={"results": results})
+        
+        # Запускаем обработку очереди если она еще не запущена
+        if not queue_processor.is_running:
+            asyncio.create_task(queue_processor.start_processing())
+        
+        queue_length = redis_manager.get_queue_length()
+        
+        logger.info(f"✅ {added_to_queue} заявок добавлено в очередь. Общая длина очереди: {queue_length}")
+        
+        # Формируем сообщение в зависимости от статуса работы парсера
+        if is_working_hours:
+            message = f"{added_to_queue} заявок добавлено в очередь"
+            queue_info = f"Позиция в очереди: {queue_length}. Обработка запущена автоматически."
+        else:
+            hours = time_to_start // 60
+            minutes = time_to_start % 60
+            message = f"{added_to_queue} заявок добавлено в очередь"
+            queue_info = f"Позиция в очереди: {queue_length}. Обработка начнется в {start_time} (через {hours}ч {minutes}м)."
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "message": message,
+                "queue_length": queue_length,
+                "queue_info": queue_info,
+                "is_working_hours": is_working_hours,
+                "start_time": start_time,
+                "time_to_start_minutes": time_to_start,
+                "results": results
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки API запроса: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Произошла ошибка: {str(e)}"
+            }
+        )
 
 
 @app.post("/login")
@@ -846,7 +905,6 @@ async def login(request: Request, username: str = Form(...), password: str = For
             )
         
         # Запускаем обработку очереди если она еще не запущена
-        from core.queue.queue_processor import queue_processor
         if not queue_processor.is_running:
             asyncio.create_task(queue_processor.start_processing())
         
@@ -910,7 +968,6 @@ async def terminate_parser():
         parser_task = None
         
         # Останавливаем queue processor
-        from core.queue.queue_processor import queue_processor
         if queue_processor.is_running:
             logger.info("🛑 Останавливаем queue processor")
             queue_processor.stop_processing()
