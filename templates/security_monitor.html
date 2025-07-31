@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг безопасности</title>
+    <link rel="stylesheet" href="/static/css/security_monitor.css">
+    <link rel="icon" href="data:," />
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Мониторинг безопасности</h1>
+            <a href="/" class="back-button">Назад к форме</a>
+        </div>
+
+        <!-- Статус системы -->
+        <div class="status-panel">
+            <div class="status-item">
+                <span class="status-label">Общий статус</span>
+                <span class="status-value" id="overall-status">Загрузка...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Rate Limiting</span>
+                <span class="status-value" id="rate-limit-status">Загрузка...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">DDoS Защита</span>
+                <span class="status-value" id="ddos-status">Загрузка...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Мониторинг</span>
+                <span class="status-value" id="monitoring-status">Загрузка...</span>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="status-panel">
+            <div class="status-item">
+                <span class="status-label">События безопасности</span>
+                <span class="status-value" id="total-events">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Заблокированные IP</span>
+                <span class="status-value" id="blocked-ips">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Высокий риск</span>
+                <span class="status-value" id="high-risk-events">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Критические события</span>
+                <span class="status-value" id="critical-events">-</span>
+            </div>
+        </div>
+
+        <!-- Управление IP -->
+        <div class="controls">
+            <input type="text" id="ip-input" placeholder="Введите IP адрес" class="ip-input">
+            <input type="number" id="ban-duration" placeholder="Длительность (сек)" value="3600" class="duration-input">
+            <button id="ban-ip-btn" class="control-btn stop">Заблокировать</button>
+            <button id="unban-ip-btn" class="control-btn start">Разблокировать</button>
+            <button id="export-btn" class="control-btn refresh">Экспорт данных</button>
+        </div>
+        <div class="ip-result" id="ip-result"></div>
+
+        <!-- Алерты -->
+        <div class="queue-section">
+            <h2>Последние алерты</h2>
+            <div id="alerts-container" class="queue-list">
+                <div class="empty-message">Загрузка алертов...</div>
+            </div>
+        </div>
+
+        <!-- Экспорт -->
+        <div class="queue-section">
+            <h2>Экспорт данных</h2>
+            <div id="export-result" class="export-result"></div>
+        </div>
+    </div>
+
+    <script src="/static/js/security_monitor.js"></script>
+</body>
+</html> 

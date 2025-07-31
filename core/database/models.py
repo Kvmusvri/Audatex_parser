@@ -1,6 +1,7 @@
 import os
-from datetime import datetime, date
-from sqlalchemy import String, Integer, Text, Index, DateTime, Date, func, PrimaryKeyConstraint
+import secrets
+from datetime import datetime, date, timedelta
+from sqlalchemy import String, Integer, Text, Index, DateTime, Date, func, PrimaryKeyConstraint, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from dotenv import load_dotenv
@@ -101,6 +102,45 @@ class ParserScheduleSettings(Base):
     is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+
+class User(Base):
+    __tablename__ = 'users'
+    __table_args__ = (
+        Index('idx_users_username', 'username', unique=True),
+        Index('idx_users_email', 'email'),
+        Index('idx_users_role', 'role'),
+        Index('idx_users_is_active', 'is_active'),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+    email: Mapped[str] = mapped_column(String(100), nullable=True)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default='api')  # 'admin' или 'api'
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_login: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+
+class UserSession(Base):
+    __tablename__ = 'user_sessions'
+    __table_args__ = (
+        Index('idx_user_sessions_user_id', 'user_id'),
+        Index('idx_user_sessions_token_hash', 'token_hash', unique=True),
+        Index('idx_user_sessions_expires_at', 'expires_at'),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ip_address: Mapped[str] = mapped_column(String(45), nullable=True)  # IPv6 support
+    user_agent: Mapped[str] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
 
 async def start_db():
     async with engine.begin() as conn:

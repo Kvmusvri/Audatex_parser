@@ -109,7 +109,8 @@ button:active {
 }
 
 .history-button,
-.queue-button {
+.queue-button,
+.security-button {
     width: auto;
     padding: 8px 16px;
     background-color: #6c757d;
@@ -125,12 +126,28 @@ button:active {
     background-color: #28a745;
 }
 
+.security-button {
+    background-color: #dc3545;
+}
+
 .history-button:hover {
     background-color: #5a6268;
 }
 
 .queue-button:hover {
     background-color: #218838;
+}
+
+.security-button:hover {
+    background-color: #c82333;
+}
+
+.logout-button {
+    background-color: #dc3545;
+}
+
+.logout-button:hover {
+    background-color: #c82333;
 }
 
 /* Унифицированные стили для кнопки остановки парсера */

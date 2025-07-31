@@ -1,6 +1,6 @@
 import logging
 from typing import List, Dict, Any
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from core.queue.redis_manager import redis_manager
@@ -26,7 +26,23 @@ class QueueResponse(BaseModel):
 
 
 @router.post("/add", response_model=QueueResponse)
-async def add_request_to_queue(request: QueueRequest):
+async def add_request_to_queue(request: QueueRequest, request_obj: Request):
+    """Добавление заявки в очередь"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request_obj.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=401,
+            detail="Недействительная сессия"
+        )
     """Добавление заявки в очередь"""
     try:
         # Проверяем, что хотя бы одно поле заполнено
@@ -61,7 +77,23 @@ async def add_request_to_queue(request: QueueRequest):
 
 
 @router.post("/start", response_model=QueueResponse)
-async def start_queue_processing():
+async def start_queue_processing(request: Request):
+    """Запуск обработки очереди"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=401,
+            detail="Недействительная сессия"
+        )
     """Запуск обработки очереди"""
     try:
         if queue_processor.is_running:
@@ -85,7 +117,23 @@ async def start_queue_processing():
 
 
 @router.post("/stop", response_model=QueueResponse)
-async def stop_queue_processing():
+async def stop_queue_processing(request: Request):
+    """Остановка обработки очереди"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=401,
+            detail="Недействительная сессия"
+        )
     """Остановка обработки очереди"""
     try:
         queue_processor.stop_processing()
@@ -101,7 +149,23 @@ async def stop_queue_processing():
 
 
 @router.get("/status", response_model=QueueResponse)
-async def get_queue_status():
+async def get_queue_status(request: Request):
+    """Получение статуса очереди"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=401,
+            detail="Недействительная сессия"
+        )
     """Получение статуса очереди"""
     try:
         stats = queue_processor.get_stats()
@@ -118,7 +182,23 @@ async def get_queue_status():
 
 
 @router.get("/requests", response_model=QueueResponse)
-async def get_queue_requests():
+async def get_queue_requests(request: Request):
+    """Получение списка заявок в очереди"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=401,
+            detail="Недействительная сессия"
+        )
     """Получение списка заявок в очереди"""
     try:
         queue_length = redis_manager.get_queue_length()
@@ -146,7 +226,23 @@ async def get_queue_requests():
 
 
 @router.delete("/clear", response_model=QueueResponse)
-async def clear_queue():
+async def clear_queue(request: Request):
+    """Очистка очереди"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=401,
+            detail="Недействительная сессия"
+        )
     """Полная очистка очереди (включая заявки в обработке и завершенные)"""
     try:
         success = redis_manager.clear_queue()
@@ -167,7 +263,23 @@ async def clear_queue():
 
 
 @router.get("/health", response_model=QueueResponse)
-async def check_redis_health():
+async def check_redis_health(request: Request):
+    """Проверка здоровья Redis"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=401,
+            detail="Недействительная сессия"
+        )
     """Проверка здоровья Redis"""
     try:
         is_connected = redis_manager.test_connection()

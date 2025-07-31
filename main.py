@@ -1,7 +1,7 @@
 import asyncio
 import uvicorn
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request, Form, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -10,7 +10,7 @@ import json
 import os
 from datetime import datetime
 import logging
-from core.database.models import ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, async_session, get_moscow_time
+from core.database.models import ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, get_moscow_time
 from pydantic import BaseModel
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -20,6 +20,8 @@ from core.database.requests import (
     save_parser_data_to_db,
     update_json_with_claim_number,
     save_updated_json_to_file,
+)
+from core.database.requests import (
     get_schedule_settings,
     save_schedule_settings,
     is_time_in_working_hours,
@@ -30,6 +32,14 @@ from core.parser.output_manager import restore_started_at_from_db, restore_last_
 from core.queue.api_endpoints import router as queue_router
 from core.queue.redis_manager import redis_manager
 from core.queue.queue_processor import queue_processor
+from core.auth.db_routes import router as auth_router
+from core.auth.db_decorators import require_auth, get_current_user
+from core.security.rate_limiter import rate_limit_middleware
+from core.security.ddos_protection import ddos_protection_middleware
+from core.security.security_monitor import security_monitoring_middleware
+from core.security.auth_middleware import security_api_auth_middleware
+from core.security.api_endpoints import router as security_router
+from core.security.session_middleware import session_middleware
 
 import time
 import concurrent.futures
@@ -56,11 +66,11 @@ async def lifespan(app: FastAPI):
     """Управление жизненным циклом приложения"""
     # Startup
     try:
-        from core.database.models import start_db
-        await start_db()
-        logger.info("✅ База данных инициализирована")
+        from core.auth.db_auth import create_default_users
+        create_default_users()
+        logger.info("✅ Аутентификация через базу данных инициализирована")
     except Exception as e:
-        logger.error(f"❌ Ошибка инициализации БД: {e}")
+        logger.error(f"❌ Ошибка инициализации: {e}")
     
     # Проверяем подключение к Redis
     try:
@@ -75,13 +85,6 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     try:
-        from core.database.models import close_db
-        await close_db()
-        logger.info("✅ Соединения с БД закрыты")
-    except Exception as e:
-        logger.error(f"❌ Ошибка закрытия БД: {e}")
-    
-    try:
         redis_manager.close()
         logger.info("✅ Соединение с Redis закрыто")
     except Exception as e:
@@ -92,8 +95,16 @@ app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Подключаем роутер очереди
+# Подключаем роутеры
+app.include_router(auth_router)
 app.include_router(queue_router)
+app.include_router(security_router)
+
+# Добавляем middleware для безопасности (в правильном порядке)
+app.middleware("http")(session_middleware)
+app.middleware("http")(security_monitoring_middleware)
+app.middleware("http")(ddos_protection_middleware)
+app.middleware("http")(rate_limit_middleware)
 
 # Модели для валидации входного JSON
 class SearchItem(BaseModel):
@@ -101,7 +112,7 @@ class SearchItem(BaseModel):
     vin: str
 
 class SearchRequest(BaseModel):
-    login: str
+    username: str
     password: str
     items: List[SearchItem]
     svg_collection: bool = True
@@ -263,22 +274,33 @@ def clean_json_data(data):
 
 
 @app.get("/", response_class=HTMLResponse)
+@require_auth()
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/queue", response_class=HTMLResponse)
+@require_auth()
 async def queue_monitor(request: Request):
     """Страница мониторинга очереди"""
     return templates.TemplateResponse("queue_monitor.html", {"request": request})
 
 
+@app.get("/security", response_class=HTMLResponse)
+@require_auth()
+async def security_monitor_page(request: Request):
+    """Страница мониторинга безопасности"""
+    return templates.TemplateResponse("security_monitor.html", {"request": request})
+
+
 @app.get("/success", response_class=HTMLResponse)
+@require_auth()
 async def success(request: Request):
     """Страница успешного добавления заявок"""
     return templates.TemplateResponse("success.html", {"request": request})
 
 @app.get("/history", response_class=HTMLResponse)
+@require_auth()
 async def history(request: Request):
     try:
         # Читаем данные из JSON файлов в папке static/data
@@ -477,6 +499,7 @@ async def history(request: Request):
 
 
 @app.get("/history_detail/{folder_name}", response_class=HTMLResponse)
+@require_auth()
 async def history_detail(request: Request, folder_name: str):
     try:
         # Используем полное имя папки напрямую
@@ -701,6 +724,31 @@ async def history_detail(request: Request, folder_name: str):
 async def import_from_json(request: SearchRequest):
     """Обработка API запросов и добавление заявок в очередь"""
     try:
+        # Аутентифицируем пользователя
+        from core.auth.db_auth import authenticate_user
+        user = authenticate_user(request.username, request.password)
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Неверное имя пользователя или пароль"
+            )
+        
+        if not user['is_active']:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Пользователь неактивен"
+            )
+        
+        # Проверяем роль пользователя
+        if user['role'] not in ['api', 'admin']:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Недостаточно прав для выполнения операции"
+            )
+        
+        logger.info(f"API запрос от пользователя: {user['username']} (роль: {user['role']})")
+        
         # Проверяем, что есть заявки для обработки
         if not request.items:
             return JSONResponse(
@@ -712,22 +760,23 @@ async def import_from_json(request: SearchRequest):
             )
         
         # Проверяем настройки времени работы парсера
+        from core.database.models import async_session
         async with async_session() as session:
             settings = await get_schedule_settings(session)
+        
+        # Определяем статус работы парсера
+        is_working_hours = False
+        time_to_start = 0
+        start_time = "09:00"
+        end_time = "18:00"
+        
+        if settings.get('is_active'):
+            start_time = settings['start_time']
+            end_time = settings['end_time']
+            is_working_hours = is_time_in_working_hours(start_time, end_time)
             
-            # Определяем статус работы парсера
-            is_working_hours = False
-            time_to_start = 0
-            start_time = "09:00"
-            end_time = "18:00"
-            
-            if settings.get('is_active'):
-                start_time = settings['start_time']
-                end_time = settings['end_time']
-                is_working_hours = is_time_in_working_hours(start_time, end_time)
-                
-                if not is_working_hours:
-                    time_to_start = get_time_to_start(start_time)
+            if not is_working_hours:
+                time_to_start = get_time_to_start(start_time)
         
         # Проверяем подключение к Redis
         if not redis_manager.test_connection():
@@ -838,115 +887,11 @@ async def import_from_json(request: SearchRequest):
         )
 
 
-@app.post("/login")
-async def login(request: Request, username: str = Form(...), password: str = Form(...),
-                claim_number: str = Form(default=""), vin_number: str = Form(default=""),
-                svg_collection: str = Form(default="")):
-    """Обработка входа и добавление заявки в очередь"""
-    try:
-        # Проверяем, что хотя бы одно поле заполнено
-        if not claim_number and not vin_number:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "success": False,
-                    "error": "Необходимо указать номер дела или VIN номер."
-                }
-            )
-        
-        # Проверяем настройки времени работы парсера
-        async with async_session() as session:
-            settings = await get_schedule_settings(session)
-            
-            # Определяем статус работы парсера
-            is_working_hours = False
-            time_to_start = 0
-            start_time = "09:00"
-            end_time = "18:00"
-            
-            if settings.get('is_active'):
-                start_time = settings['start_time']
-                end_time = settings['end_time']
-                is_working_hours = is_time_in_working_hours(start_time, end_time)
-                
-                if not is_working_hours:
-                    time_to_start = get_time_to_start(start_time)
-        
-        # Проверяем подключение к Redis
-        if not redis_manager.test_connection():
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "success": False,
-                    "error": "Redis недоступен. Очередь не может быть обработана."
-                }
-            )
-        
-        # Добавляем заявку в очередь
-        request_data = {
-            "claim_number": claim_number,
-            "vin_number": vin_number,
-            "svg_collection": svg_collection == "on",
-            "username": username,
-            "password": password
-        }
-        
-        logger.info(f"📝 Добавление заявки в очередь: Номер дела: {claim_number}, VIN: {vin_number}")
-        
-        success = redis_manager.add_request_to_queue(request_data)
-        if not success:
-            logger.error(f"❌ Ошибка добавления заявки в очередь: {claim_number}, {vin_number}")
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "success": False,
-                    "error": "Ошибка добавления заявки в очередь."
-                }
-            )
-        
-        # Запускаем обработку очереди если она еще не запущена
-        if not queue_processor.is_running:
-            asyncio.create_task(queue_processor.start_processing())
-        
-        queue_length = redis_manager.get_queue_length()
-        
-        logger.info(f"✅ Заявка успешно добавлена в очередь. Позиция: {queue_length}")
-        
-        # Формируем сообщение в зависимости от статуса работы парсера
-        if is_working_hours:
-            message = f"Заявка добавлена в очередь. Номер дела: {claim_number}, VIN: {vin_number}"
-            queue_info = f"Позиция в очереди: {queue_length}. Обработка запущена автоматически."
-        else:
-            hours = time_to_start // 60
-            minutes = time_to_start % 60
-            message = f"Заявка добавлена в очередь. Номер дела: {claim_number}, VIN: {vin_number}"
-            queue_info = f"Позиция в очереди: {queue_length}. Обработка начнется в {start_time} (через {hours}ч {minutes}м)."
-        
-        return JSONResponse(
-            status_code=200,
-            content={
-                "success": True,
-                "message": message,
-                "queue_length": queue_length,
-                "queue_info": queue_info,
-                "is_working_hours": is_working_hours,
-                "start_time": start_time,
-                "time_to_start_minutes": time_to_start
-            }
-        )
-        
-    except Exception as e:
-        logger.error(f"❌ Ошибка обработки входа: {e}")
-        return JSONResponse(
-            status_code=500,
-            content={
-                "success": False,
-                "error": f"Произошла ошибка: {str(e)}"
-            }
-        )
+# Старый маршрут login удален - теперь используется simple_routes
 
 
 @app.post("/terminate")
+@require_auth()
 async def terminate_parser():
     global parser_running, parser_task, parser_start_time
     try:
@@ -986,7 +931,24 @@ async def terminate_parser():
         return JSONResponse(content={"status": "error", "error": str(e)})
 
 @app.get("/api/processing-stats")
-async def get_processing_stats():
+async def get_processing_stats(request: Request):
+    """Получение статистики обработки"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Недействительная сессия"
+        )
+    
     """Получает статистику времени обработки заявок из истории"""
     try:
         data_dir = "static/data"
@@ -1161,13 +1123,30 @@ async def get_processing_stats():
 # API эндпоинты для работы с настройками расписания парсера
 
 @app.get("/api/schedule/settings")
-async def get_schedule_settings_api():
+async def get_schedule_settings_api(request: Request):
+    """Получение настроек расписания"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Недействительная сессия"
+        )
     """Получает текущие настройки расписания парсера"""
     try:
+        from core.database.models import async_session
         async with async_session() as session:
             settings = await get_schedule_settings(session)
-            logger.info(f"📋 Получены настройки расписания: {settings}")
-            return JSONResponse(content=settings)
+        logger.info(f"📋 Получены настройки расписания: {settings}")
+        return JSONResponse(content=settings)
     except Exception as e:
         logger.error(f"❌ Ошибка получения настроек расписания: {e}")
         return JSONResponse(
@@ -1176,7 +1155,23 @@ async def get_schedule_settings_api():
         )
 
 @app.post("/api/schedule/settings")
-async def save_schedule_settings_api(request: ScheduleSettingsRequest):
+async def save_schedule_settings_api(request_data: ScheduleSettingsRequest, request: Request):
+    """Сохранение настроек расписания"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Недействительная сессия"
+        )
     """Сохраняет настройки расписания парсера"""
     try:
         # Валидация времени
@@ -1204,6 +1199,7 @@ async def save_schedule_settings_api(request: ScheduleSettingsRequest):
                 content={"error": "Время начала должно быть раньше времени окончания"}
             )
         
+        from core.database.models import async_session
         async with async_session() as session:
             success = await save_schedule_settings(session, request.start_time, request.end_time)
             
@@ -1226,45 +1222,63 @@ async def save_schedule_settings_api(request: ScheduleSettingsRequest):
         )
 
 @app.get("/api/schedule/status")
-async def get_schedule_status_api():
+async def get_schedule_status_api(request: Request):
+    """Получение статуса расписания"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Недействительная сессия"
+        )
+    
     """Получает текущий статус расписания парсера"""
     try:
+        from core.database.models import async_session
         async with async_session() as session:
             settings = await get_schedule_settings(session)
+        
+        if not settings.get('is_active'):
+            return JSONResponse(content={
+                "status": "inactive",
+                "message": "Парсер неактивен - настройки не заданы",
+                "current_time": get_moscow_time().strftime('%H:%M'),
+                "settings": settings
+            })
+        
+        start_time = settings['start_time']
+        end_time = settings['end_time']
+        
+        # Проверяем, находимся ли в рабочем времени
+        is_working = is_time_in_working_hours(start_time, end_time)
+        
+        if is_working:
+            time_to_end = get_time_to_end(end_time)
+            return JSONResponse(content={
+                "status": "active",
+                "message": "Парсер активен",
+                "current_time": get_moscow_time().strftime('%H:%M'),
+                "time_to_end_minutes": time_to_end,
+                "settings": settings
+            })
+        else:
+            time_to_start = get_time_to_start(start_time)
+            return JSONResponse(content={
+                "status": "waiting",
+                "message": "Ожидание начала работы",
+                "current_time": get_moscow_time().strftime('%H:%M'),
+                "time_to_start_minutes": time_to_start,
+                "settings": settings
+            })
             
-            if not settings.get('is_active'):
-                return JSONResponse(content={
-                    "status": "inactive",
-                    "message": "Парсер неактивен - настройки не заданы",
-                    "current_time": get_moscow_time().strftime('%H:%M'),
-                    "settings": settings
-                })
-            
-            start_time = settings['start_time']
-            end_time = settings['end_time']
-            
-            # Проверяем, находимся ли в рабочем времени
-            is_working = is_time_in_working_hours(start_time, end_time)
-            
-            if is_working:
-                time_to_end = get_time_to_end(end_time)
-                return JSONResponse(content={
-                    "status": "active",
-                    "message": "Парсер активен",
-                    "current_time": get_moscow_time().strftime('%H:%M'),
-                    "time_to_end_minutes": time_to_end,
-                    "settings": settings
-                })
-            else:
-                time_to_start = get_time_to_start(start_time)
-                return JSONResponse(content={
-                    "status": "waiting",
-                    "message": "Ожидание начала работы",
-                    "current_time": get_moscow_time().strftime('%H:%M'),
-                    "time_to_start_minutes": time_to_start,
-                    "settings": settings
-                })
-                
     except Exception as e:
         logger.error(f"❌ Ошибка получения статуса расписания: {e}")
         return JSONResponse(
@@ -1273,7 +1287,23 @@ async def get_schedule_status_api():
         )
 
 @app.get("/api/queue/status")
-async def get_queue_status_api():
+async def get_queue_status_api(request: Request):
+    """Получение статуса очереди"""
+    # Проверяем токен сессии
+    from core.auth.db_auth import validate_session
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Не авторизован"
+        )
+    
+    user_data = validate_session(session_token)
+    if not user_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Недействительная сессия"
+        )
     """Получает статус очереди заявок"""
     try:
         queue_length = redis_manager.get_queue_length()

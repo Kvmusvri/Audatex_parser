@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в систему</title>
+    <link rel="stylesheet" href="/static/css/login.css">
+    <script>
+        // Функция для сохранения данных в localStorage
+        function saveCredentials() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+            
+            if (remember && username && password) {
+                localStorage.setItem('saved_username', username);
+                localStorage.setItem('saved_password', password);
+                localStorage.setItem('remember_me', 'true');
+            } else {
+                localStorage.removeItem('saved_username');
+                localStorage.removeItem('saved_password');
+                localStorage.removeItem('remember_me');
+            }
+        }
+        
+        // Функция для загрузки сохраненных данных
+        function loadCredentials() {
+            const remember = localStorage.getItem('remember_me');
+            if (remember === 'true') {
+                const savedUsername = localStorage.getItem('saved_username');
+                const savedPassword = localStorage.getItem('saved_password');
+                
+                if (savedUsername) {
+                    document.getElementById('username').value = savedUsername;
+                }
+                if (savedPassword) {
+                    document.getElementById('password').value = savedPassword;
+                }
+                document.getElementById('remember').checked = true;
+            }
+        }
+        
+        // Загружаем данные при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadCredentials);
+        
+        // Сохраняем данные при отправке формы
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            form.addEventListener('submit', saveCredentials);
+        });
+    </script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Вход в систему</h1>
+            <p>Введите ваши учетные данные для доступа</p>
+        </div>
+
+        {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="success-message">
+            {{ success }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/auth/login">
+            <div class="form-group">
+                <label for="username">Имя пользователя</label>
+                <input type="text" id="username" name="username" required placeholder="Введите имя пользователя">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required placeholder="Введите пароль">
+            </div>
+
+            <div class="remember-me">
+                <input type="checkbox" id="remember" name="remember">
+                <label for="remember">Запомнить меня</label>
+            </div>
+
+            <button type="submit" class="login-button">
+                Войти в систему
+            </button>
+        </form>
+    </div>
+</body>
+</html> 

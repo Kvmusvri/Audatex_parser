@@ -21,3 +21,9 @@ core/login/__pycache__/parser.cpython-311.pyc
 downloaded_files/
 .cursor/
 
+# Учетные данные администратора
+admin_credentials.md
+
+# Тесты безопасности
+tests/pentests/
+

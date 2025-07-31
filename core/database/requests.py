@@ -12,8 +12,23 @@ from core.database.models import (
     ParserCarRequestStatus, ParserCarDetailGroupZone, 
     ParserCarDetail, ParserCarOptions, ParserScheduleSettings, DatabaseSession, get_moscow_time
 )
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
 
 logger = logging.getLogger(__name__)
+
+# Создаем синхронный движок для аутентификации
+sync_engine = create_engine(os.getenv('DATABASE_URL').replace('+asyncpg', '+psycopg2'))
+SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
+
+def get_db() -> Session:
+    """Получение синхронной сессии БД"""
+    db = SyncSessionLocal()
+    try:
+        return db
+    except Exception:
+        db.close()
+        raise
 
 def validate_request_data(data: Dict[str, Any]) -> bool:
     """Валидация входных данных"""
