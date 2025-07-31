@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 # Настройки мониторинга
 MONITORING_CONFIG = {
-    "alert_threshold": 10,  # количество подозрительных запросов для алерта
-    "critical_threshold": 50,  # количество для критического алерта
+    "alert_threshold": 5,  # количество подозрительных запросов для алерта (уменьшил)
+    "critical_threshold": 20,  # количество для критического алерта (уменьшил)
     "time_window": 300,  # 5 минут
     "cleanup_interval": 3600,  # 1 час
     "max_log_entries": 10000,  # максимальное количество записей в логе
@@ -127,9 +127,13 @@ class SecurityMonitor:
                 if e.timestamp >= time_window
             ]
             
+            logger.info(f"🔍 Проверка алертов для IP {event.ip}: событий={len(ip_events)}, порог={MONITORING_CONFIG['alert_threshold']}, критический={MONITORING_CONFIG['critical_threshold']}")
+            
             if len(ip_events) >= MONITORING_CONFIG["critical_threshold"]:
+                logger.info(f"🚨 Создаем КРИТИЧЕСКИЙ алерт для IP {event.ip}")
                 self._create_alert("CRITICAL", event.ip, ip_events, "Критическая активность")
             elif len(ip_events) >= MONITORING_CONFIG["alert_threshold"]:
+                logger.info(f"⚠️ Создаем WARNING алерт для IP {event.ip}")
                 self._create_alert("WARNING", event.ip, ip_events, "Подозрительная активность")
                 
         except Exception as e:
@@ -149,6 +153,7 @@ class SecurityMonitor:
             }
             
             self.alerts.append(alert)
+            logger.info(f"✅ Алерт создан: {level} для IP {ip}, всего алертов: {len(self.alerts)}")
             
             # Логируем алерт
             if level == "CRITICAL":
@@ -270,7 +275,26 @@ class SecurityMonitor:
     def get_recent_alerts(self, limit: int = 50) -> List[Dict]:
         """Получение последних алертов"""
         try:
-            return self.alerts[-limit:]
+            logger.info(f"🔍 Запрос алертов: всего алертов={len(self.alerts)}, запрошено={limit}")
+            alerts = self.alerts[-limit:]
+            logger.info(f"🔍 Возвращаем {len(alerts)} алертов")
+            
+            # Убеждаемся, что возвращаем правильный формат
+            formatted_alerts = []
+            for alert in alerts:
+                formatted_alert = {
+                    "id": alert.get("id", "unknown"),
+                    "level": alert.get("level", "INFO"),
+                    "ip": alert.get("ip", "unknown"),
+                    "message": alert.get("message", "Событие безопасности"),
+                    "events_count": alert.get("events_count", 0),
+                    "timestamp": alert.get("timestamp", datetime.utcnow().isoformat()),
+                    "events": alert.get("events", [])
+                }
+                formatted_alerts.append(formatted_alert)
+            
+            logger.info(f"🔍 Отформатировано {len(formatted_alerts)} алертов")
+            return formatted_alerts
         except Exception as e:
             logger.error(f"Ошибка получения алертов: {e}")
             return []
@@ -290,10 +314,127 @@ class SecurityMonitor:
         except Exception as e:
             logger.error(f"Ошибка экспорта событий: {e}")
             return ""
+    
+    def clear_all_events(self) -> None:
+        """Очистка всех событий безопасности"""
+        try:
+            old_count = len(self.events)
+            self.events.clear()
+            self.alerts.clear()
+            logger.info(f"✅ Очищено {old_count} событий безопасности")
+        except Exception as e:
+            logger.error(f"Ошибка очистки событий: {e}")
+    
+    def clear_all_alerts(self) -> None:
+        """Очистка всех алертов"""
+        try:
+            old_count = len(self.alerts)
+            self.alerts.clear()
+            logger.info(f"✅ Очищено {old_count} алертов")
+        except Exception as e:
+            logger.error(f"Ошибка очистки алертов: {e}")
+    
+    def create_demo_alerts(self) -> None:
+        """Создание демонстрационных алертов"""
+        try:
+            # Создаем тестовые алерты для демонстрации
+            demo_alerts = [
+                {
+                    "id": f"demo_alert_{int(time.time())}_1",
+                    "level": "CRITICAL",
+                    "ip": "192.168.1.100",
+                    "message": "Критическая активность - множественные попытки брутфорса",
+                    "events_count": 10,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "events": [
+                        {
+                            "event_type": "BRUTEFORCE_ATTEMPT",
+                            "ip": "192.168.1.100",
+                            "risk_score": 50,
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "details": {"attempts": 15}
+                        }
+                    ]
+                },
+                {
+                    "id": f"demo_alert_{int(time.time())}_2",
+                    "level": "WARNING",
+                    "ip": "10.0.0.50",
+                    "message": "Подозрительная активность - попытка SQL инъекции",
+                    "events_count": 3,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "events": [
+                        {
+                            "event_type": "SQL_INJECTION",
+                            "ip": "10.0.0.50",
+                            "risk_score": 60,
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "details": {"query": "SELECT * FROM users"}
+                        }
+                    ]
+                },
+                {
+                    "id": f"demo_alert_{int(time.time())}_3",
+                    "level": "WARNING",
+                    "ip": "172.16.0.25",
+                    "message": "Подозрительная активность - попытка XSS атаки",
+                    "events_count": 2,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "events": [
+                        {
+                            "event_type": "XSS_ATTEMPT",
+                            "ip": "172.16.0.25",
+                            "risk_score": 45,
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "details": {"payload": "<script>"}
+                        }
+                    ]
+                }
+            ]
+            
+            self.alerts.extend(demo_alerts)
+            logger.info(f"✅ Создано {len(demo_alerts)} демонстрационных алертов")
+        except Exception as e:
+            logger.error(f"Ошибка создания демонстрационных алертов: {e}")
 
 
 # Глобальный экземпляр мониторинга
 security_monitor = SecurityMonitor()
+
+# Создаем несколько тестовых алертов для демонстрации
+def create_test_alerts():
+    """Создание тестовых алертов для демонстрации"""
+    try:
+        # Создаем тестовые события только если их нет
+        if len(security_monitor.events) == 0:
+            # Создаем события для одного IP, чтобы сгенерировать алерт
+            malicious_ip = "192.168.1.100"
+            test_events = [
+                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 15}, 50),
+                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 16}, 50),
+                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 17}, 50),
+                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 18}, 50),
+                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 19}, 50),
+                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 20}, 50),
+                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 21}, 50),
+                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 22}, 50),
+                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 23}, 50),
+                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 24}, 50),
+                # Дополнительные события от других IP
+                SecurityEvent("SQL_INJECTION", "10.0.0.50", {"query": "SELECT * FROM users"}, 60),
+                SecurityEvent("XSS_ATTEMPT", "172.16.0.25", {"payload": "<script>"}, 45),
+                SecurityEvent("UNAUTHORIZED_ACCESS", "203.0.113.10", {"path": "/admin"}, 30),
+                SecurityEvent("RATE_LIMIT_EXCEEDED", "198.51.100.5", {"requests": 100}, 35)
+            ]
+            
+            for event in test_events:
+                security_monitor.add_event(event)
+            
+            logger.info(f"✅ Создано {len(test_events)} тестовых событий безопасности")
+        else:
+            logger.info(f"Тестовые события уже существуют: {len(security_monitor.events)} событий")
+    except Exception as e:
+        logger.error(f"Ошибка создания тестовых алертов: {e}")
 
 
 def log_security_event(event_type: str, request: Request, details: Dict, risk_score: int = 0) -> None:
@@ -335,8 +476,11 @@ def log_security_event(event_type: str, request: Request, details: Dict, risk_sc
 async def security_monitoring_middleware(request: Request, call_next):
     """Middleware для мониторинга безопасности"""
     try:
-        # Пропускаем статические файлы
-        if request.url.path.startswith("/static/"):
+        # Пропускаем статические файлы и ресурсы браузера
+        if (request.url.path.startswith("/static/") or 
+            request.url.path.startswith("/.well-known/") or
+            request.url.path == "/favicon.ico" or
+            request.url.path == "/robots.txt"):
             return await call_next(request)
         
         # Пропускаем страницу безопасности (но не API эндпоинты)
@@ -350,14 +494,29 @@ async def security_monitoring_middleware(request: Request, call_next):
         # Обрабатываем запрос
         response = await call_next(request)
         
-        # Логируем подозрительные ответы
-        if response.status_code >= 400:
+        # Логируем только реальные проблемы безопасности
+        if response.status_code == 401:  # Неавторизованный доступ
             log_security_event(
                 "UNAUTHORIZED_ACCESS",
                 request,
-                {"status_code": response.status_code},
-                risk_score=20
+                {"status_code": response.status_code, "path": request.url.path},
+                risk_score=30
             )
+        elif response.status_code == 403:  # Запрещенный доступ
+            log_security_event(
+                "FORBIDDEN_ACCESS",
+                request,
+                {"status_code": response.status_code, "path": request.url.path},
+                risk_score=40
+            )
+        elif response.status_code == 429:  # Rate limit exceeded
+            log_security_event(
+                "RATE_LIMIT_EXCEEDED",
+                request,
+                {"status_code": response.status_code, "path": request.url.path},
+                risk_score=25
+            )
+        # НЕ логируем 404, 500 и другие ошибки как события безопасности
         
         return response
         

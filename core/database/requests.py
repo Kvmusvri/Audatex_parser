@@ -464,7 +464,8 @@ def is_time_in_working_hours(start_time: str, end_time: str) -> bool:
             # Обычный случай: 09:00 - 18:00
             return start_minutes <= current_minutes <= end_minutes
         else:
-            # Переход через полночь: 22:00 - 06:00
+            # Переход через полночь: 21:46 - 23:00
+            # Рабочее время: с 21:46 до 23:00 (включая переход через полночь)
             return current_minutes >= start_minutes or current_minutes <= end_minutes
             
     except Exception as e:
@@ -484,10 +485,12 @@ def get_time_to_start(start_time: str) -> int:
         current_minutes = time_to_minutes(current_time)
         start_minutes = time_to_minutes(start_time)
         
+        # Если текущее время меньше времени начала, ждем до начала
         if current_minutes < start_minutes:
             return start_minutes - current_minutes
         else:
-            # До следующего дня
+            # Если текущее время больше времени начала, 
+            # то начало уже прошло сегодня, ждем до завтра
             return (24 * 60) - current_minutes + start_minutes
             
     except Exception as e:

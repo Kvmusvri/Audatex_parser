@@ -11,9 +11,13 @@ class SecurityMonitor {
     }
 
     init() {
+        console.log('🔍 Инициализация SecurityMonitor...');
         this.loadSecurityStatus();
+        console.log('🔍 Вызываем loadAlerts()...');
+        this.loadAlerts(); // Добавляем загрузку алертов при инициализации
         this.setupEventListeners();
         this.startAutoUpdate();
+        console.log('🔍 SecurityMonitor инициализирован');
     }
 
     setupEventListeners() {
@@ -23,6 +27,12 @@ class SecurityMonitor {
         
         // Кнопка экспорта
         document.getElementById('export-btn').addEventListener('click', () => this.exportData());
+        
+        // Кнопки управления событиями
+        document.getElementById('create-test-events-btn').addEventListener('click', () => this.createTestEvents());
+        document.getElementById('create-demo-alerts-btn').addEventListener('click', () => this.createDemoAlerts());
+        document.getElementById('clear-events-btn').addEventListener('click', () => this.clearAllEvents());
+        document.getElementById('clear-alerts-btn').addEventListener('click', () => this.clearAllAlerts());
     }
 
     async loadSecurityStatus() {
@@ -108,33 +118,62 @@ class SecurityMonitor {
 
     async loadAlerts() {
         try {
+            console.log('🔍 Загружаем алерты...');
             const response = await fetch('/security/alerts?limit=5'); // Уменьшил лимит
+            
+            console.log('🔍 Ответ от /security/alerts:', response.status, response.statusText);
+            console.log('🔍 Headers:', Object.fromEntries(response.headers.entries()));
             
             if (response.status === 401) {
                 // Пользователь не аутентифицирован, перенаправляем на страницу входа
+                console.log('🔍 401 - перенаправляем на логин');
                 window.location.href = '/auth/login';
                 return;
             }
             
-            if (!response.ok) throw new Error('Ошибка загрузки алертов');
+            if (!response.ok) {
+                console.error('🔍 Response not ok:', response.status, response.statusText);
+                throw new Error('Ошибка загрузки алертов');
+            }
             
-            const data = await response.json();
+            const text = await response.text();
+            console.log('🔍 Raw response text:', text);
+            
+            let data;
+            try {
+                data = JSON.parse(text);
+                console.log('🔍 Parsed JSON data:', data);
+            } catch (parseError) {
+                console.error('🔍 JSON parse error:', parseError);
+                throw new Error('Ошибка парсинга JSON');
+            }
+            
             this.updateAlerts(data.alerts || []);
         } catch (error) {
             console.error('Ошибка загрузки алертов:', error);
-            document.getElementById('alerts-container').innerHTML = 
-                '<div class="empty-message">Ошибка загрузки алертов</div>';
+            const container = document.getElementById('alerts-container');
+            if (container) {
+                container.innerHTML = `<div class="empty-message">Ошибка загрузки алертов: ${error.message}</div>`;
+            }
         }
     }
 
     updateAlerts(alerts) {
+        console.log('🔍 Обновляем алерты:', alerts);
         const container = document.getElementById('alerts-container');
         
+        if (!container) {
+            console.error('🔍 Контейнер alerts-container не найден!');
+            return;
+        }
+        
         if (alerts.length === 0) {
+            console.log('🔍 Нет алертов для отображения');
             container.innerHTML = '<div class="empty-message">Нет активных алертов</div>';
             return;
         }
 
+        console.log('🔍 Отображаем', alerts.length, 'алертов');
         const alertsHTML = alerts.map(alert => `
             <div class="alert-item">
                 <div class="alert-header">
@@ -274,7 +313,127 @@ class SecurityMonitor {
         }
     }
 
+    async createTestEvents() {
+        try {
+            const response = await fetch('/security/create-test-events', {
+                method: 'POST'
+            });
+            
+            if (response.status === 401) {
+                window.location.href = '/auth/login';
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                this.showEventsResult(data.message, 'success');
+                this.loadSecurityStatus();
+                this.loadAlerts();
+            } else {
+                this.showEventsResult(data.detail || 'Ошибка создания тестовых событий', 'error');
+            }
+        } catch (error) {
+            console.error('Ошибка создания тестовых событий:', error);
+            this.showEventsResult('Ошибка сети', 'error');
+        }
+    }
 
+    async createDemoAlerts() {
+        try {
+            const response = await fetch('/security/create-demo-alerts', {
+                method: 'POST'
+            });
+            
+            if (response.status === 401) {
+                window.location.href = '/auth/login';
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                this.showEventsResult(data.message, 'success');
+                this.loadAlerts();
+            } else {
+                this.showEventsResult(data.detail || 'Ошибка создания демонстрационных алертов', 'error');
+            }
+        } catch (error) {
+            console.error('Ошибка создания демонстрационных алертов:', error);
+            this.showEventsResult('Ошибка сети', 'error');
+        }
+    }
+
+    async clearAllEvents() {
+        if (!confirm('Вы уверены, что хотите очистить ВСЕ события безопасности? Это действие нельзя отменить.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/security/clear-events', {
+                method: 'POST'
+            });
+            
+            if (response.status === 401) {
+                window.location.href = '/auth/login';
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                this.showEventsResult(data.message, 'success');
+                this.loadSecurityStatus();
+                this.loadAlerts();
+            } else {
+                this.showEventsResult(data.detail || 'Ошибка очистки событий', 'error');
+            }
+        } catch (error) {
+            console.error('Ошибка очистки событий:', error);
+            this.showEventsResult('Ошибка сети', 'error');
+        }
+    }
+
+    async clearAllAlerts() {
+        if (!confirm('Вы уверены, что хотите очистить ВСЕ алерты безопасности?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/security/clear-alerts', {
+                method: 'POST'
+            });
+            
+            if (response.status === 401) {
+                window.location.href = '/auth/login';
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                this.showEventsResult(data.message, 'success');
+                this.loadAlerts();
+            } else {
+                this.showEventsResult(data.detail || 'Ошибка очистки алертов', 'error');
+            }
+        } catch (error) {
+            console.error('Ошибка очистки алертов:', error);
+            this.showEventsResult('Ошибка сети', 'error');
+        }
+    }
+
+    showEventsResult(message, type) {
+        const resultDiv = document.getElementById('events-result');
+        resultDiv.textContent = message;
+        resultDiv.className = `events-result ${type}`;
+        
+        // Автоматически скрываем через 5 секунд
+        setTimeout(() => {
+            resultDiv.textContent = '';
+            resultDiv.className = 'events-result';
+        }, 5000);
+    }
 
     downloadJSON(data) {
         const blob = new Blob([data], { type: 'application/json' });

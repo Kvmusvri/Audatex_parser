@@ -117,6 +117,12 @@ class RateLimiter:
             if hasattr(request.state, 'user') and request.state.user:
                 return True
             
+            # Для внутренних эндпоинтов (не auth) считаем пользователя авторизованным
+            # если у него есть session_token, даже если мы не можем его валидировать здесь
+            path = request.url.path
+            if not path.startswith("/auth/") and session_token:
+                return True
+            
             return False
         except Exception:
             return False
@@ -317,10 +323,10 @@ class RateLimiter:
             
             # Если пользователь авторизован, применяем более мягкие лимиты
             if is_authenticated:
-                # Для авторизованных пользователей увеличиваем лимиты в 5 раз
+                # Для авторизованных пользователей увеличиваем лимиты в 10 раз
                 adjusted_config = {
-                    "requests_per_minute": config["requests_per_minute"] * 5,
-                    "burst_limit": config["burst_limit"] * 3,
+                    "requests_per_minute": config["requests_per_minute"] * 10,
+                    "burst_limit": config["burst_limit"] * 5,
                     "window_size": config["window_size"]
                 }
                 config = adjusted_config
@@ -342,16 +348,19 @@ class RateLimiter:
             
             # Проверяем burst limit
             if current_count >= config["burst_limit"]:
-                # Записываем нарушения только для неавторизованных пользователей
-                if not is_authenticated:
-                    violations = await self._record_violation(client_id)
-                    
-                    # Для атак на аутентификацию блокируем быстрее
-                    max_violations = 2 if is_auth_attack else IP_BAN_CONFIG["max_violations"]
-                    
-                    if violations >= max_violations:
-                        await self._ban_ip(client_id, IP_BAN_CONFIG["ban_duration"])
-                        return False, "IP заблокирован за множественные попытки входа"
+                # Для авторизованных пользователей просто возвращаем ошибку без блокировки
+                if is_authenticated:
+                    return False, f"Превышен лимит запросов. Попробуйте позже."
+                
+                # Для неавторизованных пользователей записываем нарушения
+                violations = await self._record_violation(client_id)
+                
+                # Для атак на аутентификацию блокируем быстрее
+                max_violations = 2 if is_auth_attack else IP_BAN_CONFIG["max_violations"]
+                
+                if violations >= max_violations:
+                    await self._ban_ip(client_id, IP_BAN_CONFIG["ban_duration"])
+                    return False, "IP заблокирован за множественные попытки входа"
                 
                 return False, f"Превышен лимит запросов. Попробуйте позже."
             

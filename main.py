@@ -81,6 +81,19 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Ошибка подключения к Redis: {e}")
     
+    # Создаем тестовые события безопасности
+    try:
+        from core.security.security_monitor import create_test_alerts
+        create_test_alerts()
+        logger.info("✅ Тестовые события безопасности созданы")
+        
+        # Создаем демонстрационные алерты
+        from core.security.security_monitor import security_monitor
+        security_monitor.create_demo_alerts()
+        logger.info("✅ Демонстрационные алерты безопасности созданы")
+    except Exception as e:
+        logger.error(f"❌ Ошибка создания тестовых событий: {e}")
+    
     yield
     
     # Shutdown
@@ -1175,7 +1188,7 @@ async def save_schedule_settings_api(request_data: ScheduleSettingsRequest, requ
     """Сохраняет настройки расписания парсера"""
     try:
         # Валидация времени
-        if not request.start_time or not request.end_time:
+        if not request_data.start_time or not request_data.end_time:
             return JSONResponse(
                 status_code=400,
                 content={"error": "Время начала и окончания обязательны"}
@@ -1183,15 +1196,15 @@ async def save_schedule_settings_api(request_data: ScheduleSettingsRequest, requ
         
         # Проверяем формат времени (HH:MM)
         time_pattern = r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
-        if not re.match(time_pattern, request.start_time) or not re.match(time_pattern, request.end_time):
+        if not re.match(time_pattern, request_data.start_time) or not re.match(time_pattern, request_data.end_time):
             return JSONResponse(
                 status_code=400,
                 content={"error": "Неверный формат времени. Используйте HH:MM"}
             )
         
         # Проверяем, что время начала меньше времени окончания
-        start_minutes = int(request.start_time.split(':')[0]) * 60 + int(request.start_time.split(':')[1])
-        end_minutes = int(request.end_time.split(':')[0]) * 60 + int(request.end_time.split(':')[1])
+        start_minutes = int(request_data.start_time.split(':')[0]) * 60 + int(request_data.start_time.split(':')[1])
+        end_minutes = int(request_data.end_time.split(':')[0]) * 60 + int(request_data.end_time.split(':')[1])
         
         if start_minutes >= end_minutes:
             return JSONResponse(
@@ -1201,12 +1214,12 @@ async def save_schedule_settings_api(request_data: ScheduleSettingsRequest, requ
         
         from core.database.models import async_session
         async with async_session() as session:
-            success = await save_schedule_settings(session, request.start_time, request.end_time)
+            success = await save_schedule_settings(session, request_data.start_time, request_data.end_time)
             
             if success:
                 # Получаем обновленные настройки
                 settings = await get_schedule_settings(session)
-                logger.info(f"✅ Настройки расписания сохранены: {request.start_time} - {request.end_time}")
+                logger.info(f"✅ Настройки расписания сохранены: {request_data.start_time} - {request_data.end_time}")
                 return JSONResponse(content=settings)
             else:
                 return JSONResponse(

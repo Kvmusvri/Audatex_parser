@@ -317,6 +317,147 @@ async def get_security_alerts(
         )
 
 
+@router.post("/clear-events")
+async def clear_security_events(request: Request):
+    """Очистка всех событий безопасности"""
+    try:
+        # Пользователь уже проверен в middleware
+        user = getattr(request.state, 'user', None)
+        if not user:
+            raise HTTPException(status_code=401, detail="Не авторизован")
+        
+        # Проверяем права доступа
+        if user.role not in ["admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Недостаточно прав для очистки событий безопасности"
+            )
+        
+        # Очищаем события
+        security_monitor.clear_all_events()
+        
+        return JSONResponse({
+            "message": "Все события безопасности очищены",
+            "cleared_by": user.username,
+            "timestamp": time.time()
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ошибка очистки событий безопасности: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Внутренняя ошибка сервера"
+        )
+
+
+@router.post("/clear-alerts")
+async def clear_security_alerts(request: Request):
+    """Очистка всех алертов безопасности"""
+    try:
+        # Пользователь уже проверен в middleware
+        user = getattr(request.state, 'user', None)
+        if not user:
+            raise HTTPException(status_code=401, detail="Не авторизован")
+        
+        # Проверяем права доступа
+        if user.role not in ["admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Недостаточно прав для очистки алертов безопасности"
+            )
+        
+        # Очищаем алерты
+        security_monitor.clear_all_alerts()
+        
+        return JSONResponse({
+            "message": "Все алерты безопасности очищены",
+            "cleared_by": user.username,
+            "timestamp": time.time()
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ошибка очистки алертов безопасности: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Внутренняя ошибка сервера"
+        )
+
+
+@router.post("/create-test-events")
+async def create_test_security_events(request: Request):
+    """Создание тестовых событий безопасности"""
+    try:
+        # Пользователь уже проверен в middleware
+        user = getattr(request.state, 'user', None)
+        if not user:
+            raise HTTPException(status_code=401, detail="Не авторизован")
+        
+        # Проверяем права доступа
+        if user.role not in ["admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Недостаточно прав для создания тестовых событий"
+            )
+        
+        # Импортируем функцию создания тестовых событий
+        from core.security.security_monitor import create_test_alerts
+        create_test_alerts()
+        
+        return JSONResponse({
+            "message": "Тестовые события безопасности созданы",
+            "created_by": user.username,
+            "timestamp": time.time()
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ошибка создания тестовых событий: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Внутренняя ошибка сервера"
+        )
+
+
+@router.post("/create-demo-alerts")
+async def create_demo_security_alerts(request: Request):
+    """Создание демонстрационных алертов безопасности"""
+    try:
+        # Пользователь уже проверен в middleware
+        user = getattr(request.state, 'user', None)
+        if not user:
+            raise HTTPException(status_code=401, detail="Не авторизован")
+        
+        # Проверяем права доступа
+        if user.role not in ["admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Недостаточно прав для создания демонстрационных алертов"
+            )
+        
+        # Создаем демонстрационные алерты
+        security_monitor.create_demo_alerts()
+        
+        return JSONResponse({
+            "message": "Демонстрационные алерты безопасности созданы",
+            "created_by": user.username,
+            "timestamp": time.time()
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ошибка создания демонстрационных алертов: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Внутренняя ошибка сервера"
+        )
+
+
 def _calculate_overall_risk(security_stats: Dict) -> str:
     """Вычисление общего уровня риска"""
     try:
