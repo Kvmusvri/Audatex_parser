@@ -65,6 +65,12 @@ async def lifespan(app: FastAPI):
     """Управление жизненным циклом приложения"""
     # Startup
     try:
+        # Создаем таблицы базы данных
+        from core.database.models import start_db
+        await start_db()
+        logger.info("✅ Таблицы базы данных созданы")
+        
+        # Создаем пользователей по умолчанию
         from core.auth.db_auth import create_default_users
         create_default_users()
         logger.info("✅ Аутентификация через базу данных инициализирована")
@@ -101,6 +107,13 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Соединение с Redis закрыто")
     except Exception as e:
         logger.error(f"❌ Ошибка закрытия Redis: {e}")
+    
+    try:
+        from core.database.models import close_db
+        await close_db()
+        logger.info("✅ Соединение с базой данных закрыто")
+    except Exception as e:
+        logger.error(f"❌ Ошибка закрытия базы данных: {e}")
 
 # Инициализация FastAPI приложения
 app = FastAPI(lifespan=lifespan)

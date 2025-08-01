@@ -1,8 +1,8 @@
 import os
 import secrets
 from datetime import datetime, date, timedelta
-from sqlalchemy import String, Integer, Text, Index, DateTime, Date, func, PrimaryKeyConstraint, Boolean
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import String, Integer, Text, Index, DateTime, Date, func, PrimaryKeyConstraint, Boolean, ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from dotenv import load_dotenv
 import pytz
@@ -124,6 +124,9 @@ class User(Base):
     locked_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    
+    # Связь с сессиями
+    sessions: Mapped[list['UserSession']] = relationship('UserSession', back_populates='user', cascade='all, delete-orphan')
 
 
 class UserSession(Base):
@@ -135,12 +138,15 @@ class UserSession(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
     token_hash: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ip_address: Mapped[str] = mapped_column(String(45), nullable=True)  # IPv6 support
     user_agent: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
+    
+    # Связь с пользователем
+    user: Mapped[User] = relationship('User', back_populates='sessions')
 
 async def start_db():
     async with engine.begin() as conn:

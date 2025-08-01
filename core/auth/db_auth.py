@@ -33,34 +33,38 @@ def get_password_hash(password: str) -> str:
 def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     """Аутентифицирует пользователя по логину и паролю"""
     try:
+        logger.info(f"Попытка аутентификации пользователя: {username}")
         db = get_db()
         try:
-            # Простой защищенный запрос с параметризацией
-            from sqlalchemy import text
-            query = text("SELECT id, username, email, hashed_password, role, is_active FROM users WHERE username = :username")
-            result = db.execute(query, {"username": username}).fetchone()
+            # Используем ORM для поиска пользователя
+            from sqlalchemy import select
+            from core.database.models import User
+            stmt = select(User).where(User.username == username)
+            user = db.execute(stmt).scalar_one_or_none()
             
-            if not result:
+            if not user:
                 logger.warning(f"Пользователь не найден: {username}")
                 return None
             
+            logger.info(f"Пользователь найден: {username}, проверяем пароль")
+            
             # Проверяем пароль
-            if not verify_password(password, result.hashed_password):
+            if not verify_password(password, user.hashed_password):
                 logger.warning(f"Неверный пароль для пользователя: {username}")
                 return None
             
             # Проверяем, что пользователь активен
-            if not result.is_active:
+            if not user.is_active:
                 logger.warning(f"Пользователь неактивен: {username}")
                 return None
             
             logger.info(f"Успешная аутентификация: {username}")
             return {
-                'id': result.id,
-                'username': result.username,
-                'email': result.email,
-                'role': result.role,
-                'is_active': result.is_active
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role,
+                'is_active': user.is_active
             }
             
         finally:
@@ -80,33 +84,28 @@ def create_session(user_data: Dict[str, Any]) -> str:
         # Сохраняем сессию в базе данных
         db = get_db()
         try:
-            from sqlalchemy import text
-            query = text("""
-                INSERT INTO user_sessions (user_id, token_hash, expires_at, ip_address, user_agent, created_at)
-                VALUES (:user_id, :token_hash, :expires_at, :ip_address, :user_agent, :created_at)
-            """)
+            from core.database.models import UserSession
+            from core.security.auth_utils import hash_token
             
             expires_at = datetime.now() + timedelta(hours=24)
-            created_at = datetime.now()
-            
-            # Хешируем токен для сохранения в БД
-            from core.security.auth_utils import hash_token
             token_hash = hash_token(session_token)
             
-            db.execute(query, {
-                "user_id": user_data['id'],
-                "token_hash": token_hash,
-                "expires_at": expires_at,
-                "ip_address": "127.0.0.1",
-                "user_agent": "Unknown",
-                "created_at": created_at
-            })
+            # Создаем новую сессию с использованием ORM
+            new_session = UserSession(
+                user_id=user_data['id'],
+                token_hash=token_hash,
+                expires_at=expires_at,
+                ip_address="127.0.0.1",
+                user_agent="Unknown"
+            )
+            
+            db.add(new_session)
             db.commit()
             
             # Также сохраняем в памяти для быстрого доступа
             active_sessions[session_token] = {
                 'user_data': user_data,
-                'created_at': created_at,
+                'created_at': datetime.now(),
                 'expires_at': expires_at
             }
             
@@ -139,20 +138,15 @@ def validate_session(session_token: str) -> Optional[Dict[str, Any]]:
         # Если нет в памяти, проверяем в базе данных
         db = get_db()
         try:
-            from sqlalchemy import text
-            query = text("""
-                SELECT us.user_id, us.expires_at, us.created_at,
-                       u.username, u.email, u.role, u.is_active
-                FROM user_sessions us
-                JOIN users u ON us.user_id = u.id
-                WHERE us.token_hash = :token_hash
-            """)
-            
-            # Хешируем токен для поиска в БД
+            from sqlalchemy import select
+            from core.database.models import UserSession, User
             from core.security.auth_utils import hash_token
+            
             token_hash = hash_token(session_token)
             
-            result = db.execute(query, {"token_hash": token_hash}).fetchone()
+            # Используем ORM для поиска сессии с пользователем
+            stmt = select(UserSession).where(UserSession.token_hash == token_hash)
+            result = db.execute(stmt).scalar_one_or_none()
             
             if not result:
                 return None
@@ -160,22 +154,28 @@ def validate_session(session_token: str) -> Optional[Dict[str, Any]]:
             # Проверяем срок действия
             if datetime.now() > result.expires_at:
                 # Удаляем истекшую сессию
-                delete_query = text("DELETE FROM user_sessions WHERE token_hash = :token_hash")
-                db.execute(delete_query, {"token_hash": token_hash})
+                db.delete(result)
                 db.commit()
                 return None
             
+            # Получаем пользователя отдельным запросом
+            user_stmt = select(User).where(User.id == result.user_id)
+            user_result = db.execute(user_stmt).scalar_one_or_none()
+            
+            if not user_result:
+                return None
+            
             # Проверяем, что пользователь активен
-            if not result.is_active:
+            if not user_result.is_active:
                 return None
             
             # Обновляем сессию в памяти
             user_data = {
-                'id': result.user_id,
-                'username': result.username,
-                'email': result.email,
-                'role': result.role,
-                'is_active': result.is_active
+                'id': user_result.id,
+                'username': user_result.username,
+                'email': user_result.email,
+                'role': user_result.role,
+                'is_active': user_result.is_active
             }
             
             active_sessions[session_token] = {
@@ -204,16 +204,19 @@ def delete_session(session_token: str) -> bool:
         # Удаляем из базы данных
         db = get_db()
         try:
-            from sqlalchemy import text
-            # Хешируем токен для удаления из БД
+            from sqlalchemy import select
+            from core.database.models import UserSession
             from core.security.auth_utils import hash_token
+            
             token_hash = hash_token(session_token)
             
-            query = text("DELETE FROM user_sessions WHERE token_hash = :token_hash")
-            result = db.execute(query, {"token_hash": token_hash})
-            db.commit()
+            # Находим сессию и удаляем её
+            stmt = select(UserSession).where(UserSession.token_hash == token_hash)
+            session = db.execute(stmt).scalar_one_or_none()
             
-            if result.rowcount > 0:
+            if session:
+                db.delete(session)
+                db.commit()
                 logger.info("Сессия удалена из базы данных")
                 return True
             return False
@@ -244,6 +247,7 @@ def cleanup_expired_sessions():
         db = get_db()
         try:
             from sqlalchemy import select
+            from core.database.models import UserSession
             stmt = select(UserSession).where(UserSession.expires_at < current_time)
             expired_sessions = db.execute(stmt).scalars().all()
             
@@ -267,6 +271,8 @@ def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
     try:
         db = get_db()
         try:
+            from sqlalchemy import select
+            from core.database.models import User
             stmt = select(User).where(User.username == username)
             user = db.execute(stmt).scalar_one_or_none()
             
@@ -294,9 +300,10 @@ def create_user(username: str, password: str, role: str = "api", email: str = No
         db = get_db()
         try:
             # Проверяем, существует ли пользователь
-            from sqlalchemy import text
-            check_query = text("SELECT id FROM users WHERE username = :username")
-            existing_user = db.execute(check_query, {"username": username}).fetchone()
+            from sqlalchemy import select
+            from core.database.models import User
+            stmt = select(User).where(User.username == username)
+            existing_user = db.execute(stmt).scalar_one_or_none()
             
             if existing_user:
                 logger.warning(f"Пользователь {username} уже существует")
@@ -305,22 +312,17 @@ def create_user(username: str, password: str, role: str = "api", email: str = No
             # Создаем хеш пароля
             password_hash = get_password_hash(password)
             
-            # Создаем нового пользователя
-            insert_query = text("""
-                INSERT INTO users (username, hashed_password, role, email, is_active, created_at, updated_at)
-                VALUES (:username, :hashed_password, :role, :email, :is_active, :created_at, :updated_at)
-            """)
+            # Создаем нового пользователя с использованием ORM
+            from core.database.models import User
+            new_user = User(
+                username=username,
+                hashed_password=password_hash,
+                role=role or 'api',
+                email=email or f"{username}@example.com",
+                is_active=True
+            )
             
-            now = datetime.now()
-            db.execute(insert_query, {
-                "username": username,
-                "hashed_password": password_hash,
-                "role": role,
-                "email": email or f"{username}@example.com",
-                "is_active": True,
-                "created_at": now,
-                "updated_at": now
-            })
+            db.add(new_user)
             db.commit()
             
             logger.info(f"Создан новый пользователь: {username}")
@@ -339,6 +341,8 @@ def change_password(username: str, new_password: str) -> bool:
     try:
         db = get_db()
         try:
+            from sqlalchemy import select
+            from core.database.models import User
             stmt = select(User).where(User.username == username)
             user = db.execute(stmt).scalar_one_or_none()
             
@@ -363,27 +367,52 @@ def change_password(username: str, new_password: str) -> bool:
 
 
 def create_default_users():
-    """Создает пользователей по умолчанию"""
+    """Создает пользователей по умолчанию из переменных окружения"""
     try:
+        import os
+        
+        # Получаем данные администратора из .env
+        admin_username = os.getenv('ADMIN_USERNAME', 'admin')
+        admin_password = os.getenv('ADMIN_PASSWORD')
+        admin_email = os.getenv('ADMIN_EMAIL', 'admin@example.com')
+        
+        # Получаем данные API пользователя из .env
+        api_username = os.getenv('API_USERNAME', 'api_user')
+        api_password = os.getenv('API_PASSWORD')
+        api_email = os.getenv('API_EMAIL', 'api@example.com')
+        
+        logger.info(f"Попытка создания пользователей: admin={admin_username}, api={api_username}")
+        logger.info(f"Пароли установлены: admin={bool(admin_password)}, api={bool(api_password)}")
+        
         # Создаем администратора
-        if not create_user(
-            username="admin",
-            password="V@mZTI&i6Q3#9U$N",
-            role="admin",
-            email="admin@example.com"
-        ):
-            logger.warning("Администратор уже существует")
+        if admin_password:
+            if not create_user(
+                username=admin_username,
+                password=admin_password,
+                role="admin",
+                email=admin_email
+            ):
+                logger.warning("Администратор уже существует")
+            else:
+                logger.info(f"Администратор {admin_username} создан успешно")
+        else:
+            logger.warning("ADMIN_PASSWORD не установлен в .env файле")
         
         # Создаем API пользователя
-        if not create_user(
-            username="api_user",
-            password="VxWRF@7HCK0oFtZR",
-            role="api",
-            email="api@example.com"
-        ):
-            logger.warning("API пользователь уже существует")
+        if api_password:
+            if not create_user(
+                username=api_username,
+                password=api_password,
+                role="api",
+                email=api_email
+            ):
+                logger.warning("API пользователь уже существует")
+            else:
+                logger.info(f"API пользователь {api_username} создан успешно")
+        else:
+            logger.warning("API_PASSWORD не установлен в .env файле")
         
-        logger.info("Пользователи по умолчанию созданы")
+        logger.info("Создание пользователей по умолчанию завершено")
         
     except Exception as e:
         logger.error(f"Ошибка создания пользователей по умолчанию: {e}") 

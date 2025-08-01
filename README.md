@@ -30,11 +30,24 @@
 ## Конфигурация
 
 ### Файл .env
-Создайте файл `.env` в корне проекта со следующей переменной:
+Создайте файл `.env` в корне проекта со следующими переменными:
 
 ```env
+# База данных
 DATABASE_URL=postgresql://user:password@localhost:5432/audatex_db
+
+# Учетные данные администратора
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=ваш_безопасный_пароль_здесь
+ADMIN_EMAIL=admin@example.com
+
+# Учетные данные API пользователя
+API_USERNAME=api_user
+API_PASSWORD=ваш_безопасный_пароль_здесь
+API_EMAIL=api@example.com
 ```
+
+**ВАЖНО:** Никогда не коммитьте .env файл в git! Добавьте его в .gitignore.
 
 ### Основной API
 - `POST /api_parse` - Добавление заявки в очередь парсинга
