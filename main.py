@@ -10,7 +10,7 @@ import json
 import os
 from datetime import datetime
 import logging
-from core.database.models import ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, get_moscow_time
+from core.database.models import ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, get_moscow_time, async_session
 from pydantic import BaseModel
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -55,7 +55,6 @@ logging.getLogger("urllib3").setLevel(logging.ERROR)
 parser_running = False
 parser_task = None
 parser_start_time = None
-
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -124,10 +123,21 @@ class SearchItem(BaseModel):
     requestId: int
     vin: str
 
-class SearchRequest(BaseModel):
+class AppCredentials(BaseModel):
     username: str
     password: str
-    items: List[SearchItem]
+
+class ParserCredentials(BaseModel):
+    login: str
+    password: str
+
+class SearchRequest(BaseModel):
+    # Авторизация в нашем приложении
+    app_credentials: AppCredentials
+    # Учетные данные парсера
+    parser_credentials: ParserCredentials
+    # Заявки для обработки
+    searchList: List[SearchItem]
     svg_collection: bool = True
 
 class ScheduleSettingsRequest(BaseModel):
@@ -284,6 +294,109 @@ def clean_json_data(data):
         return [clean_json_data(item) for item in data if item is not None and str(item) != "Undefined"]
     else:
         return data if data is not None and str(data) != "Undefined" else ""
+
+
+@app.post("/login")
+async def login(request: Request, username: str = Form(...), password: str = Form(...),
+                claim_number: str = Form(default=""), vin_number: str = Form(default=""),
+                svg_collection: str = Form(default=""), start_time: str = Form(...), 
+                end_time: str = Form(...)):
+    """Обработка входа и добавление заявки в очередь"""
+    try:
+        # Проверяем, что хотя бы одно поле заполнено
+        if not claim_number and not vin_number:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "success": False,
+                    "error": "Необходимо указать номер дела или VIN номер."
+                }
+            )
+        
+        # Проверяем настройки времени работы парсера
+        async with async_session() as session:
+            # Сохраняем настройки времени из формы
+            await save_schedule_settings(session, start_time, end_time)
+            
+            # Определяем статус работы парсера
+            is_working_hours = is_time_in_working_hours(start_time, end_time)
+            time_to_start = 0
+            
+            if not is_working_hours:
+                time_to_start = get_time_to_start(start_time)
+        
+        # Проверяем подключение к Redis
+        if not redis_manager.test_connection():
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "success": False,
+                    "error": "Redis недоступен. Очередь не может быть обработана."
+                }
+            )
+        
+        # Добавляем заявку в очередь
+        request_data = {
+            "claim_number": claim_number,
+            "vin_number": vin_number,
+            "svg_collection": svg_collection == "on",
+            "username": username,
+            "password": password
+        }
+        
+        logger.info(f"📝 Добавление заявки в очередь: Номер дела: {claim_number}, VIN: {vin_number}")
+        
+        success = redis_manager.add_request_to_queue(request_data)
+        if not success:
+            logger.error(f"❌ Ошибка добавления заявки в очередь: {claim_number}, {vin_number}")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "success": False,
+                    "error": "Ошибка добавления заявки в очередь."
+                }
+            )
+        
+        # Запускаем обработку очереди если она еще не запущена
+        if not queue_processor.is_running:
+            asyncio.create_task(queue_processor.start_processing())
+        
+        queue_length = redis_manager.get_queue_length()
+        
+        logger.info(f"✅ Заявка успешно добавлена в очередь. Позиция: {queue_length}")
+        
+        # Формируем сообщение в зависимости от статуса работы парсера
+        if is_working_hours:
+            message = f"Заявка добавлена в очередь. Номер дела: {claim_number}, VIN: {vin_number}"
+            queue_info = f"Позиция в очереди: {queue_length}. Обработка запущена автоматически."
+        else:
+            hours = time_to_start // 60
+            minutes = time_to_start % 60
+            message = f"Заявка добавлена в очередь. Номер дела: {claim_number}, VIN: {vin_number}"
+            queue_info = f"Позиция в очереди: {queue_length}. Обработка начнется в {start_time} (через {hours}ч {minutes}м)."
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "message": message,
+                "queue_length": queue_length,
+                "queue_info": queue_info,
+                "is_working_hours": is_working_hours,
+                "start_time": start_time,
+                "time_to_start_minutes": time_to_start
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки входа: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Произошла ошибка: {str(e)}"
+            }
+        )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -510,7 +623,6 @@ async def history(request: Request):
             "error": f"Ошибка при получении истории: {e}"
         })
 
-
 @app.get("/history_detail/{folder_name}", response_class=HTMLResponse)
 @require_auth()
 async def history_detail(request: Request, folder_name: str):
@@ -732,14 +844,13 @@ async def history_detail(request: Request, folder_name: str):
             "error": f"Ошибка при получении деталей: {e}"
         })
 
-
-@app.post("/process_audatex_requests")
-async def import_from_json(request: SearchRequest):
-    """Обработка API запросов и добавление заявок в очередь"""
+@app.post("/api_parse")
+async def api_parse(request: SearchRequest):
+    """API эндпоинт для парсинга заявок и добавления их в очередь"""
     try:
         # Аутентифицируем пользователя
         from core.auth.db_auth import authenticate_user
-        user = authenticate_user(request.username, request.password)
+        user = authenticate_user(request.app_credentials.username, request.app_credentials.password)
         
         if not user:
             raise HTTPException(
@@ -763,7 +874,7 @@ async def import_from_json(request: SearchRequest):
         logger.info(f"API запрос от пользователя: {user['username']} (роль: {user['role']})")
         
         # Проверяем, что есть заявки для обработки
-        if not request.items:
+        if not request.searchList:
             return JSONResponse(
                 status_code=400,
                 content={
@@ -805,7 +916,7 @@ async def import_from_json(request: SearchRequest):
         added_to_queue = 0
         
         # Добавляем каждую заявку в очередь
-        for item in request.items:
+        for item in request.searchList:
             try:
                 claim_number = str(item.requestId)
                 vin_number = item.vin
@@ -825,8 +936,8 @@ async def import_from_json(request: SearchRequest):
                     "claim_number": claim_number,
                     "vin_number": vin_number,
                     "svg_collection": getattr(request, 'svg_collection', True),
-                    "username": request.login,
-                    "password": request.password
+                    "username": request.parser_credentials.login,
+                    "password": request.parser_credentials.password
                 }
                 
                 logger.info(f"📝 Добавление заявки в очередь: Номер дела: {claim_number}, VIN: {vin_number}")
@@ -898,10 +1009,6 @@ async def import_from_json(request: SearchRequest):
                 "error": f"Произошла ошибка: {str(e)}"
             }
         )
-
-
-# Старый маршрут login удален - теперь используется simple_routes
-
 
 @app.post("/terminate")
 @require_auth()
@@ -1333,6 +1440,7 @@ async def get_queue_status_api(request: Request):
             status_code=500,
             content={"error": "Ошибка получения статуса очереди"}
         )
+
 
 
 if __name__ == "__main__":

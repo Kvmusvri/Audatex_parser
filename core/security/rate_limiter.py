@@ -139,7 +139,7 @@ class RateLimiter:
         
         if path.startswith("/auth/"):
             return RATE_LIMIT_CONFIG["auth"]
-        elif path.startswith("/process_audatex_requests"):
+        elif path.startswith("/api_parse"):
             return RATE_LIMIT_CONFIG["parser"]
         elif path.startswith("/api/"):
             return RATE_LIMIT_CONFIG["api"]

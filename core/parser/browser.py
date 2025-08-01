@@ -166,7 +166,7 @@ def init_browser():
             logger.info("✅ Расширенные настройки маскировки headless режима применены")
             
         except Exception as e:
-            logger.warning(f"⚠️ Ошибка при применении расширенных настроек маскировки: {e}")
+            logger.debug(f"⚠️ Ошибка при применении расширенных настроек маскировки: {e}")
         
         logger.info(f"Используется ChromeDriver: {driver_path}")
         return driver

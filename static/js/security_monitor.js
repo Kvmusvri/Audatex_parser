@@ -31,6 +31,7 @@ class SecurityMonitor {
         // Кнопки управления событиями
         document.getElementById('create-test-events-btn').addEventListener('click', () => this.createTestEvents());
         document.getElementById('create-demo-alerts-btn').addEventListener('click', () => this.createDemoAlerts());
+        document.getElementById('generate-alerts-btn').addEventListener('click', () => this.generateAlerts());
         document.getElementById('clear-events-btn').addEventListener('click', () => this.clearAllEvents());
         document.getElementById('clear-alerts-btn').addEventListener('click', () => this.clearAllAlerts());
     }
@@ -360,6 +361,31 @@ class SecurityMonitor {
             }
         } catch (error) {
             console.error('Ошибка создания демонстрационных алертов:', error);
+            this.showEventsResult('Ошибка сети', 'error');
+        }
+    }
+
+    async generateAlerts() {
+        try {
+            const response = await fetch('/security/generate-alerts', {
+                method: 'POST'
+            });
+            
+            if (response.status === 401) {
+                window.location.href = '/auth/login';
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                this.showEventsResult(data.message, 'success');
+                this.loadAlerts();
+            } else {
+                this.showEventsResult(data.detail || 'Ошибка генерации алертов', 'error');
+            }
+        } catch (error) {
+            console.error('Ошибка генерации алертов:', error);
             this.showEventsResult('Ошибка сети', 'error');
         }
     }

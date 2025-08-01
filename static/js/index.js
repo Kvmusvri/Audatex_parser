@@ -443,6 +443,8 @@ document.getElementById('login-form').addEventListener('submit', async function(
             requestFormData.append('claim_number', request.claimNumber === 'Не задано' ? '' : request.claimNumber);
             requestFormData.append('vin_number', request.vinNumber === 'Не задано' ? '' : request.vinNumber);
             requestFormData.append('svg_collection', svgCollection);
+            requestFormData.append('start_time', startTime);
+            requestFormData.append('end_time', endTime);
             
             // Отправляем заявку на сервер
             const response = await fetch('/login', {

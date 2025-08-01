@@ -218,7 +218,7 @@ def apply_advanced_stealth_masking(driver: WebDriver):
         logger.debug("✅ Расширенная маскировка headless режима применена")
         
     except Exception as e:
-        logger.warning(f"⚠️ Ошибка при применении расширенной маскировки: {e}")
+        logger.debug(f"⚠️ Ошибка при применении расширенной маскировки: {e}")
 
 
 def apply_headless_masking(driver: WebDriver):
@@ -319,7 +319,7 @@ def apply_headless_masking(driver: WebDriver):
         logger.debug("✅ Дополнительная маскировка headless режима применена")
         
     except Exception as e:
-        logger.warning(f"⚠️ Ошибка при применении маскировки headless: {e}")
+        logger.debug(f"⚠️ Ошибка при применении маскировки headless: {e}")
 
 
 def stealth_open_url(driver: WebDriver, url: str, reconnect_time: Optional[float] = None) -> bool:
@@ -333,7 +333,7 @@ def stealth_open_url(driver: WebDriver, url: str, reconnect_time: Optional[float
         try:
             apply_advanced_stealth_masking(driver)
         except Exception as stealth_error:
-            logger.warning(f"⚠️ Ошибка при применении stealth маскировки: {stealth_error}")
+            logger.debug(f"⚠️ Ошибка при применении stealth маскировки: {stealth_error}")
             # Продолжаем выполнение даже если маскировка не удалась
         
         # Открываем URL
@@ -431,7 +431,7 @@ def add_stealth_behavior(driver: WebDriver):
         logger.debug("Добавлено stealth-поведение")
         
     except Exception as e:
-        logger.warning(f"Ошибка при добавлении stealth-поведения: {e}")
+        logger.debug(f"Ошибка при добавлении stealth-поведения: {e}")
 
 
 def check_stealth_detection(driver: WebDriver) -> bool:

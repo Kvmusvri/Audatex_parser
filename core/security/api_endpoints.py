@@ -458,6 +458,41 @@ async def create_demo_security_alerts(request: Request):
         )
 
 
+@router.post("/generate-alerts")
+async def generate_alerts_from_events(request: Request):
+    """Генерация алертов из существующих событий"""
+    try:
+        # Пользователь уже проверен в middleware
+        user = getattr(request.state, 'user', None)
+        if not user:
+            raise HTTPException(status_code=401, detail="Не авторизован")
+        
+        # Проверяем права доступа
+        if user.role not in ["admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Недостаточно прав для генерации алертов"
+            )
+        
+        # Генерируем алерты из существующих событий
+        security_monitor.generate_alerts_from_events()
+        
+        return JSONResponse({
+            "message": "Алерты сгенерированы из существующих событий",
+            "created_by": user.username,
+            "timestamp": time.time()
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ошибка генерации алертов: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Внутренняя ошибка сервера"
+        )
+
+
 def _calculate_overall_risk(security_stats: Dict) -> str:
     """Вычисление общего уровня риска"""
     try:

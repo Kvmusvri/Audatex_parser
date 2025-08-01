@@ -1,6 +1,12 @@
 {
-  "login": "RU431440",
-  "password": "puRirmuv57",
+  "app_credentials": {
+    "username": "api_user",
+    "password": "VxWRF@7HCK0oFtZR"
+  },
+  "parser_credentials": {
+    "login": "RU431440",
+    "password": "puRirmuv57"
+  },
   "searchList": [
     {
       "requestId": 3101494,
@@ -10,5 +16,6 @@
       "requestId": 0,
       "vin": "LB37852D6RS125970"
     }
-  ]
+  ],
+  "svg_collection": true
 }

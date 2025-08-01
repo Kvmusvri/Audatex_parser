@@ -81,7 +81,7 @@ def add_human_behavior(driver: WebDriver):
         
         logger.debug("Добавлено человеческое поведение")
     except Exception as e:
-        logger.warning(f"Ошибка при добавлении человеческого поведения: {e}")
+        logger.debug(f"Ошибка при добавлении человеческого поведения: {e}")
 
 
 def add_extended_human_behavior(driver: WebDriver, total_delay: float = 60.0):
@@ -166,7 +166,7 @@ def add_extended_human_behavior(driver: WebDriver, total_delay: float = 60.0):
         logger.info("✅ Расширенное человеческое поведение завершено")
         
     except Exception as e:
-        logger.warning(f"Ошибка при добавлении расширенного человеческого поведения: {e}")
+        logger.debug(f"Ошибка при добавлении расширенного человеческого поведения: {e}")
 
 
 def check_for_bot_detection(driver: WebDriver) -> bool:

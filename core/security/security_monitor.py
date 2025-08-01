@@ -318,10 +318,25 @@ class SecurityMonitor:
     def clear_all_events(self) -> None:
         """Очистка всех событий безопасности"""
         try:
-            old_count = len(self.events)
+            old_events_count = len(self.events)
+            old_alerts_count = len(self.alerts)
+            old_ip_count = len(self.ip_activity)
+            
+            # Очищаем все события
             self.events.clear()
             self.alerts.clear()
-            logger.info(f"✅ Очищено {old_count} событий безопасности")
+            self.ip_activity.clear()
+            
+            # Сбрасываем статистику
+            self.statistics = {
+                "total_events": 0,
+                "blocked_ips": 0,
+                "high_risk_events": 0,
+                "critical_events": 0,
+                "last_cleanup": datetime.utcnow()
+            }
+            
+            logger.info(f"✅ Очищено {old_events_count} событий, {old_alerts_count} алертов, {old_ip_count} IP активностей")
         except Exception as e:
             logger.error(f"Ошибка очистки событий: {e}")
     
@@ -396,6 +411,46 @@ class SecurityMonitor:
             logger.info(f"✅ Создано {len(demo_alerts)} демонстрационных алертов")
         except Exception as e:
             logger.error(f"Ошибка создания демонстрационных алертов: {e}")
+    
+    def generate_alerts_from_events(self) -> None:
+        """Генерация алертов из существующих событий"""
+        try:
+            # Очищаем существующие алерты
+            self.alerts.clear()
+            
+            # Генерируем алерты для каждого IP с достаточным количеством событий
+            for ip, events in self.ip_activity.items():
+                if len(events) >= MONITORING_CONFIG["critical_threshold"]:
+                    # Критический алерт
+                    alert = {
+                        "id": f"auto_alert_{int(time.time())}_{ip}",
+                        "level": "CRITICAL",
+                        "ip": ip,
+                        "message": f"Критическая активность - {len(events)} событий",
+                        "events_count": len(events),
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "events": [event.to_dict() for event in events[-10:]]
+                    }
+                    self.alerts.append(alert)
+                    logger.info(f"🚨 Создан критический алерт для IP {ip}: {len(events)} событий")
+                    
+                elif len(events) >= MONITORING_CONFIG["alert_threshold"]:
+                    # Предупреждающий алерт
+                    alert = {
+                        "id": f"auto_alert_{int(time.time())}_{ip}",
+                        "level": "WARNING",
+                        "ip": ip,
+                        "message": f"Подозрительная активность - {len(events)} событий",
+                        "events_count": len(events),
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "events": [event.to_dict() for event in events[-10:]]
+                    }
+                    self.alerts.append(alert)
+                    logger.info(f"⚠️ Создан предупреждающий алерт для IP {ip}: {len(events)} событий")
+            
+            logger.info(f"✅ Сгенерировано {len(self.alerts)} алертов из существующих событий")
+        except Exception as e:
+            logger.error(f"Ошибка генерации алертов из событий: {e}")
 
 
 # Глобальный экземпляр мониторинга
