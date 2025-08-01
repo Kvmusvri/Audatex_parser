@@ -19,7 +19,21 @@
 │   └── data/       # JSON данные (создается автоматически)
 ├── templates/      # HTML шаблоны
 ├── tests/          # Тесты API и функциональности
-└── session_management/  # Ручное управление сессиями авторизации
+├── session_management/  # Ручное управление сессиями авторизации
+├── main.py         # Основной файл приложения
+├── requirements.txt # Зависимости Python
+├── redis_manager.bat # Скрипт управления Redis (Windows)
+├── unban_ip.py     # Утилита разблокировки IP
+└── .eslintrc.json  # Конфигурация ESLint
+```
+
+## Конфигурация
+
+### Файл .env
+Создайте файл `.env` в корне проекта со следующей переменной:
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/audatex_db
 ```
 
 ### Основной API
