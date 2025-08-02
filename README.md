@@ -23,6 +23,7 @@
 ├── main.py         # Основной файл приложения
 ├── requirements.txt # Зависимости Python
 ├── redis_manager.bat # Скрипт управления Redis (Windows)
+├── redis_manager.sh # # Скрипт управления Redis (Linux)
 ├── unban_ip.py     # Утилита разблокировки IP
 └── .eslintrc.json  # Конфигурация ESLint
 ```
@@ -124,4 +125,5 @@ python main.py
 ## Требования
 
 - Python 3.8+
+
 - Redis Server 
