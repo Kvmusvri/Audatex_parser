@@ -1,0 +1,46 @@
+services:
+  # PostgreSQL база данных
+  postgres:
+    image: postgres:15
+    container_name: audotex_postgres
+    environment:
+      POSTGRES_DB: audotex_db
+      POSTGRES_USER: audotex_user
+      POSTGRES_PASSWORD: audotex_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: audotex_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Основное приложение
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: audotex_linux_env
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: postgresql+asyncpg://audotex_user:audotex_password@postgres:5432/audotex_db
+      REDIS_URL: redis://redis:6379
+      DISABLE_RATE_LIMIT: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../downloaded_files:/app/downloaded_files
+      - ../tmp:/app/tmp
+      - ../static:/app/static
+
+volumes:
+  postgres_data:
+  redis_data: 

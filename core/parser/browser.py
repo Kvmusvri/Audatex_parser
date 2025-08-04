@@ -138,6 +138,9 @@ def init_browser():
         options.add_argument('--password-store=basic')
         options.add_argument('--use-mock-keychain')
         
+        # Дополнительные настройки для обхода детекции
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        
         # Настройки окна для headless режима
         options.add_argument('--window-size=1920,1080')
         
@@ -181,13 +184,16 @@ def init_browser():
         else:
             logger.info(f"Используется существующий ChromeDriver: {driver_path}")
 
-        driver = uc.Chrome(driver_executable_path=driver_path, options=options, use_subprocess=True, headless=True)
+        driver = uc.Chrome(driver_executable_path=driver_path, options=options, use_subprocess=True)
         
         # Дополнительные настройки для маскировки headless режима
         try:
             # Применяем расширенную маскировку из stealth модуля
             from .stealth import apply_advanced_stealth_masking
             apply_advanced_stealth_masking(driver)
+            
+            # Применяем дополнительную маскировку после инициализации
+            apply_enhanced_stealth_masking(driver)
             
             logger.info("✅ Расширенные настройки маскировки headless режима применены")
             
@@ -198,4 +204,208 @@ def init_browser():
         return driver
     except Exception as e:
         logger.error(f"Ошибка при инициализации браузера: {str(e)}")
-        raise 
+        raise
+
+
+def apply_enhanced_stealth_masking(driver):
+    """
+    Применяет дополнительную маскировку для обхода детекта
+    """
+    try:
+        driver.execute_script("""
+            // Дополнительная маскировка для обхода детекта
+            (function() {
+                // Маскируем webdriver
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined,
+                    configurable: true
+                });
+                
+                // Маскируем chrome runtime
+                if (window.chrome) {
+                    window.chrome = {
+                        runtime: {},
+                        loadTimes: function() {},
+                        csi: function() {},
+                        app: {}
+                    };
+                }
+                
+                // Маскируем permissions
+                const originalPermissions = navigator.permissions;
+                navigator.permissions = {
+                    ...originalPermissions,
+                    query: (parameters) => {
+                        if (parameters.name === 'notifications') {
+                            return Promise.resolve({ state: 'granted' });
+                        }
+                        return originalPermissions.query(parameters);
+                    }
+                };
+                
+                // Маскируем plugins
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => [1, 2, 3, 4, 5],
+                    configurable: true
+                });
+                
+                // Маскируем languages
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['ru-RU', 'ru', 'en-US', 'en'],
+                    configurable: true
+                });
+                
+                // Маскируем connection
+                Object.defineProperty(navigator, 'connection', {
+                    get: () => ({
+                        effectiveType: '4g',
+                        rtt: 50,
+                        downlink: 10,
+                        saveData: false,
+                    }),
+                    configurable: true
+                });
+                
+                // Маскируем hardwareConcurrency
+                Object.defineProperty(navigator, 'hardwareConcurrency', {
+                    get: () => 8,
+                    configurable: true
+                });
+                
+                // Маскируем deviceMemory
+                Object.defineProperty(navigator, 'deviceMemory', {
+                    get: () => 8,
+                    configurable: true
+                });
+                
+                // Маскируем maxTouchPoints
+                Object.defineProperty(navigator, 'maxTouchPoints', {
+                    get: () => 0,
+                    configurable: true
+                });
+                
+                // Маскируем vendor
+                Object.defineProperty(navigator, 'vendor', {
+                    get: () => 'Google Inc.',
+                    configurable: true
+                });
+                
+                // Маскируем platform
+                Object.defineProperty(navigator, 'platform', {
+                    get: () => 'Win32',
+                    configurable: true
+                });
+                
+                // Удаляем признаки автоматизации
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+                
+                // Маскируем screen свойства
+                Object.defineProperty(screen, 'width', { get: () => 1920 });
+                Object.defineProperty(screen, 'height', { get: () => 1080 });
+                Object.defineProperty(screen, 'availWidth', { get: () => 1920 });
+                Object.defineProperty(screen, 'availHeight', { get: () => 1040 });
+                Object.defineProperty(screen, 'colorDepth', { get: () => 24 });
+                Object.defineProperty(screen, 'pixelDepth', { get: () => 24 });
+                
+                // Маскируем window свойства
+                Object.defineProperty(window, 'outerWidth', { get: () => 1920 });
+                Object.defineProperty(window, 'outerHeight', { get: () => 1080 });
+                Object.defineProperty(window, 'innerWidth', { get: () => 1920 });
+                Object.defineProperty(window, 'innerHeight', { get: () => 937 });
+                
+                // Маскируем devicePixelRatio
+                Object.defineProperty(window, 'devicePixelRatio', { get: () => 1 });
+                
+                // Маскируем WebGL
+                try {
+                    const getParameter = WebGLRenderingContext.prototype.getParameter;
+                    WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                        if (parameter === 37445) {
+                            return 'Intel Inc.';
+                        }
+                        if (parameter === 37446) {
+                            return 'Intel(R) Iris(TM) Graphics 6100';
+                        }
+                        return getParameter.call(this, parameter);
+                    };
+                } catch (e) {
+                    // Игнорируем ошибки WebGL
+                }
+                
+                // Маскируем Canvas fingerprinting
+                try {
+                    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+                    HTMLCanvasElement.prototype.getContext = function(type, ...args) {
+                        const context = originalGetContext.call(this, type, ...args);
+                        if (type === '2d') {
+                            const originalFillText = context.fillText;
+                            context.fillText = function(...args) {
+                                return originalFillText.apply(this, args);
+                            };
+                        }
+                        return context;
+                    };
+                } catch (e) {
+                    // Игнорируем ошибки Canvas
+                }
+                
+                // Маскируем Audio fingerprinting
+                try {
+                    const originalGetChannelData = AudioBuffer.prototype.getChannelData;
+                    AudioBuffer.prototype.getChannelData = function(channel) {
+                        const data = originalGetChannelData.call(this, channel);
+                        // Добавляем небольшие изменения для уникальности
+                        for (let i = 0; i < data.length; i += 100) {
+                            data[i] += Math.random() * 0.0001;
+                        }
+                        return data;
+                    };
+                } catch (e) {
+                    // Игнорируем ошибки Audio
+                }
+                
+                // Маскируем userAgent
+                try {
+                    const originalUserAgent = navigator.userAgent;
+                    Object.defineProperty(navigator, 'userAgent', {
+                        get: () => originalUserAgent.replace('HeadlessChrome', 'Chrome'),
+                    });
+                } catch (e) {
+                    // Свойство уже определено, пропускаем
+                }
+                
+                // Добавляем случайные задержки для имитации человеческого поведения
+                const originalSetTimeout = window.setTimeout;
+                window.setTimeout = function(fn, delay, ...args) {
+                    if (delay < 100) {
+                        delay += Math.random() * 50;
+                    }
+                    return originalSetTimeout.call(this, fn, delay, ...args);
+                };
+                
+                // Маскируем performance API
+                try {
+                    const originalGetEntries = Performance.prototype.getEntries;
+                    Performance.prototype.getEntries = function() {
+                        const entries = originalGetEntries.call(this);
+                        // Добавляем случайные вариации
+                        return entries.map(entry => {
+                            if (entry.duration) {
+                                entry.duration += Math.random() * 0.1;
+                            }
+                            return entry;
+                        });
+                    };
+                } catch (e) {
+                    // Игнорируем ошибки Performance
+                }
+                
+            })();
+        """)
+        
+        logger.debug("✅ Дополнительная маскировка применена")
+        
+    except Exception as e:
+        logger.debug(f"⚠️ Ошибка при применении дополнительной маскировки: {e}") 

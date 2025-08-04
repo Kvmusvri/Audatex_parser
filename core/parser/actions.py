@@ -254,48 +254,89 @@ def retry_on_failure(max_attempts: int = 2, delay: float = 0.5):
 @retry_on_failure(max_attempts=2, delay=0.5)
 def wait_for_table(driver: WebDriver, selector: Optional[str] = None) -> bool:
     """
-    Ожидание загрузки таблицы с явным ожиданием элементов.
+    Ожидание загрузки таблицы с динамическим ожиданием до 2 минут.
+    Продолжает работу сразу после загрузки таблицы.
     """
     # Добавляем человеческое поведение перед ожиданием таблицы
     add_human_behavior(driver)
     
     selectors_to_check = [selector] if selector else [OPEN_TABLE_SELECTOR, OUTGOING_TABLE_SELECTOR]
     
-    # Увеличиваем таймаут для медленного сайта
-    timeout = 60  # 60 секунд для полной загрузки
+    # Максимальный таймаут 2 минуты (120 секунд)
+    max_timeout = 120
     
     for sel in selectors_to_check:
         try:
             logger.info(f"Ожидание таблицы с селектором: {sel}")
             
-            # Ждем появления элемента
-            table_element = WebDriverWait(driver, timeout, poll_frequency=0.5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, sel))
-            )
+            # Ждем появления элемента с динамическим таймаутом
+            start_time = time.time()
+            table_element = None
             
-            # Дополнительно ждем, что элемент стал видимым и интерактивным
-            WebDriverWait(driver, 10, poll_frequency=0.5).until(
-                EC.visibility_of(table_element)
-            )
+            while time.time() - start_time < max_timeout:
+                try:
+                    # Проверяем наличие элемента каждые 0.5 секунды
+                    table_element = driver.find_element(By.CSS_SELECTOR, sel)
+                    if table_element:
+                        logger.info(f"✅ Элемент таблицы найден: {sel}")
+                        break
+                except NoSuchElementException:
+                    time.sleep(0.5)
+                    continue
             
-            # Проверяем, что таблица не пустая (есть строки или сообщение о пустоте)
+            if not table_element:
+                logger.warning(f"⚠️ Таблица с селектором '{sel}' не найдена за {max_timeout} секунд")
+                continue
+            
+            # Сразу после нахождения элемента проверяем видимость с динамическим ожиданием
             try:
-                # Ждем либо строки таблицы, либо сообщения о пустоте
-                WebDriverWait(driver, 10, poll_frequency=0.5).until(
-                    lambda d: (
-                        len(d.find_elements(By.CSS_SELECTOR, ROW_SELECTOR)) > 0 or
-                        len(d.find_elements(By.CSS_SELECTOR, EMPTY_TABLE_TEXT_SELECTOR)) > 0
-                    )
-                )
-                logger.info(f"✅ Таблица '{sel}' полностью загружена и готова")
-                return True
-            except TimeoutException:
-                logger.warning(f"⚠️ Таблица '{sel}' найдена, но содержимое не загрузилось")
-                # Возвращаем True, так как таблица есть, просто может быть пустая
-                return True
+                # Ждем, что элемент стал видимым (динамически до 2 минут)
+                visibility_start_time = time.time()
+                while time.time() - visibility_start_time < max_timeout:
+                    try:
+                        if table_element.is_displayed():
+                            logger.info(f"✅ Таблица '{sel}' стала видимой")
+                            break
+                        time.sleep(0.5)
+                    except Exception:
+                        time.sleep(0.5)
+                        continue
+                else:
+                    logger.warning(f"⚠️ Таблица '{sel}' найдена, но не стала видимой за {max_timeout} секунд")
+                    continue
                 
-        except TimeoutException:
-            logger.warning(f"⚠️ Таблица с селектором '{sel}' не найдена за {timeout} секунд")
+                # Проверяем, что таблица не пустая (есть строки или сообщение о пустоте) с динамическим ожиданием
+                try:
+                    # Ждем либо строки таблицы, либо сообщения о пустоте (динамически до 2 минут)
+                    content_start_time = time.time()
+                    while time.time() - content_start_time < max_timeout:
+                        try:
+                            rows = driver.find_elements(By.CSS_SELECTOR, ROW_SELECTOR)
+                            empty_text = driver.find_elements(By.CSS_SELECTOR, EMPTY_TABLE_TEXT_SELECTOR)
+                            
+                            if len(rows) > 0 or len(empty_text) > 0:
+                                logger.info(f"✅ Таблица '{sel}' полностью загружена и готова")
+                                return True
+                            time.sleep(0.5)
+                        except Exception:
+                            time.sleep(0.5)
+                            continue
+                    else:
+                        logger.warning(f"⚠️ Таблица '{sel}' найдена и видима, но содержимое не загрузилось за {max_timeout} секунд")
+                        # Возвращаем True, так как таблица есть и видима, просто может быть пустая
+                        return True
+                        
+                except Exception as e:
+                    logger.warning(f"⚠️ Ошибка при проверке содержимого таблицы '{sel}': {e}")
+                    # Возвращаем True, так как таблица есть и видима
+                    return True
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Ошибка при проверке видимости таблицы '{sel}': {e}")
+                continue
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка при ожидании таблицы '{sel}': {e}")
             continue
 
     logger.error("❌ Ни одна из таблиц не загрузилась")

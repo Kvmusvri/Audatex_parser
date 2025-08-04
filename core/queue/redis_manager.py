@@ -1,29 +1,42 @@
 import redis
 import json
 import logging
+import asyncio
+import os
 from typing import Optional, Dict, Any, List
 from datetime import datetime
+from core.database.requests import save_parser_data_to_db
+from core.database.models import get_moscow_time
 
 logger = logging.getLogger(__name__)
 
 
 class RedisQueueManager:
-    """Менеджер для работы с очередью заявок в Redis"""
+    """Менеджер очереди Redis для парсера"""
     
-    def __init__(self, host: str = 'localhost', port: int = 6379, db: int = 0):
-        """Инициализация подключения к Redis"""
-        self.redis_client = redis.Redis(
-            host=host,
-            port=port,
-            db=db,
-            decode_responses=True,
-            socket_connect_timeout=5,
-            socket_timeout=5
-        )
+    def __init__(self, host: str = None, port: int = None, db: int = 0):
+        # Используем переменную окружения REDIS_URL или fallback на localhost
+        redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+        
+        if host and port:
+            # Если переданы host и port, используем их
+            self.redis_client = redis.Redis(host=host, port=port, db=db, decode_responses=True)
+        else:
+            # Используем URL из переменной окружения
+            self.redis_client = redis.from_url(redis_url, decode_responses=True)
         self.queue_key = "parser_queue"
         self.processing_key = "parser_processing"
         self.completed_key = "parser_completed"
+        self.error_count_key = "parser_error_count"  # Счетчик ошибок для заявок
         
+        # Проверяем подключение
+        try:
+            self.redis_client.ping()
+            logger.info("✅ Подключение к Redis установлено")
+        except Exception as e:
+            logger.error(f"❌ Ошибка подключения к Redis: {e}")
+            raise
+    
     def test_connection(self) -> bool:
         """Проверка подключения к Redis"""
         try:
@@ -83,6 +96,19 @@ class RedisQueueManager:
             key = f"{request_data.get('claim_number', '')}_{request_data.get('vin_number', '')}"
             self.redis_client.hdel(self.processing_key, key)
             
+            # Если неуспешно, увеличиваем счетчик ошибок
+            if not success:
+                self._increment_error_count(key)
+                
+                # Проверяем, достигли ли лимита ошибок (10 раз)
+                error_count = self._get_error_count(key)
+                if error_count >= 10:
+                    logger.warning(f"⚠️ Заявка {key} достигла лимита ошибок ({error_count}), записываем в БД как nsvg")
+                    # Записываем в БД как nsvg
+                    self._save_failed_request_to_db(request_data)
+                    # Очищаем счетчик ошибок
+                    self._clear_error_count(key)
+            
             # Добавляем в завершенные
             self.redis_client.hset(
                 self.completed_key,
@@ -94,6 +120,83 @@ class RedisQueueManager:
             return True
         except Exception as e:
             logger.error(f"❌ Ошибка отметки заявки как завершенной: {e}")
+            return False
+    
+    def _increment_error_count(self, key: str) -> int:
+        """Увеличивает счетчик ошибок для заявки"""
+        try:
+            current_count = self.redis_client.hget(self.error_count_key, key)
+            new_count = int(current_count or 0) + 1
+            self.redis_client.hset(self.error_count_key, key, new_count)
+            logger.debug(f"📊 Счетчик ошибок для {key}: {new_count}")
+            return new_count
+        except Exception as e:
+            logger.error(f"❌ Ошибка увеличения счетчика ошибок: {e}")
+            return 0
+    
+    def _get_error_count(self, key: str) -> int:
+        """Получает текущий счетчик ошибок для заявки"""
+        try:
+            count = self.redis_client.hget(self.error_count_key, key)
+            return int(count or 0)
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения счетчика ошибок: {e}")
+            return 0
+    
+    def _clear_error_count(self, key: str) -> bool:
+        """Очищает счетчик ошибок для заявки"""
+        try:
+            self.redis_client.hdel(self.error_count_key, key)
+            logger.debug(f"🧹 Счетчик ошибок очищен для {key}")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Ошибка очистки счетчика ошибок: {e}")
+            return False
+    
+    def _save_failed_request_to_db(self, request_data: Dict[str, Any]) -> bool:
+        """Сохраняет неудачную заявку в БД как nsvg"""
+        try:
+            # Создаем данные для сохранения в БД
+            claim_number = request_data.get('claim_number', '')
+            vin_number = request_data.get('vin_number', '')
+            
+            # Создаем пустой результат с пометкой nsvg
+            failed_result = {
+                "claim_number": claim_number,
+                "vin_number": vin_number,
+                "vin_status": "Нет",
+                "comment": "nsvg",
+                "error": "Превышен лимит ошибок (10 попыток)",
+                "success": False
+            }
+            
+            # Получаем текущее время
+            started_at = get_moscow_time()
+            completed_at = get_moscow_time()
+            
+            # Сохраняем в БД
+            async def save_to_db():
+                return await save_parser_data_to_db(
+                    failed_result, 
+                    claim_number, 
+                    vin_number, 
+                    is_success=False, 
+                    started_at=started_at, 
+                    completed_at=completed_at
+                )
+            
+            # Запускаем асинхронную функцию
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                success = loop.run_until_complete(save_to_db())
+                logger.info(f"💾 Неудачная заявка {claim_number} сохранена в БД как nsvg: {success}")
+                return success
+            finally:
+                loop.close()
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка сохранения неудачной заявки в БД: {e}")
             return False
     
     def get_queue_length(self) -> int:
@@ -141,8 +244,10 @@ class RedisQueueManager:
             self.redis_client.delete(self.processing_key)
             # Очищаем завершенные заявки
             self.redis_client.delete(self.completed_key)
+            # Очищаем счетчик ошибок
+            self.redis_client.delete(self.error_count_key)
             
-            logger.info("✅ Вся очередь полностью очищена (очередь, обработка, завершенные)")
+            logger.info("✅ Вся очередь полностью очищена (очередь, обработка, завершенные, счетчик ошибок)")
             return True
         except Exception as e:
             logger.error(f"❌ Ошибка очистки очереди: {e}")

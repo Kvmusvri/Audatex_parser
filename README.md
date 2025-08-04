@@ -78,7 +78,7 @@ API_EMAIL=api@example.com
 
 ## Установка и запуск
 
-### Установка зависимостей
+### Локальный запуск
 ```bash
 # Создание виртуального окружения
 python -m venv venv
@@ -91,26 +91,21 @@ source venv/bin/activate
 
 # Установка зависимостей
 pip install -r requirements.txt
-```
 
-### Запуск Redis
-```bash
-# Windows
-redis_manager.bat start
+# Запуск Redis
+redis_manager.bat start  # Windows
 
-# Linux/Mac
-# Установите и запустите Redis в соответствии с документацией вашей системы
-# https://redis.io/docs/getting-started/
-```
-
-### Запуск приложения
-```bash
-# Активация окружения
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
-
-# Запуск сервера
+# Запуск приложения
 python main.py
+```
+
+### Docker запуск
+```bash
+# Запуск в Docker
+docker/start_dev_server.bat
+
+# В контейнере запустить:
+python3 main.py
 ```
 
 Приложение будет доступно по адресу: http://127.0.0.1:8000

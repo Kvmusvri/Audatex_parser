@@ -90,6 +90,7 @@ async def upsert_request_status(session, claim_number: str, vin: str, status_dat
         vin=vin,
             vin_status=status_data.get('vin_status', 'Неизвестно'),
             comment=status_data.get('comment', ''),
+            file_path=status_data.get('file_path', None),  # Добавляем путь к файлу
             started_at=status_data.get('started_at'),
             completed_at=status_data.get('completed_at'),
             created_date=func.current_date()
@@ -98,6 +99,7 @@ async def upsert_request_status(session, claim_number: str, vin: str, status_dat
             set_={
                 'vin_status': status_data.get('vin_status', 'Неизвестно'),
                 'comment': status_data.get('comment', ''),
+                'file_path': status_data.get('file_path', None),  # Добавляем путь к файлу
                 'started_at': status_data.get('started_at'),
                 'completed_at': status_data.get('completed_at')
             }
@@ -120,6 +122,7 @@ async def save_details_batch(session, claim_number: str, vin: str, details: List
             "code": detail.get("code", ""),
             "title": detail.get("title", ""),
             "source_from": detail.get("source_from", ""),
+            "svg_path": detail.get("svg_path", None),  # Путь к SVG детали
             "created_date": current_date
         })
     
@@ -141,6 +144,8 @@ async def save_zones_batch(session, claim_number: str, vin: str, zones: List[dic
             "type": zone.get("type", ""),
             "title": zone.get("title", ""),
             "source_from": zone.get("source_from", ""),
+            "screenshot_path": zone.get("screenshot_path", None),  # Путь к скриншоту зоны
+            "svg_path": zone.get("svg_path", None),  # Путь к SVG зоны
             "created_date": current_date
         })
     
@@ -196,7 +201,7 @@ async def delete_existing_request_data(session, claim_number: str, vin: str):
         .where(ParserCarRequestStatus.vin == vin)
     )
 
-async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str, is_success: bool = True, started_at=None, completed_at=None) -> bool:
+async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str, is_success: bool = True, started_at=None, completed_at=None, file_path: str = None) -> bool:
     """Оптимизированное сохранение данных парсера с batch операциями"""
     try:
         async with DatabaseSession() as session:
@@ -230,6 +235,8 @@ async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str,
                     "type": zone_type,
                     "title": zone_title,
                     "source_from": "AUDATEX",
+                    "screenshot_path": zone.get("screenshot_path", None),  # Путь к скриншоту зоны
+                    "svg_path": zone.get("svg_path", None),  # Путь к SVG зоны
                     "created_date": date.today()
                 }
                 zones.append(zone_data)
@@ -271,6 +278,8 @@ async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str,
                                     "type": "EQUIPMENT",
                                     "title": "Комплектация",
                                     "source_from": "AUDATEX",
+                                    "screenshot_path": None,  # У зоны комплектации нет скриншота
+                                    "svg_path": None,  # У зоны комплектации нет SVG
                                     "created_date": date.today()
                                 }
                                 await session.execute(insert(ParserCarDetailGroupZone), [equipment_zone_data])
@@ -296,6 +305,7 @@ async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str,
                             "code": code,
                             "title": title,
                             "source_from": "AUDATEX",
+                            "svg_path": detail.get("svg_path", None),  # Путь к SVG детали
                             "created_date": date.today()
                         }
                         details.append(detail_data)
@@ -341,7 +351,8 @@ async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str,
                 "vin_status": parser_data.get("vin_status", "Неизвестно"),
                 "comment": "ysvg" if is_success else "nsvg",
                 "started_at": started_at,
-                "completed_at": completed_at
+                "completed_at": completed_at,
+                "file_path": file_path  # Добавляем путь к файлу
             }
             
             # Batch операции

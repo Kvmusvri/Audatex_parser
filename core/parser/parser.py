@@ -45,7 +45,7 @@ import sys
 from .constants import *
 from .browser import kill_chrome_processes, get_chromedriver_version, init_browser
 from .auth import load_cookies, perform_login, check_if_authorized
-from .folder_manager import create_folders, extract_vin_and_claim_number
+from .folder_manager import create_folders
 from .output_manager import create_zones_table, save_data_to_json
 from .visual_processor import (
     is_zone_file, split_svg_by_details, save_svg_sync, 
@@ -57,7 +57,7 @@ from .actions import (
     wait_for_table, click_cansel_button, click_request_type_button,
     search_in_table, click_more_icon, open_task, 
     switch_to_frame_and_confirm, click_breadcrumb, is_table_empty,
-    find_claim_data
+    find_claim_data, get_vin_status
 )
 
 # Настройка логирования
@@ -74,8 +74,8 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
     
     Args:
         driver: WebDriver - экземпляр браузера
-        claim_number: str - номер заявки
-        vin_number: str - VIN автомобиля
+        claim_number: str - номер заявки из формы
+        vin_number: str - VIN автомобиля из формы
         svg_collection: bool - собирать SVG (по умолчанию True)
         started_at: datetime|str|None - время старта (опционально)
     
@@ -117,19 +117,23 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
     time.sleep(1)
     current_url = driver.current_url
     logger.info(f"Текущий URL: {current_url}")
+    
+    # Используем данные из формы вместо извлечения из заявки
+    logger.info(f"🔍 Используем данные из формы: claim_number='{claim_number}', vin_number='{vin_number}'")
+    
+    # Получаем VIN статус после открытия задачи
     try:
-        claim_number, vin_number, vin_status = extract_vin_and_claim_number(driver, current_url)
-        logger.info(f"🔍 Извлеченные данные: claim_number='{claim_number}', vin_number='{vin_number}', vin_status='{vin_status}'")
-        
-        # Проверяем, что данные не пустые
-        if not claim_number.strip() and not vin_number.strip():
-            logger.error("❌ Извлеченные данные пустые - claim_number и vin_number отсутствуют")
-            return {"error": "Не удалось извлечь данные VIN и номер дела"}
-        
+        vin_status = get_vin_status(driver)
+        logger.info(f"📊 VIN статус определен: {vin_status}")
+    except Exception as e:
+        logger.error(f"❌ Ошибка при получении VIN статуса: {e}")
+        vin_status = "Нет"
+    
+    try:
         screenshot_dir, svg_dir, data_dir = create_folders(claim_number, vin_number)
     except Exception as e:
-        logger.error(f"❌ Ошибка при извлечении данных: {e}")
-        return {"error": f"Ошибка извлечения данных: {str(e)}"}
+        logger.error(f"❌ Ошибка при создании папок: {e}")
+        return {"error": f"Ошибка создания папок: {str(e)}"}
     
     # Формируем URL страницы повреждений для повторного использования
     base_url = current_url.split('step')[0][:-1] + '&step=Damage+capturing'
@@ -233,7 +237,7 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
     
     # Получаем время завершения
     completed_at = datetime.now()
-    logger.info(f"🕐 Парсер завершен в: {completed_at.strftime('%H:%M:%S')}")
+    logger.info(f"�� Парсер завершен в: {completed_at.strftime('%H:%M:%S')}")
     
     json_path = save_data_to_json(
         vin_number, zone_data, main_screenshot_relative, main_svg_relative, 

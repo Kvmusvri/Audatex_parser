@@ -404,8 +404,6 @@ async def create_test_security_events(request: Request):
             )
         
         # Импортируем функцию создания тестовых событий
-        from core.security.security_monitor import create_test_alerts
-        create_test_alerts()
         
         return JSONResponse({
             "message": "Тестовые события безопасности созданы",

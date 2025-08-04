@@ -38,6 +38,7 @@ class ParserCarDetail(Base):
     code: Mapped[str] = mapped_column(String(50), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     source_from: Mapped[str] = mapped_column(String(50), nullable=False)
+    svg_path: Mapped[str] = mapped_column(Text, nullable=True)  # Путь к SVG детали
     created_date: Mapped[date] = mapped_column(Date, default=func.current_date())
 
 class ParserCarDetailGroupZone(Base):
@@ -53,6 +54,8 @@ class ParserCarDetailGroupZone(Base):
     type: Mapped[str] = mapped_column(String(50), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     source_from: Mapped[str] = mapped_column(String(50), nullable=False)
+    screenshot_path: Mapped[str] = mapped_column(Text, nullable=True)  # Путь к скриншоту зоны
+    svg_path: Mapped[str] = mapped_column(Text, nullable=True)  # Путь к SVG зоны
     created_date: Mapped[date] = mapped_column(Date, default=func.current_date())
 
 class ParserCarRequestStatus(Base):
@@ -68,6 +71,7 @@ class ParserCarRequestStatus(Base):
     vin: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     vin_status: Mapped[str] = mapped_column(String(50), nullable=False)
     comment: Mapped[str] = mapped_column(String(50), nullable=False)
+    file_path: Mapped[str] = mapped_column(Text, nullable=True)  # Путь к файлу из JSON
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     created_date: Mapped[date] = mapped_column(Date, default=func.current_date())

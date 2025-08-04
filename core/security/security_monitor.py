@@ -456,42 +456,6 @@ class SecurityMonitor:
 # Глобальный экземпляр мониторинга
 security_monitor = SecurityMonitor()
 
-# Создаем несколько тестовых алертов для демонстрации
-def create_test_alerts():
-    """Создание тестовых алертов для демонстрации"""
-    try:
-        # Создаем тестовые события только если их нет
-        if len(security_monitor.events) == 0:
-            # Создаем события для одного IP, чтобы сгенерировать алерт
-            malicious_ip = "192.168.1.100"
-            test_events = [
-                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 15}, 50),
-                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 16}, 50),
-                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 17}, 50),
-                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 18}, 50),
-                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 19}, 50),
-                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 20}, 50),
-                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 21}, 50),
-                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 22}, 50),
-                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 23}, 50),
-                SecurityEvent("BRUTEFORCE_ATTEMPT", malicious_ip, {"attempts": 24}, 50),
-                # Дополнительные события от других IP
-                SecurityEvent("SQL_INJECTION", "10.0.0.50", {"query": "SELECT * FROM users"}, 60),
-                SecurityEvent("XSS_ATTEMPT", "172.16.0.25", {"payload": "<script>"}, 45),
-                SecurityEvent("UNAUTHORIZED_ACCESS", "203.0.113.10", {"path": "/admin"}, 30),
-                SecurityEvent("RATE_LIMIT_EXCEEDED", "198.51.100.5", {"requests": 100}, 35)
-            ]
-            
-            for event in test_events:
-                security_monitor.add_event(event)
-            
-            logger.info(f"✅ Создано {len(test_events)} тестовых событий безопасности")
-        else:
-            logger.info(f"Тестовые события уже существуют: {len(security_monitor.events)} событий")
-    except Exception as e:
-        logger.error(f"Ошибка создания тестовых алертов: {e}")
-
-
 def log_security_event(event_type: str, request: Request, details: Dict, risk_score: int = 0) -> None:
     """Логирование события безопасности"""
     try:

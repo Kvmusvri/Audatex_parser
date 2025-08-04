@@ -474,6 +474,11 @@ rate_limiter = RateLimiter()
 async def rate_limit_middleware(request: Request, call_next):
     """Middleware для rate limiting"""
     try:
+        # Проверяем, отключен ли rate limiting
+        import os
+        if os.getenv('DISABLE_RATE_LIMIT', 'false').lower() == 'true':
+            return await call_next(request)
+        
         # Пропускаем статические файлы
         if request.url.path.startswith("/static/"):
             return await call_next(request)

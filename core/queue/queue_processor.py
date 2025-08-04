@@ -124,7 +124,7 @@ class QueueProcessor:
                 self._run_parser(claim_number, vin_number, svg_collection, username, password, started_at)
             )
             
-            # Ждем завершения без таймаута
+            # Ждем завершения без таймаута - заявка должна работать без ограничений
             try:
                 result = await self.current_parser_task
                 
@@ -152,8 +152,6 @@ class QueueProcessor:
                     logger.error(f"❌ Парсер вернул пустой результат: {claim_number}")
                     redis_manager.mark_request_completed(request_data, success=False)
                     
-
-                
             except Exception as e:
                 self.failed_count += 1
                 logger.error(f"❌ Ошибка обработки заявки {claim_number}: {e}")

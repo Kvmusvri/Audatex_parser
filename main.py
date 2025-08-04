@@ -86,19 +86,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Ошибка подключения к Redis: {e}")
     
-    # Создаем тестовые события безопасности
-    try:
-        from core.security.security_monitor import create_test_alerts
-        create_test_alerts()
-        logger.info("✅ Тестовые события безопасности созданы")
-        
-        # Создаем демонстрационные алерты
-        from core.security.security_monitor import security_monitor
-        security_monitor.create_demo_alerts()
-        logger.info("✅ Демонстрационные алерты безопасности созданы")
-    except Exception as e:
-        logger.error(f"❌ Ошибка создания тестовых событий: {e}")
-    
     yield
     
     # Shutdown
@@ -190,8 +177,8 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
     Обрабатывает данные результата парсера: ищет JSON файл и сохраняет в БД
     
     Args:
-        claim_number: Номер заявки
-        vin_value: VIN номер
+        claim_number: Номер заявки из формы
+        vin_value: VIN номер из формы
         parser_result: Результат парсера
         started_at: Время начала парсинга
         completed_at: Время завершения парсинга
@@ -205,18 +192,20 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
             logger.error(f"❌ Парсер вернул ошибку: {parser_result['error']}")
             return False
         
-        # Получаем извлеченные данные из результата парсера
-        extracted_claim_number = parser_result.get("claim_number", claim_number)
-        extracted_vin_value = parser_result.get("vin_value", vin_value)
+        # Используем данные из формы
+        clean_claim_number = claim_number.strip() if claim_number else ""
+        clean_vin_value = vin_value.strip() if vin_value else ""
         
-        # Очищаем строки от лишних пробелов и символов табуляции
-        clean_claim_number = extracted_claim_number.strip() if extracted_claim_number else ""
-        clean_vin_value = extracted_vin_value.strip() if extracted_vin_value else ""
+        logger.info(f"🔍 Используем данные из формы: claim_number='{clean_claim_number}', vin='{clean_vin_value}'")
         
-        logger.info(f"🔍 Используем извлеченные данные: claim_number='{extracted_claim_number}' -> '{clean_claim_number}', vin='{extracted_vin_value}' -> '{clean_vin_value}'")
+        # Формируем имя папки с безопасной обработкой символов
+        import re
+        safe_claim_number = re.sub(r'[<>:"/\\|?*]', '_', clean_claim_number)
+        safe_claim_number = safe_claim_number.replace('-', '_').replace('.', '_')
+        safe_claim_number = re.sub(r'_+', '_', safe_claim_number)
+        safe_claim_number = safe_claim_number.strip('_')
         
-        # Формируем имя папки
-        folder_name = f"{clean_claim_number}_{clean_vin_value}"
+        folder_name = f"{safe_claim_number}_{clean_vin_value}"
         folder_path = os.path.join("static", "data", folder_name)
         
         # Проверяем существование папки
@@ -242,7 +231,7 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
         with open(file_path, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
         
-        # Обновляем JSON с извлеченным claim_number
+        # Обновляем JSON с данными из формы
         updated_json = update_json_with_claim_number(json_data, clean_claim_number)
         
         # Сохраняем обновленный JSON обратно в файл
@@ -251,8 +240,8 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
             logger.error(f"Не удалось сохранить обновленный JSON: {file_path}")
             return False
         
-        # Сохраняем данные в БД с временными метками
-        db_success = await save_parser_data_to_db(updated_json, clean_claim_number, clean_vin_value, is_success=True, started_at=started_at, completed_at=completed_at)
+        # Сохраняем данные в БД с временными метками и путем к файлу
+        db_success = await save_parser_data_to_db(updated_json, clean_claim_number, clean_vin_value, is_success=True, started_at=started_at, completed_at=completed_at, file_path=file_path)
         if not db_success:
             logger.error(f"Не удалось сохранить данные в БД: {clean_claim_number}_{clean_vin_value}")
             return False
@@ -316,13 +305,13 @@ async def login(request: Request, username: str = Form(...), password: str = For
                 end_time: str = Form(...)):
     """Обработка входа и добавление заявки в очередь"""
     try:
-        # Проверяем, что хотя бы одно поле заполнено
-        if not claim_number and not vin_number:
+        # Проверяем, что оба поля заполнены
+        if not claim_number.strip() or not vin_number.strip():
             return JSONResponse(
                 status_code=400,
                 content={
                     "success": False,
-                    "error": "Необходимо указать номер дела или VIN номер."
+                    "error": "Необходимо указать номер дела И VIN номер. Оба поля обязательны."
                 }
             )
         
@@ -350,8 +339,8 @@ async def login(request: Request, username: str = Form(...), password: str = For
         
         # Добавляем заявку в очередь
         request_data = {
-            "claim_number": claim_number,
-            "vin_number": vin_number,
+            "claim_number": claim_number.strip(),
+            "vin_number": vin_number.strip(),
             "svg_collection": svg_collection == "on",
             "username": username,
             "password": password
@@ -897,7 +886,6 @@ async def api_parse(request: SearchRequest):
             )
         
         # Проверяем настройки времени работы парсера
-        from core.database.models import async_session
         async with async_session() as session:
             settings = await get_schedule_settings(session)
         
@@ -1275,7 +1263,6 @@ async def get_schedule_settings_api(request: Request):
         )
     """Получает текущие настройки расписания парсера"""
     try:
-        from core.database.models import async_session
         async with async_session() as session:
             settings = await get_schedule_settings(session)
         logger.info(f"📋 Получены настройки расписания: {settings}")
@@ -1332,7 +1319,6 @@ async def save_schedule_settings_api(request_data: ScheduleSettingsRequest, requ
                 content={"error": "Время начала должно быть раньше времени окончания"}
             )
         
-        from core.database.models import async_session
         async with async_session() as session:
             success = await save_schedule_settings(session, request_data.start_time, request_data.end_time)
             
@@ -1375,7 +1361,6 @@ async def get_schedule_status_api(request: Request):
     
     """Получает текущий статус расписания парсера"""
     try:
-        from core.database.models import async_session
         async with async_session() as session:
             settings = await get_schedule_settings(session)
         
