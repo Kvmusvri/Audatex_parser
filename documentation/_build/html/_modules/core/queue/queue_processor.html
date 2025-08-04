@@ -1,0 +1,492 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.queue.queue_processor &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#id3">Структура базы данных</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#er">ER-диаграмма</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">core.queue.queue_processor</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код core.queue.queue_processor</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.queue.redis_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">redis_manager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.parser.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">login_audatex</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.database.requests</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">save_parser_data_to_db</span><span class="p">,</span> <span class="n">update_json_with_claim_number</span><span class="p">,</span> <span class="n">save_updated_json_to_file</span><span class="p">,</span>
+    <span class="n">get_schedule_settings</span><span class="p">,</span> <span class="n">is_time_in_working_hours</span><span class="p">,</span> <span class="n">get_time_to_start</span>
+<span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="QueueProcessor">
+<a class="viewcode-back" href="../../../modules/queue.html#core.queue.queue_processor.QueueProcessor">[документация]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QueueProcessor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Процессор для обработки очереди заявок&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="QueueProcessor.__init__">
+<a class="viewcode-back" href="../../../modules/queue.html#core.queue.queue_processor.QueueProcessor.__init__">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_task</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_parser_task</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Текущая задача парсера</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processed_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">failed_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># Флаг запроса остановки</span></div>
+
+        
+<div class="viewcode-block" id="QueueProcessor.start_processing">
+<a class="viewcode-back" href="../../../modules/queue.html#core.queue.queue_processor.QueueProcessor.start_processing">[документация]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Запуск обработки очереди&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ Обработка очереди уже запущена&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🚀 Запуск обработки очереди заявок&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Восстанавливаем прерванные заявки при запуске</span>
+        <span class="n">interrupted_requests</span> <span class="o">=</span> <span class="n">redis_manager</span><span class="o">.</span><span class="n">restore_interrupted_requests</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">interrupted_requests</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔄 Восстановлено </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">interrupted_requests</span><span class="p">)</span><span class="si">}</span><span class="s2"> прерванных заявок&quot;</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span><span class="p">:</span>
+                <span class="c1"># Проверяем очередь</span>
+                <span class="n">queue_length</span> <span class="o">=</span> <span class="n">redis_manager</span><span class="o">.</span><span class="n">get_queue_length</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">queue_length</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># Логируем только при первом обнаружении пустой очереди</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_empty_queue_logged&#39;</span><span class="p">):</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;📭 Очередь пуста, ожидание...&quot;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_empty_queue_logged</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># Ждем 5 секунд</span>
+                    <span class="k">continue</span>
+                
+                <span class="c1"># Сбрасываем флаг логирования пустой очереди</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_empty_queue_logged&#39;</span><span class="p">):</span>
+                    <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_empty_queue_logged&#39;</span><span class="p">)</span>
+                
+                <span class="c1"># Логируем только при изменении количества заявок</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_last_queue_length&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_queue_length</span> <span class="o">!=</span> <span class="n">queue_length</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📋 Заявок в очереди: </span><span class="si">{</span><span class="n">queue_length</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_last_queue_length</span> <span class="o">=</span> <span class="n">queue_length</span>
+                
+                <span class="c1"># Проверяем настройки времени работы парсера</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">core.database.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_session</span>
+                <span class="k">async</span> <span class="k">with</span> <span class="n">async_session</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+                    <span class="n">settings</span> <span class="o">=</span> <span class="k">await</span> <span class="n">get_schedule_settings</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_active&#39;</span><span class="p">):</span>
+                        <span class="n">start_time</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;start_time&#39;</span><span class="p">]</span>
+                        <span class="n">end_time</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">]</span>
+                        
+                        <span class="c1"># Проверяем, находимся ли в рабочем времени</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_time_in_working_hours</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">):</span>
+                            <span class="n">time_to_start</span> <span class="o">=</span> <span class="n">get_time_to_start</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+                            <span class="n">hours</span> <span class="o">=</span> <span class="n">time_to_start</span> <span class="o">//</span> <span class="mi">60</span>
+                            <span class="n">minutes</span> <span class="o">=</span> <span class="n">time_to_start</span> <span class="o">%</span> <span class="mi">60</span>
+                            
+                            <span class="c1"># Логируем только при первом обнаружении нерабочего времени</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_non_working_hours_logged&#39;</span><span class="p">):</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⏰ Парсер работает с </span><span class="si">{</span><span class="n">start_time</span><span class="si">}</span><span class="s2"> до </span><span class="si">{</span><span class="n">end_time</span><span class="si">}</span><span class="s2">. &quot;</span>
+                                           <span class="sa">f</span><span class="s2">&quot;До начала работы осталось </span><span class="si">{</span><span class="n">hours</span><span class="si">}</span><span class="s2">ч </span><span class="si">{</span><span class="n">minutes</span><span class="si">}</span><span class="s2">м. Ожидание...&quot;</span><span class="p">)</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_non_working_hours_logged</span> <span class="o">=</span> <span class="kc">True</span>
+                            
+                            <span class="c1"># Ждем 1 минуту перед следующей проверкой</span>
+                            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+                            <span class="k">continue</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="c1"># Сбрасываем флаг логирования нерабочего времени</span>
+                            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_non_working_hours_logged&#39;</span><span class="p">):</span>
+                                <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_non_working_hours_logged&#39;</span><span class="p">)</span>
+                
+                <span class="c1"># Берем следующую заявку</span>
+                <span class="n">request_data</span> <span class="o">=</span> <span class="n">redis_manager</span><span class="o">.</span><span class="n">get_next_request</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">request_data</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                
+                <span class="c1"># Обрабатываем заявку</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_request</span><span class="p">(</span><span class="n">request_data</span><span class="p">)</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Критическая ошибка в обработке очереди: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🛑 Обработка очереди остановлена&quot;</span><span class="p">)</span></div>
+
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Обработка одной заявки&quot;&quot;&quot;</span>
+        <span class="n">claim_number</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;claim_number&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">vin_number</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vin_number&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">svg_collection</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;svg_collection&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔄 Обработка заявки: </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2"> | VIN: </span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Запускаем парсер с московским временем</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">core.database.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_moscow_time</span>
+            <span class="n">started_at</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+            
+            <span class="c1"># Создаем задачу для парсера</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_parser_task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_run_parser</span><span class="p">(</span><span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">,</span> <span class="n">svg_collection</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">started_at</span><span class="p">)</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># Ждем завершения без таймаута</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_parser_task</span>
+                
+                <span class="n">completed_at</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+                <span class="n">duration</span> <span class="o">=</span> <span class="p">(</span><span class="n">completed_at</span> <span class="o">-</span> <span class="n">started_at</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+                
+                <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+                    <span class="c1"># Обрабатываем результат парсера</span>
+                    <span class="n">success</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_parser_result</span><span class="p">(</span>
+                        <span class="n">result</span><span class="p">,</span> <span class="n">started_at</span><span class="p">,</span> <span class="n">completed_at</span><span class="p">,</span> <span class="n">request_data</span>
+                    <span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">processed_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Заявка успешно обработана: </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2"> (время: </span><span class="si">{</span><span class="n">duration</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">с)&quot;</span><span class="p">)</span>
+                        <span class="n">redis_manager</span><span class="o">.</span><span class="n">mark_request_completed</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">failed_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка обработки результата парсера: </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        
+                        <span class="c1"># Отмечаем как неудачную</span>
+                        <span class="n">redis_manager</span><span class="o">.</span><span class="n">mark_request_completed</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">failed_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Парсер вернул пустой результат: </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">redis_manager</span><span class="o">.</span><span class="n">mark_request_completed</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    
+
+                
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">failed_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка обработки заявки </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">redis_manager</span><span class="o">.</span><span class="n">mark_request_completed</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">failed_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка обработки заявки </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">redis_manager</span><span class="o">.</span><span class="n">mark_request_completed</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="c1"># Очищаем ссылку на текущую задачу парсера</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_parser_task</span> <span class="o">=</span> <span class="kc">None</span>
+            
+            <span class="c1"># Проверяем время работы после обработки заявки</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">core.database.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_session</span>
+                <span class="k">async</span> <span class="k">with</span> <span class="n">async_session</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+                    <span class="n">settings</span> <span class="o">=</span> <span class="k">await</span> <span class="n">get_schedule_settings</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_active&#39;</span><span class="p">):</span>
+                        <span class="n">start_time</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;start_time&#39;</span><span class="p">]</span>
+                        <span class="n">end_time</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">]</span>
+                        
+                        <span class="c1"># Проверяем, не вышли ли мы за пределы рабочего времени</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_time_in_working_hours</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">):</span>
+                            <span class="n">time_to_start</span> <span class="o">=</span> <span class="n">get_time_to_start</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+                            <span class="n">hours</span> <span class="o">=</span> <span class="n">time_to_start</span> <span class="o">//</span> <span class="mi">60</span>
+                            <span class="n">minutes</span> <span class="o">=</span> <span class="n">time_to_start</span> <span class="o">%</span> <span class="mi">60</span>
+                            
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⏰ Рабочее время закончилось. Парсер работает с </span><span class="si">{</span><span class="n">start_time</span><span class="si">}</span><span class="s2"> до </span><span class="si">{</span><span class="n">end_time</span><span class="si">}</span><span class="s2">. &quot;</span>
+                                       <span class="sa">f</span><span class="s2">&quot;Следующая обработка начнется через </span><span class="si">{</span><span class="n">hours</span><span class="si">}</span><span class="s2">ч </span><span class="si">{</span><span class="n">minutes</span><span class="si">}</span><span class="s2">м.&quot;</span><span class="p">)</span>
+                            
+                            <span class="c1"># Останавливаем обработку до следующего рабочего времени</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка проверки времени работы: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_run_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">svg_collection</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">started_at</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Запуск парсера для заявки&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Запускаем парсер с учетными данными</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">login_audatex</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">,</span> <span class="n">svg_collection</span><span class="p">,</span> <span class="n">started_at</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка запуска парсера для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_process_parser_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser_result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> 
+                                   <span class="n">started_at</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">completed_at</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span>
+                                   <span class="n">request_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Обработка результата парсера&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Обрабатываем результат парсера: </span><span class="si">{</span><span class="n">parser_result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Проверяем, есть ли ошибка в результате</span>
+            <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">parser_result</span><span class="p">:</span>
+                <span class="n">error_msg</span> <span class="o">=</span> <span class="n">parser_result</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span>
+                <span class="n">is_cancelled</span> <span class="o">=</span> <span class="n">parser_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cancelled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                
+                <span class="c1"># Проверяем, была ли это действительно остановка пользователем</span>
+                <span class="k">if</span> <span class="n">is_cancelled</span> <span class="ow">and</span> <span class="s2">&quot;прерван во время выполнения&quot;</span> <span class="ow">in</span> <span class="n">error_msg</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🛑 Парсер был остановлен пользователем: </span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Парсер был отменен по техническим причинам: </span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">is_cancelled</span> <span class="ow">and</span> <span class="s2">&quot;остановлен пользователем&quot;</span> <span class="ow">in</span> <span class="n">error_msg</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🛑 Парсер был остановлен пользователем: </span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Парсер был отменен по техническим причинам: </span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Парсер вернул ошибку: </span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            
+            <span class="c1"># Получаем извлеченные данные из результата парсера</span>
+            <span class="n">extracted_claim_number</span> <span class="o">=</span> <span class="n">parser_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;claim_number&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">extracted_vin_number</span> <span class="o">=</span> <span class="n">parser_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vin_value&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Очищаем строки от лишних пробелов и символов табуляции</span>
+            <span class="n">clean_claim_number</span> <span class="o">=</span> <span class="n">extracted_claim_number</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">extracted_claim_number</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">clean_vin_number</span> <span class="o">=</span> <span class="n">extracted_vin_number</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">extracted_vin_number</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Используем извлеченные данные: claim_number=&#39;</span><span class="si">{</span><span class="n">extracted_claim_number</span><span class="si">}</span><span class="s2">&#39; -&gt; &#39;</span><span class="si">{</span><span class="n">clean_claim_number</span><span class="si">}</span><span class="s2">&#39;, vin=&#39;</span><span class="si">{</span><span class="n">extracted_vin_number</span><span class="si">}</span><span class="s2">&#39; -&gt; &#39;</span><span class="si">{</span><span class="n">clean_vin_number</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Проверяем, что данные не пустые</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">clean_claim_number</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">clean_vin_number</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Извлеченные данные пустые - claim_number и vin_number отсутствуют&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            
+            <span class="c1"># Формируем имя папки</span>
+            <span class="n">folder_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">clean_claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">clean_vin_number</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">folder_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;static/data/</span><span class="si">{</span><span class="n">folder_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Ищем папку: </span><span class="si">{</span><span class="n">folder_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Проверяем существование папки</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+            
+            <span class="c1"># Проверяем существование основной папки static/data</span>
+            <span class="n">base_data_dir</span> <span class="o">=</span> <span class="s2">&quot;static/data&quot;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">base_data_dir</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Основная папка </span><span class="si">{</span><span class="n">base_data_dir</span><span class="si">}</span><span class="s2"> не существует&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">folder_path</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Папка </span><span class="si">{</span><span class="n">folder_path</span><span class="si">}</span><span class="s2"> не существует после парсинга&quot;</span><span class="p">)</span>
+                
+                <span class="c1"># Показываем все доступные папки для отладки</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">all_folders</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">base_data_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_data_dir</span><span class="p">,</span> <span class="n">d</span><span class="p">))]</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📁 Доступные папки в </span><span class="si">{</span><span class="n">base_data_dir</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">all_folders</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Не удалось прочитать папки: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+                <span class="c1"># Попробуем найти папку по исходным данным из запроса</span>
+                <span class="n">original_claim</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;claim_number&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">original_vin</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vin_number&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                
+                <span class="k">if</span> <span class="n">original_claim</span> <span class="ow">or</span> <span class="n">original_vin</span><span class="p">:</span>
+                    <span class="n">fallback_folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">original_claim</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">original_vin</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">fallback_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;static/data/</span><span class="si">{</span><span class="n">fallback_folder</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔄 Пробуем найти папку по исходным данным: </span><span class="si">{</span><span class="n">fallback_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fallback_path</span><span class="p">):</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Найдена папка по исходным данным: </span><span class="si">{</span><span class="n">fallback_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">folder_path</span> <span class="o">=</span> <span class="n">fallback_path</span>
+                        <span class="n">folder_name</span> <span class="o">=</span> <span class="n">fallback_folder</span>
+                        <span class="n">clean_claim_number</span> <span class="o">=</span> <span class="n">original_claim</span>
+                        <span class="n">clean_vin_number</span> <span class="o">=</span> <span class="n">original_vin</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Папка по исходным данным тоже не найдена: </span><span class="si">{</span><span class="n">fallback_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="kc">False</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+            
+            <span class="c1"># Ищем JSON файлы в папке</span>
+            <span class="n">json_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">folder_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📁 Найдено JSON файлов в папке </span><span class="si">{</span><span class="n">folder_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">json_files</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">json_files</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ JSON-файлы не найдены в </span><span class="si">{</span><span class="n">folder_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="c1"># Показываем содержимое папки для отладки</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">all_files</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">folder_path</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📁 Содержимое папки </span><span class="si">{</span><span class="n">folder_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">all_files</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Не удалось прочитать содержимое папки: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            
+            <span class="c1"># Берем самый новый JSON файл</span>
+            <span class="n">latest_json</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">json_files</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_path</span><span class="p">,</span> <span class="n">f</span><span class="p">)))</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_path</span><span class="p">,</span> <span class="n">latest_json</span><span class="p">)</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Найден JSON файл: </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Читаем JSON файл</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            
+            <span class="c1"># Обновляем JSON с извлеченным claim_number</span>
+            <span class="n">updated_json</span> <span class="o">=</span> <span class="n">update_json_with_claim_number</span><span class="p">(</span><span class="n">json_data</span><span class="p">,</span> <span class="n">clean_claim_number</span><span class="p">)</span>
+            
+            <span class="c1"># Сохраняем обновленный JSON обратно в файл</span>
+            <span class="n">save_success</span> <span class="o">=</span> <span class="k">await</span> <span class="n">save_updated_json_to_file</span><span class="p">(</span><span class="n">updated_json</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">save_success</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Не удалось сохранить обновленный JSON: </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            
+            <span class="c1"># Сохраняем данные в БД с временными метками</span>
+            <span class="n">db_success</span> <span class="o">=</span> <span class="k">await</span> <span class="n">save_parser_data_to_db</span><span class="p">(</span>
+                <span class="n">updated_json</span><span class="p">,</span> <span class="n">clean_claim_number</span><span class="p">,</span> <span class="n">clean_vin_number</span><span class="p">,</span> 
+                <span class="n">is_success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">started_at</span><span class="o">=</span><span class="n">started_at</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="n">completed_at</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">db_success</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Не удалось сохранить данные в БД: </span><span class="si">{</span><span class="n">clean_claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">clean_vin_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            
+            <span class="k">return</span> <span class="kc">True</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка обработки результата парсера: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    
+<div class="viewcode-block" id="QueueProcessor.stop_processing">
+<a class="viewcode-back" href="../../../modules/queue.html#core.queue.queue_processor.QueueProcessor.stop_processing">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Остановка обработки очереди&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🛑 Запрошена остановка обработки очереди&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Отменяем текущую задачу парсера, если она запущена</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_parser_task</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_parser_task</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🛑 Отмена текущей задачи парсера&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_parser_task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+        
+        <span class="c1"># Очищаем очередь</span>
+        <span class="n">redis_manager</span><span class="o">.</span><span class="n">clear_queue</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🗑️ Очередь очищена&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="QueueProcessor.get_stats">
+<a class="viewcode-back" href="../../../modules/queue.html#core.queue.queue_processor.QueueProcessor.get_stats">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение статистики обработки&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;is_running&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span><span class="p">,</span>
+            <span class="s2">&quot;processed_count&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_count</span><span class="p">,</span>
+            <span class="s2">&quot;failed_count&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">failed_count</span><span class="p">,</span>
+            <span class="s2">&quot;queue_length&quot;</span><span class="p">:</span> <span class="n">redis_manager</span><span class="o">.</span><span class="n">get_queue_length</span><span class="p">(),</span>
+            <span class="s2">&quot;processing_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">redis_manager</span><span class="o">.</span><span class="n">get_processing_requests</span><span class="p">())</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+<span class="c1"># Глобальный экземпляр процессора</span>
+<span class="n">queue_processor</span> <span class="o">=</span> <span class="n">QueueProcessor</span><span class="p">()</span> 
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

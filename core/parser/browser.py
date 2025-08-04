@@ -1,3 +1,11 @@
+"""
+Управление браузером Chrome и WebDriver
+
+Основные функции:
+    * kill_chrome_processes: Завершает все процессы Chrome и ChromeDriver
+    * get_chromedriver_version: Получает версию установленного ChromeDriver
+    * init_browser: Инициализирует браузер Chrome с настройками для обхода бот-детекта
+"""
 # Функции для работы с браузером
 import psutil
 import logging
@@ -14,6 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 def kill_chrome_processes():
+    """
+    Завершает все процессы Chrome и ChromeDriver.
+    
+    Returns:
+        None
+    """
     for proc in psutil.process_iter(['name']):
         if proc.info['name'] in ['chrome.exe', 'chromedriver.exe']:
             try:
@@ -23,6 +37,12 @@ def kill_chrome_processes():
                 logger.error(f"Ошибка при завершении процесса {proc.info['name']}: {e}")
 
 def get_chromedriver_version():
+    """
+    Получает версию установленного ChromeDriver.
+    
+    Returns:
+        str - версия ChromeDriver или "неизвестно"
+    """
     try:
         # Получаем путь к ChromeDriver
         chromedriver_path = ChromeDriverManager().install()
@@ -37,6 +57,12 @@ def get_chromedriver_version():
 
 
 def init_browser():
+    """
+    Инициализирует браузер Chrome с настройками для обхода бот-детекта.
+    
+    Returns:
+        uc.Chrome - экземпляр браузера
+    """
     try:
         system = platform.system()
         print(f"ПЛАТФОРМА - {system}")

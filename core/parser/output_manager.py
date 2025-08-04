@@ -1,3 +1,13 @@
+"""
+Управление выходными данными и их сохранение
+
+Основные функции:
+    * create_zones_table: Формирует HTML-таблицу зон
+    * save_data_to_json: Сохраняет данные в JSON файл
+    * restore_started_at_from_db: Восстанавливает started_at из базы данных
+    * restore_last_updated_from_db: Восстанавливает last_updated из базы данных
+    * restore_completed_at_from_db: Восстанавливает completed_at из базы данных
+"""
 # Модуль для создания выходных данных
 import logging
 import os

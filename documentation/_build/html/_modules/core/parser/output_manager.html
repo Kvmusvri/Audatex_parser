@@ -1,0 +1,568 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.parser.output_manager &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8b205fae" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#id3">Структура базы данных</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#er">ER-диаграмма</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">core.parser.output_manager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код core.parser.output_manager</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Управление выходными данными и их сохранение</span>
+
+<span class="sd">Основные функции:</span>
+<span class="sd">    * create_zones_table: Формирует HTML-таблицу зон</span>
+<span class="sd">    * save_data_to_json: Сохраняет данные в JSON файл</span>
+<span class="sd">    * restore_started_at_from_db: Восстанавливает started_at из базы данных</span>
+<span class="sd">    * restore_last_updated_from_db: Восстанавливает last_updated из базы данных</span>
+<span class="sd">    * restore_completed_at_from_db: Восстанавливает completed_at из базы данных</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Модуль для создания выходных данных</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytz</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.database.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParserCarRequestStatus</span><span class="p">,</span> <span class="n">DatabaseSession</span><span class="p">,</span> <span class="n">get_moscow_time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">text</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="c1"># Формирует HTML-таблицу зон</span>
+<div class="viewcode-block" id="create_zones_table">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.output_manager.create_zones_table">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_zones_table</span><span class="p">(</span><span class="n">zone_data</span><span class="p">):</span>
+    <span class="n">table_html</span> <span class="o">=</span> <span class="s1">&#39;&lt;div class=&quot;zones-table&quot;&gt;&#39;</span>
+    <span class="k">for</span> <span class="n">zone</span> <span class="ow">in</span> <span class="n">zone_data</span><span class="p">:</span>
+        <span class="n">table_html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div class=&quot;zone-row&quot;&gt;&lt;button class=&quot;zone-button&quot; data-zone-title=&quot;</span><span class="si">{</span><span class="n">zone</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&quot;&gt;</span><span class="si">{</span><span class="n">zone</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">if</span> <span class="n">zone</span><span class="p">[</span><span class="s2">&quot;has_pictograms&quot;</span><span class="p">]:</span>
+            <span class="n">table_html</span> <span class="o">+=</span> <span class="s1">&#39;&lt;span class=&quot;pictogram-icon&quot;&gt;🖼️&lt;/span&gt;&#39;</span>
+        <span class="n">table_html</span> <span class="o">+=</span> <span class="s1">&#39;&lt;/button&gt;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">zone</span><span class="p">[</span><span class="s2">&quot;graphics_not_available&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;svg_path&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">zone</span><span class="p">[</span><span class="s2">&quot;svg_path&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">table_html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;a href=&quot;</span><span class="si">{</span><span class="n">zone</span><span class="p">[</span><span class="s2">&quot;svg_path&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&quot; download class=&quot;svg-download&quot; title=&quot;Скачать SVG&quot;&gt;&lt;span class=&quot;download-icon&quot;&gt;⬇&lt;/span&gt;&lt;/a&gt;&#39;</span>
+        <span class="n">table_html</span> <span class="o">+=</span> <span class="s1">&#39;&lt;/div&gt;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">zone_data</span><span class="p">:</span>
+        <span class="n">table_html</span> <span class="o">+=</span> <span class="s1">&#39;&lt;p&gt;Зоны не найдены&lt;/p&gt;&#39;</span>
+    <span class="n">table_html</span> <span class="o">+=</span> <span class="s1">&#39;&lt;/div&gt;&#39;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;HTML-таблица зон создана&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">table_html</span></div>
+
+
+
+<span class="c1"># Сохраняет данные в JSON</span>
+<div class="viewcode-block" id="save_data_to_json">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.output_manager.save_data_to_json">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_data_to_json</span><span class="p">(</span><span class="n">vin_value</span><span class="p">,</span> <span class="n">zone_data</span><span class="p">,</span> <span class="n">main_screenshot_path</span><span class="p">,</span> <span class="n">main_svg_path</span><span class="p">,</span> <span class="n">zones_table</span><span class="p">,</span> <span class="n">all_svgs_zip</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">options_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vin_status</span><span class="o">=</span><span class="s2">&quot;Нет&quot;</span><span class="p">,</span> <span class="n">started_at</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_intermediate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="c1"># Проверяем, что папка существует</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">data_dir</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Папка </span><span class="si">{</span><span class="n">data_dir</span><span class="si">}</span><span class="s2"> не существует, создаем её&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Папка </span><span class="si">{</span><span class="n">data_dir</span><span class="si">}</span><span class="s2"> создана&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Не удалось создать папку </span><span class="si">{</span><span class="n">data_dir</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    
+    <span class="c1"># Для промежуточных сохранений используем фиксированное имя файла</span>
+    <span class="k">if</span> <span class="n">is_intermediate</span><span class="p">:</span>
+        <span class="n">json_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;data_intermediate_</span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">.json&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;💾 Сохраняем промежуточный JSON в: </span><span class="si">{</span><span class="n">json_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Для финального сохранения используем timestamp</span>
+        <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S&quot;</span><span class="p">)</span>
+        <span class="n">json_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;data_</span><span class="si">{</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">.json&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;💾 Сохраняем финальный JSON в: </span><span class="si">{</span><span class="n">json_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Определяем статус завершения</span>
+    <span class="n">json_completed</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># JSON полностью собран</span>
+    <span class="n">db_saved</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># Предполагаем, что БД сохранена успешно</span>
+    
+    <span class="c1"># Создаем метаданные с правильным учетом часового пояса</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_time_with_timezone</span><span class="p">(</span><span class="n">dt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Форматирует время с учетом часового пояса для JSON&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        
+        <span class="c1"># Добавляем подробное логирование для диагностики</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 format_time_with_timezone получил: </span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2"> (тип: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Если передана строка, пытаемся преобразовать в datetime</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;+00:00&#39;</span><span class="p">))</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Строка времени преобразована: </span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Не удалось преобразовать строку времени &#39;</span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        
+        <span class="c1"># Проверяем, что это объект datetime</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Неожиданный тип времени: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span><span class="si">}</span><span class="s2">, значение: </span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Если время без часового пояса, считаем его московским</span>
+            <span class="k">if</span> <span class="n">dt</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">moscow_tz</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Europe/Moscow&#39;</span><span class="p">)</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="n">moscow_tz</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">dt</span><span class="o">.</span><span class="n">tzinfo</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Если время в UTC, конвертируем в московское</span>
+                <span class="n">moscow_tz</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Europe/Moscow&#39;</span><span class="p">)</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">moscow_tz</span><span class="p">)</span>
+            
+            <span class="c1"># Форматируем в московском времени</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Время отформатировано: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при форматировании времени </span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;started_at&quot;</span><span class="p">:</span> <span class="n">format_time_with_timezone</span><span class="p">(</span><span class="n">started_at</span><span class="p">),</span>
+        <span class="s2">&quot;completed_at&quot;</span><span class="p">:</span> <span class="n">format_time_with_timezone</span><span class="p">(</span><span class="n">completed_at</span><span class="p">),</span>
+        <span class="s2">&quot;last_updated&quot;</span><span class="p">:</span> <span class="n">format_time_with_timezone</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()),</span>
+        <span class="s2">&quot;json_completed&quot;</span><span class="p">:</span> <span class="n">json_completed</span><span class="p">,</span>
+        <span class="s2">&quot;db_saved&quot;</span><span class="p">:</span> <span class="n">db_saved</span><span class="p">,</span>
+        <span class="s2">&quot;total_zones&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">zone_data</span><span class="p">),</span>
+        <span class="s2">&quot;total_options&quot;</span><span class="p">:</span> <span class="n">options_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statistics&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total_options&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">options_data</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;options_success&quot;</span><span class="p">:</span> <span class="n">options_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">options_data</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="p">}</span>
+    
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;vin_value&quot;</span><span class="p">:</span> <span class="n">vin_value</span><span class="p">,</span>
+        <span class="s2">&quot;vin_status&quot;</span><span class="p">:</span> <span class="n">vin_status</span><span class="p">,</span>
+        <span class="s2">&quot;zone_data&quot;</span><span class="p">:</span> <span class="p">[{</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;screenshot_path&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="p">[</span><span class="s2">&quot;screenshot_path&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;svg_path&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="p">[</span><span class="s2">&quot;svg_path&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;svg_path&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;has_pictograms&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="p">[</span><span class="s2">&quot;has_pictograms&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;graphics_not_available&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="p">[</span><span class="s2">&quot;graphics_not_available&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">detail</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">],</span> <span class="s2">&quot;svg_path&quot;</span><span class="p">:</span> <span class="n">detail</span><span class="p">[</span><span class="s2">&quot;svg_path&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)}</span> <span class="k">for</span> <span class="n">detail</span> <span class="ow">in</span> <span class="n">zone</span><span class="p">[</span><span class="s2">&quot;details&quot;</span><span class="p">]],</span>
+            <span class="s2">&quot;pictograms&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;section_name&quot;</span><span class="p">:</span> <span class="n">pictogram</span><span class="p">[</span><span class="s2">&quot;section_name&quot;</span><span class="p">],</span> <span class="s2">&quot;works&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;work_name1&quot;</span><span class="p">:</span> <span class="n">work</span><span class="p">[</span><span class="s2">&quot;work_name1&quot;</span><span class="p">],</span> <span class="s2">&quot;work_name2&quot;</span><span class="p">:</span> <span class="n">work</span><span class="p">[</span><span class="s2">&quot;work_name2&quot;</span><span class="p">],</span> <span class="s2">&quot;svg_path&quot;</span><span class="p">:</span> <span class="n">work</span><span class="p">[</span><span class="s2">&quot;svg_path&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)}</span> <span class="k">for</span> <span class="n">work</span> <span class="ow">in</span> <span class="n">pictogram</span><span class="p">[</span><span class="s2">&quot;works&quot;</span><span class="p">]]}</span> <span class="k">for</span> <span class="n">pictogram</span> <span class="ow">in</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pictograms&quot;</span><span class="p">,</span> <span class="p">[])]</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">zone</span> <span class="ow">in</span> <span class="n">zone_data</span><span class="p">],</span>
+        <span class="s2">&quot;main_screenshot_path&quot;</span><span class="p">:</span> <span class="n">main_screenshot_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">main_screenshot_path</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;main_svg_path&quot;</span><span class="p">:</span> <span class="n">main_svg_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">main_svg_path</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;zones_table&quot;</span><span class="p">:</span> <span class="n">zones_table</span><span class="p">,</span>
+        <span class="s2">&quot;all_svgs_zip&quot;</span><span class="p">:</span> <span class="n">all_svgs_zip</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">all_svgs_zip</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;options_data&quot;</span><span class="p">:</span> <span class="n">options_data</span> <span class="k">if</span> <span class="n">options_data</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;zones&quot;</span><span class="p">:</span> <span class="p">[]},</span>
+        <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">,</span>
+        <span class="s2">&quot;claim_number&quot;</span><span class="p">:</span> <span class="n">claim_number</span>
+    <span class="p">}</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Данные сохранены в </span><span class="si">{</span><span class="n">json_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📊 VIN статус &#39;</span><span class="si">{</span><span class="n">vin_status</span><span class="si">}</span><span class="s2">&#39; сохранен в JSON&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⏱️ Время начала: </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;started_at&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, завершения: </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;completed_at&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Логируем итоговое время работы парсера</span>
+    <span class="k">if</span> <span class="n">started_at</span> <span class="ow">and</span> <span class="n">completed_at</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">duration_seconds</span> <span class="o">=</span> <span class="p">(</span><span class="n">completed_at</span> <span class="o">-</span> <span class="n">started_at</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+            <span class="n">duration_minutes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration_seconds</span> <span class="o">//</span> <span class="mi">60</span><span class="p">)</span>
+            <span class="n">duration_secs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration_seconds</span> <span class="o">%</span> <span class="mi">60</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⏱️ Итоговое время работы парсера: </span><span class="si">{</span><span class="n">duration_minutes</span><span class="si">}</span><span class="s2">м </span><span class="si">{</span><span class="n">duration_secs</span><span class="si">}</span><span class="s2">с&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка расчета итогового времени: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🏁 JSON завершен: </span><span class="si">{</span><span class="n">json_completed</span><span class="si">}</span><span class="s2">, БД сохранена: </span><span class="si">{</span><span class="n">db_saved</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">options_data</span> <span class="ow">and</span> <span class="n">options_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;success&quot;</span><span class="p">):</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">options_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statistics&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;💾 Опции сохранены: </span><span class="si">{</span><span class="n">stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total_selected&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total_options&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> в </span><span class="si">{</span><span class="n">stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total_zones&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> зонах&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">json_path</span></div>
+
+
+
+<div class="viewcode-block" id="restore_started_at_from_db">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.output_manager.restore_started_at_from_db">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">restore_started_at_from_db</span><span class="p">(</span><span class="n">json_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Восстанавливает started_at из БД если в JSON он null</span>
+<span class="sd">    Учитывает часовой пояс: БД хранит в UTC+3, JSON должен показывать московское время</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Читаем JSON файл</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем, есть ли started_at и равен ли он null</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;metadata&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">started_at</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;started_at&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем, нужно ли восстановление</span>
+        <span class="n">should_restore</span> <span class="o">=</span> <span class="p">(</span><span class="n">started_at</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">started_at</span> <span class="o">==</span> <span class="s2">&quot;null&quot;</span> <span class="ow">or</span> <span class="n">started_at</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span> <span class="ow">or</span> <span class="n">started_at</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Восстанавливаем только если started_at null или пустой</span>
+        <span class="c1"># Если started_at есть, но неправильный - не трогаем его</span>
+        
+        <span class="k">if</span> <span class="n">should_restore</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Восстанавливаем started_at из БД для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Ищем в БД</span>
+            <span class="k">async</span> <span class="k">with</span> <span class="n">DatabaseSession</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                    <span class="n">text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                    SELECT started_at </span>
+<span class="s2">                    FROM parser_car_request_status </span>
+<span class="s2">                    WHERE request_id = &#39;</span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&#39; AND vin = &#39;</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&#39;</span>
+<span class="s2">                    ORDER BY created_date DESC, id DESC </span>
+<span class="s2">                    LIMIT 1</span>
+<span class="s2">                    &quot;&quot;&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">db_started_at</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
+                
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Получено из БД для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">db_started_at</span><span class="si">}</span><span class="s2"> (тип: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">db_started_at</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">db_started_at</span><span class="p">:</span>
+                    <span class="c1"># Обрабатываем разные типы данных из БД</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">db_started_at</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                        <span class="c1"># Если это строка, парсим её</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="c1"># Пробуем парсить как ISO формат с часовым поясом</span>
+                            <span class="n">db_started_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">db_started_at</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                            <span class="c1"># Пробуем другие форматы</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">db_started_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">db_started_at</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+                            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Не удалось распарсить время из БД: </span><span class="si">{</span><span class="n">db_started_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                                <span class="k">return</span> <span class="kc">False</span>
+                    
+                    <span class="c1"># В БД время хранится в UTC+3 (московское время)</span>
+                    <span class="c1"># Конвертируем в московское время для JSON</span>
+                    <span class="k">if</span> <span class="n">db_started_at</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># Если время без часового пояса, считаем его московским</span>
+                        <span class="n">moscow_tz</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Europe/Moscow&#39;</span><span class="p">)</span>
+                        <span class="n">db_started_at</span> <span class="o">=</span> <span class="n">moscow_tz</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">db_started_at</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">db_started_at</span><span class="o">.</span><span class="n">tzinfo</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">(</span><span class="n">db_started_at</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="c1"># Если время в UTC, конвертируем в московское</span>
+                        <span class="n">moscow_tz</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Europe/Moscow&#39;</span><span class="p">)</span>
+                        <span class="n">db_started_at</span> <span class="o">=</span> <span class="n">db_started_at</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">moscow_tz</span><span class="p">)</span>
+                    <span class="c1"># Если время уже в московском часовом поясе (+03), оставляем как есть</span>
+                    
+                    <span class="c1"># Форматируем время в московском часовом поясе для JSON</span>
+                    <span class="n">formatted_time</span> <span class="o">=</span> <span class="n">db_started_at</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+                    
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Обработка времени для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Исходное из БД: </span><span class="si">{</span><span class="n">db_started_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Часовой пояс: </span><span class="si">{</span><span class="n">db_started_at</span><span class="o">.</span><span class="n">tzinfo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Итоговое для JSON: </span><span class="si">{</span><span class="n">formatted_time</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    
+                    <span class="c1"># Обновляем JSON</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;started_at&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">formatted_time</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span>
+                    
+                    <span class="c1"># Сохраняем обновленный JSON</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                    
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ started_at восстановлен из БД: </span><span class="si">{</span><span class="n">formatted_time</span><span class="si">}</span><span class="s2"> (МСК)&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ started_at не найден в БД для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ started_at уже есть в JSON: </span><span class="si">{</span><span class="n">started_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка восстановления started_at: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="restore_last_updated_from_db">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.output_manager.restore_last_updated_from_db">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">restore_last_updated_from_db</span><span class="p">(</span><span class="n">json_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Восстанавливает last_updated из БД если в JSON он неправильный</span>
+<span class="sd">    Учитывает часовой пояс: БД хранит в UTC+3, JSON должен показывать московское время</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Читаем JSON файл</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем, есть ли last_updated и правильный ли он</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;metadata&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">last_updated</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;last_updated&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем, нужно ли восстановление</span>
+        <span class="n">should_restore</span> <span class="o">=</span> <span class="p">(</span><span class="n">last_updated</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">last_updated</span> <span class="o">==</span> <span class="s2">&quot;null&quot;</span> <span class="ow">or</span> <span class="n">last_updated</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span> <span class="ow">or</span> <span class="n">last_updated</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Восстанавливаем только если last_updated null или пустой</span>
+        <span class="c1"># Если last_updated есть, но неправильный - не трогаем его</span>
+        
+        <span class="k">if</span> <span class="n">should_restore</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Восстанавливаем last_updated из БД для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Ищем в БД</span>
+            <span class="k">async</span> <span class="k">with</span> <span class="n">DatabaseSession</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                    <span class="n">text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                    SELECT completed_at </span>
+<span class="s2">                    FROM parser_car_request_status </span>
+<span class="s2">                    WHERE request_id = &#39;</span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&#39; AND vin = &#39;</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&#39;</span>
+<span class="s2">                    ORDER BY created_date DESC, id DESC </span>
+<span class="s2">                    LIMIT 1</span>
+<span class="s2">                    &quot;&quot;&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">db_completed_at</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
+                
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Получено completed_at из БД для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">db_completed_at</span><span class="si">}</span><span class="s2"> (тип: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">db_completed_at</span><span class="p">:</span>
+                    <span class="c1"># Обрабатываем разные типы данных из БД</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                        <span class="c1"># Если это строка, парсим её</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="c1"># Пробуем парсить как ISO формат с часовым поясом</span>
+                            <span class="n">db_completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                            <span class="c1"># Пробуем другие форматы</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">db_completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+                            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Не удалось распарсить время из БД: </span><span class="si">{</span><span class="n">db_completed_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                                <span class="k">return</span> <span class="kc">False</span>
+                    
+                    <span class="c1"># В БД время хранится в UTC+3 (московское время)</span>
+                    <span class="c1"># Конвертируем в московское время для JSON</span>
+                    <span class="k">if</span> <span class="n">db_completed_at</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># Если время без часового пояса, считаем его московским</span>
+                        <span class="n">moscow_tz</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Europe/Moscow&#39;</span><span class="p">)</span>
+                        <span class="n">db_completed_at</span> <span class="o">=</span> <span class="n">moscow_tz</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">db_completed_at</span><span class="o">.</span><span class="n">tzinfo</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="c1"># Если время в UTC, конвертируем в московское</span>
+                        <span class="n">moscow_tz</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Europe/Moscow&#39;</span><span class="p">)</span>
+                        <span class="n">db_completed_at</span> <span class="o">=</span> <span class="n">db_completed_at</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">moscow_tz</span><span class="p">)</span>
+                    <span class="c1"># Если время уже в московском часовом поясе (+03), оставляем как есть</span>
+                    
+                    <span class="c1"># Форматируем время в московском часовом поясе для JSON</span>
+                    <span class="n">formatted_time</span> <span class="o">=</span> <span class="n">db_completed_at</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+                    
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Обработка last_updated для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Исходное из БД: </span><span class="si">{</span><span class="n">db_completed_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Часовой пояс: </span><span class="si">{</span><span class="n">db_completed_at</span><span class="o">.</span><span class="n">tzinfo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Итоговое для JSON: </span><span class="si">{</span><span class="n">formatted_time</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    
+                    <span class="c1"># Обновляем JSON</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;last_updated&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">formatted_time</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span>
+                    
+                    <span class="c1"># Сохраняем обновленный JSON</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                    
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ last_updated восстановлен из БД: </span><span class="si">{</span><span class="n">formatted_time</span><span class="si">}</span><span class="s2"> (МСК)&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ completed_at не найден в БД для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ last_updated уже правильный в JSON: </span><span class="si">{</span><span class="n">last_updated</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка восстановления last_updated: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="restore_completed_at_from_db">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.output_manager.restore_completed_at_from_db">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">restore_completed_at_from_db</span><span class="p">(</span><span class="n">json_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Восстанавливает completed_at из БД если в JSON он null или неправильный</span>
+<span class="sd">    Учитывает часовой пояс: БД хранит в UTC+3, JSON должен показывать московское время</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Читаем JSON файл</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем, есть ли completed_at и правильный ли он</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;metadata&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">completed_at</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;completed_at&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем, нужно ли восстановление</span>
+        <span class="n">should_restore</span> <span class="o">=</span> <span class="p">(</span><span class="n">completed_at</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">completed_at</span> <span class="o">==</span> <span class="s2">&quot;null&quot;</span> <span class="ow">or</span> <span class="n">completed_at</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span> <span class="ow">or</span> <span class="n">completed_at</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Восстанавливаем только если completed_at null или пустой</span>
+        <span class="c1"># Если completed_at есть, но неправильный - не трогаем его</span>
+        
+        <span class="k">if</span> <span class="n">should_restore</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Восстанавливаем completed_at из БД для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Ищем в БД</span>
+            <span class="k">async</span> <span class="k">with</span> <span class="n">DatabaseSession</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                    <span class="n">text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                    SELECT completed_at </span>
+<span class="s2">                    FROM parser_car_request_status </span>
+<span class="s2">                    WHERE request_id = &#39;</span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&#39; AND vin = &#39;</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&#39;</span>
+<span class="s2">                    ORDER BY created_date DESC, id DESC </span>
+<span class="s2">                    LIMIT 1</span>
+<span class="s2">                    &quot;&quot;&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">db_completed_at</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
+                
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Получено completed_at из БД для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">db_completed_at</span><span class="si">}</span><span class="s2"> (тип: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">db_completed_at</span><span class="p">:</span>
+                    <span class="c1"># Обрабатываем разные типы данных из БД</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                        <span class="c1"># Если это строка, парсим её</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="c1"># Пробуем парсить как ISO формат с часовым поясом</span>
+                            <span class="n">db_completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                            <span class="c1"># Пробуем другие форматы</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">db_completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+                            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Не удалось распарсить время из БД: </span><span class="si">{</span><span class="n">db_completed_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                                <span class="k">return</span> <span class="kc">False</span>
+                    
+                    <span class="c1"># В БД время хранится в UTC+3 (московское время)</span>
+                    <span class="c1"># Конвертируем в московское время для JSON</span>
+                    <span class="k">if</span> <span class="n">db_completed_at</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># Если время без часового пояса, считаем его московским</span>
+                        <span class="n">moscow_tz</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Europe/Moscow&#39;</span><span class="p">)</span>
+                        <span class="n">db_completed_at</span> <span class="o">=</span> <span class="n">moscow_tz</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">db_completed_at</span><span class="o">.</span><span class="n">tzinfo</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">(</span><span class="n">db_completed_at</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="c1"># Если время в UTC, конвертируем в московское</span>
+                        <span class="n">moscow_tz</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Europe/Moscow&#39;</span><span class="p">)</span>
+                        <span class="n">db_completed_at</span> <span class="o">=</span> <span class="n">db_completed_at</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">moscow_tz</span><span class="p">)</span>
+                    <span class="c1"># Если время уже в московском часовом поясе (+03), оставляем как есть</span>
+                    
+                    <span class="c1"># Форматируем время в московском часовом поясе для JSON</span>
+                    <span class="n">formatted_time</span> <span class="o">=</span> <span class="n">db_completed_at</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+                    
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Обработка completed_at для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Исходное из БД: </span><span class="si">{</span><span class="n">db_completed_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Часовой пояс: </span><span class="si">{</span><span class="n">db_completed_at</span><span class="o">.</span><span class="n">tzinfo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Итоговое для JSON: </span><span class="si">{</span><span class="n">formatted_time</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    
+                    <span class="c1"># Обновляем JSON</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;completed_at&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">formatted_time</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span>
+                    
+                    <span class="c1"># Сохраняем обновленный JSON</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                    
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ completed_at восстановлен из БД: </span><span class="si">{</span><span class="n">formatted_time</span><span class="si">}</span><span class="s2"> (МСК)&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ completed_at не найден в БД для </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ completed_at уже правильный в JSON: </span><span class="si">{</span><span class="n">completed_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка восстановления completed_at: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span> </div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

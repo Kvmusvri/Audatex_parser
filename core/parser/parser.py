@@ -1,3 +1,11 @@
+"""
+Основной модуль парсинга данных автомобилей
+
+Основные функции:
+    * search_and_extract: Поиск и извлечение данных по номеру заявки и VIN
+    * login_audatex: Асинхронный вход в Audatex и запуск парсинга  
+    * terminate_all_processes_and_restart: Завершение всех процессов Chrome и перезапуск парсера
+"""
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
@@ -61,6 +69,19 @@ logger = logging.getLogger(__name__)
 
 # Основная функция
 def search_and_extract(driver, claim_number, vin_number, svg_collection=True, started_at=None):
+    """
+    Поиск и извлечение данных по номеру заявки и VIN.
+    
+    Args:
+        driver: WebDriver - экземпляр браузера
+        claim_number: str - номер заявки
+        vin_number: str - VIN автомобиля
+        svg_collection: bool - собирать SVG (по умолчанию True)
+        started_at: datetime|str|None - время старта (опционально)
+    
+    Returns:
+        dict - результат парсинга или описание ошибки
+    """
     logger.info(f"🎛️ Флаг сбора SVG: {'ВКЛЮЧЕН' if svg_collection else 'ОТКЛЮЧЕН'}")
     
     # Проверяем и нормализуем started_at
@@ -243,7 +264,18 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
 # Точка входа в парсер 
 async def login_audatex(username: str, password: str, claim_number: str, vin_number: str, svg_collection: bool = True, started_at=None):
     """
-    Асинхронная функция для входа в Audatex и выполнения парсинга
+    Асинхронный вход в Audatex и запуск парсинга.
+    
+    Args:
+        username: str - логин пользователя
+        password: str - пароль пользователя
+        claim_number: str - номер заявки
+        vin_number: str - VIN автомобиля
+        svg_collection: bool - собирать SVG (по умолчанию True)
+        started_at: datetime|str|None - время старта (опционально)
+    
+    Returns:
+        dict - результат парсинга или описание ошибки
     """
     driver = None
     try:
@@ -301,6 +333,15 @@ async def login_audatex(username: str, password: str, claim_number: str, vin_num
 
 # Функция для завершения всех процессов браузера
 def terminate_all_processes_and_restart(current_url=None):
+    """
+    Завершение всех процессов Chrome и перезапуск парсера.
+    
+    Args:
+        current_url: str|None - URL для восстановления (опционально)
+    
+    Returns:
+        None
+    """
     logger.critical("🛑 Завершение всех процессов браузера инициировано!")
     killed_processes = []
     

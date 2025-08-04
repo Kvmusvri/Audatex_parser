@@ -1,0 +1,868 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.parser.actions &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">core.parser.actions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код core.parser.actions</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Улучшенные функции для действий и взаимодействий с элементами интерфейса</span>
+<span class="c1"># Оптимизированы для скорости с сохранением надежности</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.common.by</span><span class="w"> </span><span class="kn">import</span> <span class="n">By</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.support.ui</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebDriverWait</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.support</span><span class="w"> </span><span class="kn">import</span> <span class="n">expected_conditions</span> <span class="k">as</span> <span class="n">EC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.remote.webdriver</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebDriver</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.common.action_chains</span><span class="w"> </span><span class="kn">import</span> <span class="n">ActionChains</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.common.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TimeoutException</span><span class="p">,</span> 
+    <span class="n">StaleElementReferenceException</span><span class="p">,</span> 
+    <span class="n">ElementNotInteractableException</span><span class="p">,</span>
+    <span class="n">NoSuchElementException</span><span class="p">,</span>
+    <span class="n">ElementClickInterceptedException</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.constants</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TIMEOUT</span><span class="p">,</span> <span class="n">OPEN_TABLE_SELECTOR</span><span class="p">,</span> <span class="n">OUTGOING_TABLE_SELECTOR</span><span class="p">,</span> <span class="n">ROW_SELECTOR</span><span class="p">,</span> 
+    <span class="n">MORE_ICON_SELECTOR</span><span class="p">,</span> <span class="n">IFRAME_ID</span><span class="p">,</span> <span class="n">EMPTY_TABLE_TEXT_SELECTOR</span><span class="p">,</span> <span class="n">EMPTY_TABLE_TEXT</span>
+<span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="human_like_delay">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.human_like_delay">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">human_like_delay</span><span class="p">(</span><span class="n">min_seconds</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">max_seconds</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Человеческая задержка с рандомизацией&quot;&quot;&quot;</span>
+    <span class="n">delay</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">min_seconds</span><span class="p">,</span> <span class="n">max_seconds</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="human_like_click">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.human_like_click">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">human_like_click</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="n">use_actions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Человеческий клик с рандомизацией&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_actions</span><span class="p">:</span>
+            <span class="c1"># Используем ActionChains для более человечного поведения</span>
+            <span class="n">actions</span> <span class="o">=</span> <span class="n">ActionChains</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">move_to_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="n">human_like_delay</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">perform</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Обычный клик с небольшой задержкой</span>
+            <span class="n">human_like_delay</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+            <span class="n">element</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="n">ElementClickInterceptedException</span><span class="p">:</span>
+        <span class="c1"># Fallback на JavaScript клик</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;arguments[0].click();&quot;</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при клике: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="add_human_behavior">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.add_human_behavior">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Добавляет человеческое поведение для обхода детекции&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Случайные движения мыши в пределах окна</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">window_size</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">get_window_size</span><span class="p">()</span>
+            <span class="n">max_x</span> <span class="o">=</span> <span class="n">window_size</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">100</span>
+            <span class="n">max_y</span> <span class="o">=</span> <span class="n">window_size</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">100</span>
+            
+            <span class="n">actions</span> <span class="o">=</span> <span class="n">ActionChains</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_x</span><span class="p">))</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_y</span><span class="p">))</span>
+                <span class="n">actions</span><span class="o">.</span><span class="n">move_by_offset</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="n">human_like_delay</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка движения мыши: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Случайный скролл</span>
+        <span class="n">scroll_amount</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="mi">300</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;window.scrollBy(0, </span><span class="si">{</span><span class="n">scroll_amount</span><span class="si">}</span><span class="s2">);&quot;</span><span class="p">)</span>
+        <span class="n">human_like_delay</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Добавлено человеческое поведение&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при добавлении человеческого поведения: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_extended_human_behavior">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.add_extended_human_behavior">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_extended_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">total_delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">60.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Расширенное человеческое поведение с контролируемой общей задержкой.</span>
+<span class="sd">    Распределяет задержку на различные человеческие действия.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        driver: WebDriver instance</span>
+<span class="sd">        total_delay: Общая задержка в секундах (по умолчанию 1 минута)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🤖 Добавляем расширенное человеческое поведение (общая задержка: </span><span class="si">{</span><span class="n">total_delay</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">с)&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Распределяем задержку на различные действия</span>
+        <span class="n">actions_count</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+        <span class="n">delay_per_action</span> <span class="o">=</span> <span class="n">total_delay</span> <span class="o">/</span> <span class="n">actions_count</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">actions_count</span><span class="p">):</span>
+            <span class="n">action_type</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span>
+                <span class="s1">&#39;mouse_movement&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;scroll&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;pause&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;window_focus&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;element_hover&#39;</span>
+            <span class="p">])</span>
+            
+            <span class="k">if</span> <span class="n">action_type</span> <span class="o">==</span> <span class="s1">&#39;mouse_movement&#39;</span><span class="p">:</span>
+                <span class="c1"># Случайные движения мыши в пределах окна</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Получаем размеры окна</span>
+                    <span class="n">window_size</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">get_window_size</span><span class="p">()</span>
+                    <span class="n">max_x</span> <span class="o">=</span> <span class="n">window_size</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">100</span>  <span class="c1"># Оставляем отступ от краев</span>
+                    <span class="n">max_y</span> <span class="o">=</span> <span class="n">window_size</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">100</span>
+                    
+                    <span class="c1"># Генерируем координаты в пределах окна</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_x</span><span class="p">))</span>
+                    <span class="n">y</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_y</span><span class="p">))</span>
+                    
+                    <span class="n">actions</span> <span class="o">=</span> <span class="n">ActionChains</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+                    <span class="n">actions</span><span class="o">.</span><span class="n">move_by_offset</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                    <span class="n">actions</span><span class="o">.</span><span class="n">perform</span><span class="p">()</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay_per_action</span> <span class="o">*</span> <span class="mf">0.3</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка движения мыши: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay_per_action</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+                
+            <span class="k">elif</span> <span class="n">action_type</span> <span class="o">==</span> <span class="s1">&#39;scroll&#39;</span><span class="p">:</span>
+                <span class="c1"># Случайный скролл</span>
+                <span class="n">scroll_amount</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;window.scrollBy(0, </span><span class="si">{</span><span class="n">scroll_amount</span><span class="si">}</span><span class="s2">);&quot;</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay_per_action</span> <span class="o">*</span> <span class="mf">0.4</span><span class="p">)</span>
+                
+            <span class="k">elif</span> <span class="n">action_type</span> <span class="o">==</span> <span class="s1">&#39;pause&#39;</span><span class="p">:</span>
+                <span class="c1"># Простая пауза</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay_per_action</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)</span>
+                
+            <span class="k">elif</span> <span class="n">action_type</span> <span class="o">==</span> <span class="s1">&#39;window_focus&#39;</span><span class="p">:</span>
+                <span class="c1"># Фокус на окно</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;window.focus();&quot;</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay_per_action</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">)</span>
+                
+            <span class="k">elif</span> <span class="n">action_type</span> <span class="o">==</span> <span class="s1">&#39;element_hover&#39;</span><span class="p">:</span>
+                <span class="c1"># Наведение на случайный элемент</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">elements</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_elements</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s2">&quot;div, span, a, button&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">elements</span><span class="p">:</span>
+                        <span class="n">random_element</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
+                        <span class="n">actions</span> <span class="o">=</span> <span class="n">ActionChains</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+                        <span class="n">actions</span><span class="o">.</span><span class="n">move_to_element</span><span class="p">(</span><span class="n">random_element</span><span class="p">)</span>
+                        <span class="n">actions</span><span class="o">.</span><span class="n">perform</span><span class="p">()</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay_per_action</span> <span class="o">*</span> <span class="mf">0.3</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay_per_action</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+            
+            <span class="c1"># Небольшая пауза между действиями</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">))</span>
+            
+            <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🤖 Выполнено </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">actions_count</span><span class="si">}</span><span class="s2"> человеческих действий&quot;</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Расширенное человеческое поведение завершено&quot;</span><span class="p">)</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при добавлении расширенного человеческого поведения: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="check_for_bot_detection">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.check_for_bot_detection">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_for_bot_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Проверяет признаки детекции бота&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">page_source</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">page_source</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">bot_indicators</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;gethandleverifier&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;white screen&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;bot detected&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;automation detected&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;captcha&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;cloudflare&quot;</span>
+        <span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">bot_indicators</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">page_source</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 Обнаружен индикатор детекции бота: </span><span class="si">{</span><span class="n">indicator</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при проверке детекции бота: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="handle_bot_detection">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.handle_bot_detection">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">handle_bot_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Обрабатывает детекцию бота с расширенным человеческим поведением&quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;🚨 Обрабатываем детекцию бота...&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Длительная пауза</span>
+    <span class="n">human_like_delay</span><span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span>
+    
+    <span class="c1"># Добавляем расширенное человеческое поведение</span>
+    <span class="n">add_extended_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">total_delay</span><span class="o">=</span><span class="mf">60.0</span><span class="p">)</span>
+    
+    <span class="c1"># Пробуем обновить страницу</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="n">human_like_delay</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+        <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при обновлении страницы: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Декоратор для повторных попыток - оптимизированный</span>
+<div class="viewcode-block" id="retry_on_failure">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.retry_on_failure">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Быстрый декоратор для повторных попыток.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        max_attempts: Максимальное количество попыток (по умолчанию 2)</span>
+<span class="sd">        delay: Задержка между попытками (по умолчанию 0.5 сек)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="n">last_exception</span> <span class="o">=</span> <span class="kc">None</span>
+            
+            <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_attempts</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Проверяем детекцию бота перед выполнением</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;page_source&#39;</span><span class="p">):</span>
+                        <span class="n">driver</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">check_for_bot_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+                            <span class="n">handle_bot_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+                    
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">attempt</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Функция </span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> успешна с попытки </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">result</span>
+                <span class="k">except</span> <span class="p">(</span><span class="n">StaleElementReferenceException</span><span class="p">,</span> <span class="n">ElementNotInteractableException</span><span class="p">,</span> 
+                        <span class="n">ElementClickInterceptedException</span><span class="p">,</span> <span class="n">NoSuchElementException</span><span class="p">,</span> <span class="n">TimeoutException</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">last_exception</span> <span class="o">=</span> <span class="n">e</span>
+                    <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_attempts</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Попытка </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2"> неудачна, повторяем через </span><span class="si">{</span><span class="n">delay</span><span class="si">}</span><span class="s2">с: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Все </span><span class="si">{</span><span class="n">max_attempts</span><span class="si">}</span><span class="s2"> попыток функции </span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> исчерпаны&quot;</span><span class="p">)</span>
+                        
+            <span class="k">raise</span> <span class="n">last_exception</span>
+        <span class="k">return</span> <span class="n">wrapper</span>
+    <span class="k">return</span> <span class="n">decorator</span></div>
+
+
+
+<div class="viewcode-block" id="wait_for_table">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.wait_for_table">[документация]</a>
+<span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">wait_for_table</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">selector</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ожидание загрузки таблицы с явным ожиданием элементов.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Добавляем человеческое поведение перед ожиданием таблицы</span>
+    <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+    
+    <span class="n">selectors_to_check</span> <span class="o">=</span> <span class="p">[</span><span class="n">selector</span><span class="p">]</span> <span class="k">if</span> <span class="n">selector</span> <span class="k">else</span> <span class="p">[</span><span class="n">OPEN_TABLE_SELECTOR</span><span class="p">,</span> <span class="n">OUTGOING_TABLE_SELECTOR</span><span class="p">]</span>
+    
+    <span class="c1"># Увеличиваем таймаут для медленного сайта</span>
+    <span class="n">timeout</span> <span class="o">=</span> <span class="mi">60</span>  <span class="c1"># 60 секунд для полной загрузки</span>
+    
+    <span class="k">for</span> <span class="n">sel</span> <span class="ow">in</span> <span class="n">selectors_to_check</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ожидание таблицы с селектором: </span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Ждем появления элемента</span>
+            <span class="n">table_element</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+                <span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">sel</span><span class="p">))</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># Дополнительно ждем, что элемент стал видимым и интерактивным</span>
+            <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+                <span class="n">EC</span><span class="o">.</span><span class="n">visibility_of</span><span class="p">(</span><span class="n">table_element</span><span class="p">)</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># Проверяем, что таблица не пустая (есть строки или сообщение о пустоте)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Ждем либо строки таблицы, либо сообщения о пустоте</span>
+                <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+                    <span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">find_elements</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">ROW_SELECTOR</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">find_elements</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">EMPTY_TABLE_TEXT_SELECTOR</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Таблица &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; полностью загружена и готова&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Таблица &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; найдена, но содержимое не загрузилось&quot;</span><span class="p">)</span>
+                <span class="c1"># Возвращаем True, так как таблица есть, просто может быть пустая</span>
+                <span class="k">return</span> <span class="kc">True</span>
+                
+        <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Таблица с селектором &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; не найдена за </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2"> секунд&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Ни одна из таблиц не загрузилась&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="click_cansel_button">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.click_cansel_button">[документация]</a>
+<span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">click_cansel_button</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Нажатие кнопки отмены с явным ожиданием элемента.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">selector</span> <span class="o">=</span> <span class="s2">&quot;#confirm &gt; div &gt; div &gt; div.modal-footer &gt; button&quot;</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Ждем появления кнопки</span>
+        <span class="n">button</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">selector</span><span class="p">))</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Добавляем человеческое поведение</span>
+        <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="c1"># Используем человеческий клик</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="n">human_like_click</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">button</span><span class="p">,</span> <span class="n">use_actions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Кнопка подтверждения нажата&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Не удалось нажать кнопку подтверждения&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ℹ️ Кнопка подтверждения не найдена (это нормально)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># Это нормально</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка клика кнопки подтверждения: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="click_request_type_button">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.click_request_type_button">[документация]</a>
+<span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">click_request_type_button</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">req_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Переключение между типами заявок с явным ожиданием элементов.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">req_type</span> <span class="o">==</span> <span class="s2">&quot;open&quot;</span><span class="p">:</span>
+            <span class="n">selector</span> <span class="o">=</span> <span class="s2">&quot;#view-link-worklistgrid_custom_open&quot;</span>
+        <span class="k">elif</span> <span class="n">req_type</span> <span class="o">==</span> <span class="s2">&quot;outgoing&quot;</span><span class="p">:</span>
+            <span class="n">selector</span> <span class="o">=</span> <span class="s2">&quot;#view-link-worklistgrid_custom_sent&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Неизвестный тип заявки: </span><span class="si">{</span><span class="n">req_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ожидание кнопки типа заявки: </span><span class="si">{</span><span class="n">req_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Ждем появления и кликабельности кнопки</span>
+        <span class="n">more_views_link</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">selector</span><span class="p">))</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Добавляем человеческое поведение</span>
+        <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="c1"># Используем человеческий клик</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="n">human_like_click</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">more_views_link</span><span class="p">,</span> <span class="n">use_actions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Клик по кнопке </span><span class="si">{</span><span class="n">req_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Не удалось кликнуть по кнопке </span><span class="si">{</span><span class="n">req_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+    <span class="k">except</span> <span class="n">TimeoutException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка клика по кнопке </span><span class="si">{</span><span class="n">req_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="search_in_table">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.search_in_table">[документация]</a>
+<span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">search_in_table</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">search_value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">search_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Поиск в таблице с расширенным человеческим поведением для обхода детекции.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Начинаем поиск по </span><span class="si">{</span><span class="n">search_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">search_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Добавляем расширенное человеческое поведение перед поиском</span>
+        <span class="n">add_extended_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">total_delay</span><span class="o">=</span><span class="mf">60.0</span><span class="p">)</span>
+        
+        <span class="n">search_input</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s2">&quot;#root</span><span class="se">\\</span><span class="s2">.quickfilter</span><span class="se">\\</span><span class="s2">.searchbox&quot;</span><span class="p">))</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Добавляем человеческое поведение</span>
+        <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="c1"># Очищаем поле с человеческой задержкой</span>
+        <span class="n">search_input</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="n">human_like_delay</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">)</span>
+        
+        <span class="c1"># Вводим текст с человеческими паузами</span>
+        <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">search_value</span><span class="p">:</span>
+            <span class="n">search_input</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+            <span class="n">human_like_delay</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Введён </span><span class="si">{</span><span class="n">search_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">search_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">human_like_delay</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">)</span>  <span class="c1"># Человеческая задержка</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ожидание результатов поиска по </span><span class="si">{</span><span class="n">search_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">ROW_SELECTOR</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Найдены строки по </span><span class="si">{</span><span class="n">search_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+        
+    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Таблица пустая после поиска по </span><span class="si">{</span><span class="n">search_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="click_more_icon">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.click_more_icon">[документация]</a>
+<span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">click_more_icon</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Нажатие иконки &quot;Еще&quot; с явным ожиданием элементов.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Селекторы для разных типов таблиц</span>
+    <span class="n">selectors</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">MORE_ICON_SELECTOR</span><span class="p">,</span>  <span class="c1"># Исходящие дела</span>
+        <span class="n">MORE_ICON_SELECTOR</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;worklistgrid_custom_sent&quot;</span><span class="p">,</span> <span class="s2">&quot;worklistgrid_custom_open&quot;</span><span class="p">)</span>  <span class="c1"># Открытые дела</span>
+    <span class="p">]</span>
+    
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">selector</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">selectors</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ожидание иконки &#39;ещё&#39; с селектором: </span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Ждем появления и кликабельности иконки</span>
+            <span class="n">more_icon</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+                <span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">selector</span><span class="p">))</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># Добавляем человеческое поведение</span>
+            <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+            
+            <span class="c1"># Используем человеческий клик</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="n">human_like_click</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">more_icon</span><span class="p">,</span> <span class="n">use_actions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+                <span class="n">table_type</span> <span class="o">=</span> <span class="s2">&quot;исходящих&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;открытых&quot;</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Клик по иконке &#39;ещё&#39; в таблице </span><span class="si">{</span><span class="n">table_type</span><span class="si">}</span><span class="s2"> дел&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Иконка &#39;ещё&#39; не найдена с селектором: </span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Ошибка клика по иконке &#39;ещё&#39;: не найдена ни в одной таблице&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="open_task">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.open_task">[документация]</a>
+<span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">open_task</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Открытие задачи с явным ожиданием элемента.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Добавляем человеческое поведение перед открытием задачи</span>
+        <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ожидание кнопки &#39;openTask&#39;&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Ждем появления и кликабельности кнопки</span>
+        <span class="n">open_task</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s2">&quot;#openTask&quot;</span><span class="p">))</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Используем человеческий клик</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="n">human_like_click</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">open_task</span><span class="p">,</span> <span class="n">use_actions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Кнопка &#39;openTask&#39; нажата&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Не удалось нажать кнопку &#39;openTask&#39;&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+            
+    <span class="k">except</span> <span class="n">TimeoutException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка клика по openTask: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="switch_to_frame_and_confirm">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.switch_to_frame_and_confirm">[документация]</a>
+<span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">switch_to_frame_and_confirm</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Надёжное переключение в iframe с человеческим поведением и дополнительными проверками.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Добавляем человеческое поведение перед переключением на фрейм</span>
+        <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="c1"># Ждём полной загрузки страницы</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ожидание полной загрузки страницы&quot;</span><span class="p">)</span>
+        <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return document.readyState === &#39;complete&#39;&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Страница полностью загружена&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Дополнительная пауза для загрузки динамического контента</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем наличие iframe в DOM</span>
+        <span class="n">iframe_exists</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            return document.getElementById(&#39;</span><span class="si">{</span><span class="n">IFRAME_ID</span><span class="si">}</span><span class="s2">&#39;) !== null;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">iframe_exists</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iframe </span><span class="si">{</span><span class="n">IFRAME_ID</span><span class="si">}</span><span class="s2"> не найден в DOM&quot;</span><span class="p">)</span>
+            <span class="c1"># Выводим список всех iframe на странице для диагностики</span>
+            <span class="n">iframes</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                var iframes = document.getElementsByTagName(&#39;iframe&#39;);</span>
+<span class="s2">                var result = [];</span>
+<span class="s2">                for (var i = 0; i &lt; iframes.length; i++) {</span>
+<span class="s2">                    result.push({</span>
+<span class="s2">                        id: iframes[i].id || &#39;no-id&#39;,</span>
+<span class="s2">                        src: iframes[i].src || &#39;no-src&#39;,</span>
+<span class="s2">                        name: iframes[i].name || &#39;no-name&#39;</span>
+<span class="s2">                    });</span>
+<span class="s2">                }</span>
+<span class="s2">                return result;</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Найдены iframe на странице: </span><span class="si">{</span><span class="n">iframes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iframe </span><span class="si">{</span><span class="n">IFRAME_ID</span><span class="si">}</span><span class="s2"> найден в DOM, переключаемся...&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Переключаемся на iframe с увеличенным таймаутом</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ожидание готовности iframe: </span><span class="si">{</span><span class="n">IFRAME_ID</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="n">EC</span><span class="o">.</span><span class="n">frame_to_be_available_and_switch_to_it</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">ID</span><span class="p">,</span> <span class="n">IFRAME_ID</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Успешно переключились на фрейм: </span><span class="si">{</span><span class="n">IFRAME_ID</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Ждём загрузки содержимого iframe</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ожидание кнопки подтверждения в iframe&quot;</span><span class="p">)</span>
+            <span class="n">confirm_button</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+                <span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s2">&quot;.btn.btn-confirm&quot;</span><span class="p">))</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># Используем человеческий клик для кнопки подтверждения</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="n">human_like_click</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">confirm_button</span><span class="p">,</span> <span class="n">use_actions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Кнопка подтверждения в фрейме нажата&quot;</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ Не удалось нажать кнопку подтверждения в фрейме&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ℹ️ Кнопка подтверждения в фрейме не найдена (это нормально)&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="kc">True</span>
+        
+    <span class="k">except</span> <span class="n">TimeoutException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка переключения на фрейм </span><span class="si">{</span><span class="n">IFRAME_ID</span><span class="si">}</span><span class="s2">: Таймаут ожидания&quot;</span><span class="p">)</span>
+        <span class="c1"># Дополнительная диагностика</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">current_url</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">current_url</span>
+            <span class="n">page_title</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">title</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Текущий URL: </span><span class="si">{</span><span class="n">current_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Заголовок страницы: </span><span class="si">{</span><span class="n">page_title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Неожиданная ошибка при переключении на фрейм </span><span class="si">{</span><span class="n">IFRAME_ID</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="click_breadcrumb">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.click_breadcrumb">[документация]</a>
+<span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">click_breadcrumb</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Нажатие breadcrumb с явным ожиданием элемента.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ожидание breadcrumb элемента&quot;</span><span class="p">)</span>
+        <span class="n">breadcrumb</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">ID</span><span class="p">,</span> <span class="s2">&quot;breadcrumb-navigation-title&quot;</span><span class="p">))</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Добавляем человеческое поведение</span>
+        <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="c1"># Используем человеческий клик</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="n">human_like_click</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">breadcrumb</span><span class="p">,</span> <span class="n">use_actions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Клик по breadcrumb выполнен&quot;</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Не удалось нажать breadcrumb&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="n">TimeoutException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка клика по breadcrumb: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="is_table_empty">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.is_table_empty">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_table_empty</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">selector</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">EMPTY_TABLE_TEXT_SELECTOR</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Проверка пустоты таблицы с человеческим поведением.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">element</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">selector</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">EMPTY_TABLE_TEXT</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Таблица пуста&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="find_claim_data">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.find_claim_data">[документация]</a>
+<span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_claim_data</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                    <span class="n">vin_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Поиск данных заявки с расширенным человеческим поведением для обхода детекции.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🤖 Начинаем поиск заявки с расширенным человеческим поведением&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Добавляем расширенное человеческое поведение перед поиском заявки</span>
+    <span class="n">add_extended_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">total_delay</span><span class="o">=</span><span class="mf">60.0</span><span class="p">)</span>
+    
+    <span class="n">section_selector_map</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;open&quot;</span><span class="p">:</span> <span class="n">OPEN_TABLE_SELECTOR</span><span class="p">,</span> <span class="s2">&quot;outgoing&quot;</span><span class="p">:</span> <span class="n">OUTGOING_TABLE_SELECTOR</span><span class="p">}</span>
+    
+    <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;open&quot;</span><span class="p">,</span> <span class="s2">&quot;outgoing&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">click_request_type_button</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Не удалось перейти в раздел </span><span class="si">{</span><span class="n">section</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Не удалось перейти в раздел </span><span class="si">{</span><span class="n">section</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">wait_for_table</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">section_selector_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Таблица не загрузилась в разделе </span><span class="si">{</span><span class="n">section</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">is_table_empty</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Раздел </span><span class="si">{</span><span class="n">section</span><span class="si">}</span><span class="s2"> пуст&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">claim_number</span> <span class="ow">and</span> <span class="n">search_in_table</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="s2">&quot;номеру дела&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="k">elif</span> <span class="n">vin_number</span> <span class="ow">and</span> <span class="n">search_in_table</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">,</span> <span class="s2">&quot;VIN&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Данные не найдены в разделе </span><span class="si">{</span><span class="n">section</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Данные не найдены ни в одном разделе&quot;</span><span class="p">}</span> </div>
+
+
+
+<div class="viewcode-block" id="get_vin_status">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.actions.get_vin_status">[документация]</a>
+<span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_vin_status</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Определяет активный статус VIN кнопок с человеческим поведением.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: &quot;VIN&quot;, &quot;VIN лайт&quot; или &quot;Нет&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🔍 Определяем статус VIN кнопок...&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Добавляем человеческое поведение перед определением статуса</span>
+    <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">vin_query_id</span> <span class="o">=</span> <span class="s2">&quot;root.task.basicClaimData.vehicle.vehicleIdentification.VINQuery-VINQueryButton&quot;</span>
+        <span class="n">vin_lite_id</span> <span class="o">=</span> <span class="s2">&quot;root.task.basicClaimData.vehicle.vehicleIdentification.VINQuery-vinDecoderButton&quot;</span>
+        
+        <span class="c1"># Ищем кнопки с явным ожиданием</span>
+        <span class="n">wait</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+        
+        <span class="n">vin_query_enabled</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">vin_lite_enabled</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ожидание кнопки VIN Запрос&quot;</span><span class="p">)</span>
+            <span class="n">vin_query_button</span> <span class="o">=</span> <span class="n">wait</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">ID</span><span class="p">,</span> <span class="n">vin_query_id</span><span class="p">)))</span>
+            <span class="n">vin_query_enabled</span> <span class="o">=</span> <span class="n">vin_query_button</span><span class="o">.</span><span class="n">is_enabled</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📋 VIN Запрос: </span><span class="si">{</span><span class="s1">&#39;активна&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">vin_query_enabled</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;неактивна&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ Кнопка VIN Запрос не найдена&quot;</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">vin_lite_button</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">ID</span><span class="p">,</span> <span class="n">vin_lite_id</span><span class="p">)</span>
+            <span class="n">vin_lite_enabled</span> <span class="o">=</span> <span class="n">vin_lite_button</span><span class="o">.</span><span class="n">is_enabled</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📋 VIN Лайт: </span><span class="si">{</span><span class="s1">&#39;активна&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">vin_lite_enabled</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;неактивна&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NoSuchElementException</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;❌ Кнопка VIN Лайт не найдена&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Определяем статус</span>
+        <span class="k">if</span> <span class="n">vin_query_enabled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">vin_lite_enabled</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;VIN&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Статус: VIN Запрос активен&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vin_lite_enabled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">vin_query_enabled</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;VIN лайт&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Статус: VIN Лайт активен&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vin_query_enabled</span> <span class="ow">and</span> <span class="n">vin_lite_enabled</span><span class="p">:</span>
+            <span class="c1"># Если обе активны, проверяем визуально какая выбрана (оранжевая)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;VIN&quot;</span>  <span class="c1"># По умолчанию VIN Запрос</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Статус: Обе активны, выбран VIN Запрос&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;Нет&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;❌ Статус: Ни одна кнопка не активна&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">result</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при определении VIN статуса: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;Нет&quot;</span> </div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

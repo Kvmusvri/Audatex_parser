@@ -1,0 +1,513 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.parser.parser &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8b205fae" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#id3">Структура базы данных</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#er">ER-диаграмма</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">core.parser.parser</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код core.parser.parser</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Основной модуль парсинга данных автомобилей</span>
+
+<span class="sd">Основные функции:</span>
+<span class="sd">    * search_and_extract: Поиск и извлечение данных по номеру заявки и VIN</span>
+<span class="sd">    * login_audatex: Асинхронный вход в Audatex и запуск парсинга  </span>
+<span class="sd">    * terminate_all_processes_and_restart: Завершение всех процессов Chrome и перезапуск парсера</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selectolax.lexbor</span><span class="w"> </span><span class="kn">import</span> <span class="n">LexborHTMLParser</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">undetected_chromedriver</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">uc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.common.by</span><span class="w"> </span><span class="kn">import</span> <span class="n">By</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.support.ui</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebDriverWait</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.support</span><span class="w"> </span><span class="kn">import</span> <span class="n">expected_conditions</span> <span class="k">as</span> <span class="n">EC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.common.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeoutException</span><span class="p">,</span> <span class="n">StaleElementReferenceException</span><span class="p">,</span> <span class="n">WebDriverException</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lxml</span><span class="w"> </span><span class="kn">import</span> <span class="n">etree</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">urllib3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xml.etree.ElementTree</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ET</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">transliterate</span><span class="w"> </span><span class="kn">import</span> <span class="n">translit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytesIO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.chrome.service</span><span class="w"> </span><span class="kn">import</span> <span class="n">Service</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">webdriver_manager.chrome</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChromeDriverManager</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">webdriver_manager.core.os_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChromeType</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">zipfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="c1"># Импорт констант и функций</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.constants</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.browser</span><span class="w"> </span><span class="kn">import</span> <span class="n">kill_chrome_processes</span><span class="p">,</span> <span class="n">get_chromedriver_version</span><span class="p">,</span> <span class="n">init_browser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_cookies</span><span class="p">,</span> <span class="n">perform_login</span><span class="p">,</span> <span class="n">check_if_authorized</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.folder_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_folders</span><span class="p">,</span> <span class="n">extract_vin_and_claim_number</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.output_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_zones_table</span><span class="p">,</span> <span class="n">save_data_to_json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.visual_processor</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">is_zone_file</span><span class="p">,</span> <span class="n">split_svg_by_details</span><span class="p">,</span> <span class="n">save_svg_sync</span><span class="p">,</span> 
+    <span class="n">save_main_screenshot_and_svg</span><span class="p">,</span> <span class="n">extract_zones</span><span class="p">,</span> 
+    <span class="n">process_zone</span><span class="p">,</span> <span class="n">process_pictograms</span><span class="p">,</span> <span class="n">ensure_zone_details_extracted</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.option_processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">process_vehicle_options</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.actions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">wait_for_table</span><span class="p">,</span> <span class="n">click_cansel_button</span><span class="p">,</span> <span class="n">click_request_type_button</span><span class="p">,</span>
+    <span class="n">search_in_table</span><span class="p">,</span> <span class="n">click_more_icon</span><span class="p">,</span> <span class="n">open_task</span><span class="p">,</span> 
+    <span class="n">switch_to_frame_and_confirm</span><span class="p">,</span> <span class="n">click_breadcrumb</span><span class="p">,</span> <span class="n">is_table_empty</span><span class="p">,</span>
+    <span class="n">find_claim_data</span>
+<span class="p">)</span>
+
+<span class="c1"># Настройка логирования</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+
+
+<span class="c1"># Основная функция</span>
+<div class="viewcode-block" id="search_and_extract">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.parser.search_and_extract">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">search_and_extract</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">,</span> <span class="n">svg_collection</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">started_at</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Поиск и извлечение данных по номеру заявки и VIN.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        driver: WebDriver - экземпляр браузера</span>
+<span class="sd">        claim_number: str - номер заявки</span>
+<span class="sd">        vin_number: str - VIN автомобиля</span>
+<span class="sd">        svg_collection: bool - собирать SVG (по умолчанию True)</span>
+<span class="sd">        started_at: datetime|str|None - время старта (опционально)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict - результат парсинга или описание ошибки</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🎛️ Флаг сбора SVG: </span><span class="si">{</span><span class="s1">&#39;ВКЛЮЧЕН&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">svg_collection</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;ОТКЛЮЧЕН&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Проверяем и нормализуем started_at</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 search_and_extract получил started_at: </span><span class="si">{</span><span class="n">started_at</span><span class="si">}</span><span class="s2"> (тип: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">started_at</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">started_at</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">started_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ started_at установлен как текущее время: </span><span class="si">{</span><span class="n">started_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">started_at</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">started_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">started_at</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;+00:00&#39;</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ started_at преобразован из строки: </span><span class="si">{</span><span class="n">started_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Не удалось преобразовать started_at &#39;</span><span class="si">{</span><span class="n">started_at</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">started_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ started_at установлен как текущее время после ошибки: </span><span class="si">{</span><span class="n">started_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ started_at уже правильного типа: </span><span class="si">{</span><span class="n">started_at</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="n">zone_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">wait_for_table</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Таблица не загрузилась&quot;</span><span class="p">}</span>
+    <span class="n">click_cansel_button</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">find_claim_data</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">claim_number</span><span class="o">=</span><span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="o">=</span><span class="n">vin_number</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">click_more_icon</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Не удалось открыть меню действий&quot;</span><span class="p">}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">open_task</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Не удалось открыть задачу&quot;</span><span class="p">}</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ожидание загрузки страницы после открытия задачи&quot;</span><span class="p">)</span>
+    <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">)))</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">current_url</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">current_url</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Текущий URL: </span><span class="si">{</span><span class="n">current_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">,</span> <span class="n">vin_status</span> <span class="o">=</span> <span class="n">extract_vin_and_claim_number</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">current_url</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Извлеченные данные: claim_number=&#39;</span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&#39;, vin_number=&#39;</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&#39;, vin_status=&#39;</span><span class="si">{</span><span class="n">vin_status</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем, что данные не пустые</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">claim_number</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">vin_number</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Извлеченные данные пустые - claim_number и vin_number отсутствуют&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Не удалось извлечь данные VIN и номер дела&quot;</span><span class="p">}</span>
+        
+        <span class="n">screenshot_dir</span><span class="p">,</span> <span class="n">svg_dir</span><span class="p">,</span> <span class="n">data_dir</span> <span class="o">=</span> <span class="n">create_folders</span><span class="p">(</span><span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при извлечении данных: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Ошибка извлечения данных: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+    
+    <span class="c1"># Формируем URL страницы повреждений для повторного использования</span>
+    <span class="n">base_url</span> <span class="o">=</span> <span class="n">current_url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;step&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;&amp;step=Damage+capturing&#39;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Сформирован URL повреждений: </span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Переходим на страницу повреждений для main screenshot</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Переход на URL повреждений для main screenshot: </span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">base_url</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ожидание загрузки страницы повреждений&quot;</span><span class="p">)</span>
+    <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">)))</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">switch_to_frame_and_confirm</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">switch_to</span><span class="o">.</span><span class="n">default_content</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Не удалось переключиться на фрейм </span><span class="si">{</span><span class="n">IFRAME_ID</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S&quot;</span><span class="p">)</span>
+    <span class="n">main_screenshot_relative</span><span class="p">,</span> <span class="n">main_svg_relative</span> <span class="o">=</span> <span class="n">save_main_screenshot_and_svg</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">screenshot_dir</span><span class="p">,</span> <span class="n">svg_dir</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">,</span> <span class="n">svg_collection</span><span class="p">)</span>
+    
+    <span class="c1"># Исправляем проблему с None при ошибке скриншота</span>
+    <span class="k">if</span> <span class="n">main_screenshot_relative</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">main_screenshot_relative</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ Основной скриншот не был сохранен, устанавливаем пустой путь&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">main_svg_relative</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">main_svg_relative</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ Основной SVG не был сохранен, устанавливаем пустой путь&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Выходим из фрейма для сбора опций</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">switch_to</span><span class="o">.</span><span class="n">default_content</span><span class="p">()</span>
+    
+    <span class="c1"># СНАЧАЛА СОБИРАЕМ ОПЦИИ АВТОМОБИЛЯ (до обработки зон)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🚗 ЭТАП 1: Сбор опций автомобиля&quot;</span><span class="p">)</span>
+    <span class="n">options_result</span> <span class="o">=</span> <span class="n">process_vehicle_options</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">)</span>
+    
+    <span class="c1"># ВОЗВРАЩАЕМСЯ К СТРАНИЦЕ ПОВРЕЖДЕНИЙ ДЛЯ СБОРА SVG</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🔄 Возвращаемся к странице повреждений для сбора SVG&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Переход на URL повреждений для SVG: </span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">base_url</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ожидание загрузки страницы повреждений для SVG&quot;</span><span class="p">)</span>
+    <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">)))</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">switch_to_frame_and_confirm</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">switch_to</span><span class="o">.</span><span class="n">default_content</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Не удалось переключиться на фрейм </span><span class="si">{</span><span class="n">IFRAME_ID</span><span class="si">}</span><span class="s2"> для SVG&quot;</span><span class="p">}</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">click_breadcrumb</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">switch_to</span><span class="o">.</span><span class="n">default_content</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Не удалось кликнуть по breadcrumb&quot;</span><span class="p">}</span>
+    <span class="n">zones</span> <span class="o">=</span> <span class="n">extract_zones</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">zones</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">switch_to</span><span class="o">.</span><span class="n">default_content</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Зоны не найдены&quot;</span><span class="p">}</span>
+    
+    <span class="c1"># ЗАТЕМ ОБРАБАТЫВАЕМ ЗОНЫ И SVG</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🎨 ЭТАП 2: Обработка зон и SVG&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Промежуточное сохранение JSON перед обработкой зон</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;💾 Промежуточное сохранение JSON перед обработкой зон&quot;</span><span class="p">)</span>
+    <span class="n">intermediate_json_path</span> <span class="o">=</span> <span class="n">save_data_to_json</span><span class="p">(</span>
+        <span class="n">vin_number</span><span class="p">,</span> <span class="p">[],</span> <span class="n">main_screenshot_relative</span><span class="p">,</span> <span class="n">main_svg_relative</span><span class="p">,</span> 
+        <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">options_result</span><span class="p">,</span> <span class="n">vin_status</span><span class="p">,</span>
+        <span class="n">started_at</span><span class="o">=</span><span class="n">started_at</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span> <span class="n">is_intermediate</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">intermediate_json_path</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Промежуточный JSON сохранен: </span><span class="si">{</span><span class="n">intermediate_json_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ Не удалось сохранить промежуточный JSON&quot;</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">zone</span> <span class="ow">in</span> <span class="n">zones</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Проверяем, что браузер еще работает</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">current_url</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">browser_error</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Браузер закрыт во время обработки зоны </span><span class="si">{</span><span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">browser_error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Браузер был закрыт во время выполнения&quot;</span><span class="p">,</span> <span class="s2">&quot;browser_closed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+                
+            <span class="n">zone_result</span> <span class="o">=</span> <span class="n">process_zone</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">zone</span><span class="p">,</span> <span class="n">screenshot_dir</span><span class="p">,</span> <span class="n">svg_dir</span><span class="p">,</span> <span class="n">claim_number</span><span class="o">=</span><span class="n">claim_number</span><span class="p">,</span> <span class="n">vin</span><span class="o">=</span><span class="n">vin_number</span><span class="p">,</span> <span class="n">svg_collection</span><span class="o">=</span><span class="n">svg_collection</span><span class="p">)</span>
+            <span class="n">zone_data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">zone_result</span><span class="p">)</span>
+            
+            <span class="c1"># Промежуточное сохранение после каждой зоны</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;💾 Промежуточное сохранение после зоны: </span><span class="si">{</span><span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">intermediate_json_path</span> <span class="o">=</span> <span class="n">save_data_to_json</span><span class="p">(</span>
+                <span class="n">vin_number</span><span class="p">,</span> <span class="n">zone_data</span><span class="p">,</span> <span class="n">main_screenshot_relative</span><span class="p">,</span> <span class="n">main_svg_relative</span><span class="p">,</span> 
+                <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">options_result</span><span class="p">,</span> <span class="n">vin_status</span><span class="p">,</span>
+                <span class="n">started_at</span><span class="o">=</span><span class="n">started_at</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span> <span class="n">is_intermediate</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">intermediate_json_path</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Промежуточный JSON обновлен после зоны </span><span class="si">{</span><span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при обработке зоны </span><span class="si">{</span><span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Продолжаем обработку других зон</span>
+            <span class="k">continue</span>
+    
+    <span class="n">driver</span><span class="o">.</span><span class="n">switch_to</span><span class="o">.</span><span class="n">default_content</span><span class="p">()</span>
+    
+    <span class="c1"># ГАРАНТИРУЕМ извлечение деталей из всех зон</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔧 Запускаем финальную проверку извлечения деталей для </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">zone_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> зон&quot;</span><span class="p">)</span>
+    <span class="n">zone_data</span> <span class="o">=</span> <span class="n">ensure_zone_details_extracted</span><span class="p">(</span><span class="n">zone_data</span><span class="p">,</span> <span class="n">svg_dir</span><span class="p">,</span> <span class="n">claim_number</span><span class="o">=</span><span class="n">claim_number</span><span class="p">,</span> <span class="n">vin</span><span class="o">=</span><span class="n">vin_number</span><span class="p">,</span> <span class="n">svg_collection</span><span class="o">=</span><span class="n">svg_collection</span><span class="p">)</span>
+    
+    <span class="n">zones_table</span> <span class="o">=</span> <span class="n">create_zones_table</span><span class="p">(</span><span class="n">zone_data</span><span class="p">)</span>
+    
+    <span class="c1"># Получаем время завершения</span>
+    <span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🕐 Парсер завершен в: </span><span class="si">{</span><span class="n">completed_at</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%H:%M:%S&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="n">json_path</span> <span class="o">=</span> <span class="n">save_data_to_json</span><span class="p">(</span>
+        <span class="n">vin_number</span><span class="p">,</span> <span class="n">zone_data</span><span class="p">,</span> <span class="n">main_screenshot_relative</span><span class="p">,</span> <span class="n">main_svg_relative</span><span class="p">,</span> 
+        <span class="n">zones_table</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">options_result</span><span class="p">,</span> <span class="n">vin_status</span><span class="p">,</span>
+        <span class="n">started_at</span><span class="o">=</span><span class="n">started_at</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="n">completed_at</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Проверяем, что JSON файл был успешно сохранен</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">json_path</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Не удалось сохранить JSON файл&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Ошибка сохранения данных&quot;</span><span class="p">}</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ JSON файл успешно сохранен: </span><span class="si">{</span><span class="n">json_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="s2">&quot;Задача открыта&quot;</span><span class="p">,</span> 
+        <span class="s2">&quot;main_screenshot_path&quot;</span><span class="p">:</span> <span class="n">main_screenshot_relative</span><span class="p">,</span> 
+        <span class="s2">&quot;main_svg_path&quot;</span><span class="p">:</span> <span class="n">main_svg_relative</span><span class="p">,</span> 
+        <span class="s2">&quot;zones_table&quot;</span><span class="p">:</span> <span class="n">zones_table</span><span class="p">,</span> 
+        <span class="s2">&quot;zone_data&quot;</span><span class="p">:</span> <span class="n">zone_data</span><span class="p">,</span> 
+        <span class="s2">&quot;options_data&quot;</span><span class="p">:</span> <span class="n">options_result</span><span class="p">,</span> 
+        <span class="s2">&quot;vin_value&quot;</span><span class="p">:</span> <span class="n">vin_number</span><span class="p">,</span> 
+        <span class="s2">&quot;claim_number&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
+        <span class="s2">&quot;started_at&quot;</span><span class="p">:</span> <span class="n">started_at</span><span class="p">,</span>
+        <span class="s2">&quot;completed_at&quot;</span><span class="p">:</span> <span class="n">completed_at</span>
+    <span class="p">}</span></div>
+
+
+<span class="c1"># Точка входа в парсер </span>
+<div class="viewcode-block" id="login_audatex">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.parser.login_audatex">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">login_audatex</span><span class="p">(</span><span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">svg_collection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">started_at</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Асинхронный вход в Audatex и запуск парсинга.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        username: str - логин пользователя</span>
+<span class="sd">        password: str - пароль пользователя</span>
+<span class="sd">        claim_number: str - номер заявки</span>
+<span class="sd">        vin_number: str - VIN автомобиля</span>
+<span class="sd">        svg_collection: bool - собирать SVG (по умолчанию True)</span>
+<span class="sd">        started_at: datetime|str|None - время старта (опционально)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict - результат парсинга или описание ошибки</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">driver</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🚀 Начинаем процесс входа в Audatex&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Инициализируем браузер</span>
+        <span class="n">driver</span> <span class="o">=</span> <span class="n">init_browser</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">driver</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Не удалось инициализировать браузер&quot;</span><span class="p">}</span>
+        
+        <span class="c1"># Загружаем cookies</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">load_cookies</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">BASE_URL</span><span class="p">,</span> <span class="n">COOKIES_FILE</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ Cookies не загружены, выполняем вход заново&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">perform_login</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">COOKIES_FILE</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Не удалось выполнить вход в систему&quot;</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Cookies загружены успешно&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">check_if_authorized</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ Cookies устарели, выполняем вход заново&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">perform_login</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">COOKIES_FILE</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Не удалось выполнить вход в систему&quot;</span><span class="p">}</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Вход в систему выполнен успешно&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Выполняем поиск и извлечение данных в отдельном потоке</span>
+        <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_in_executor</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">search_and_extract</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">,</span> <span class="n">svg_collection</span><span class="p">,</span> <span class="n">started_at</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка выполнения парсера: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Ошибка выполнения парсера: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+        
+        <span class="c1"># Сохраняем cookies после успешного выполнения</span>
+        <span class="k">if</span> <span class="s2">&quot;success&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cookies</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">get_cookies</span><span class="p">()</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">COOKIES_FILE</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">cookies</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Cookies обновлены после успешного выполнения&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Не удалось сохранить cookies: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">result</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка в login_audatex: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Ошибка парсинга: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">driver</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Попытка 1: Браузер закрыт в finally&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при закрытии браузера: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1"># Функция для завершения всех процессов браузера</span>
+<div class="viewcode-block" id="terminate_all_processes_and_restart">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.parser.terminate_all_processes_and_restart">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">terminate_all_processes_and_restart</span><span class="p">(</span><span class="n">current_url</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Завершение всех процессов Chrome и перезапуск парсера.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        current_url: str|None - URL для восстановления (опционально)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s2">&quot;🛑 Завершение всех процессов браузера инициировано!&quot;</span><span class="p">)</span>
+    <span class="n">killed_processes</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Первый проход - мягкое завершение</span>
+        <span class="k">for</span> <span class="n">proc</span> <span class="ow">in</span> <span class="n">psutil</span><span class="o">.</span><span class="n">process_iter</span><span class="p">([</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;pid&#39;</span><span class="p">,</span> <span class="s1">&#39;cmdline&#39;</span><span class="p">]):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">proc_name</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">proc_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;chrome.exe&#39;</span><span class="p">,</span> <span class="s1">&#39;chromedriver.exe&#39;</span><span class="p">,</span> <span class="s1">&#39;chrome&#39;</span><span class="p">,</span> <span class="s1">&#39;chromedriver&#39;</span><span class="p">]:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔄 Завершаем процесс: </span><span class="si">{</span><span class="n">proc_name</span><span class="si">}</span><span class="s2"> (pid=</span><span class="si">{</span><span class="n">proc</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                    <span class="n">proc</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+                    <span class="n">killed_processes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">psutil</span><span class="o">.</span><span class="n">NoSuchProcess</span><span class="p">,</span> <span class="n">psutil</span><span class="o">.</span><span class="n">AccessDenied</span><span class="p">,</span> <span class="n">psutil</span><span class="o">.</span><span class="n">ZombieProcess</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при мягком завершении процесса: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Ждем немного для мягкого завершения</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        
+        <span class="c1"># Второй проход - принудительное завершение</span>
+        <span class="k">for</span> <span class="n">proc</span> <span class="ow">in</span> <span class="n">psutil</span><span class="o">.</span><span class="n">process_iter</span><span class="p">([</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;pid&#39;</span><span class="p">]):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">proc_name</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">proc_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;chrome.exe&#39;</span><span class="p">,</span> <span class="s1">&#39;chromedriver.exe&#39;</span><span class="p">,</span> <span class="s1">&#39;chrome&#39;</span><span class="p">,</span> <span class="s1">&#39;chromedriver&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">killed_processes</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;💀 Принудительно завершаем процесс: </span><span class="si">{</span><span class="n">proc_name</span><span class="si">}</span><span class="s2"> (pid=</span><span class="si">{</span><span class="n">proc</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                        <span class="n">proc</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+                        <span class="n">killed_processes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">psutil</span><span class="o">.</span><span class="n">NoSuchProcess</span><span class="p">,</span> <span class="n">psutil</span><span class="o">.</span><span class="n">AccessDenied</span><span class="p">,</span> <span class="n">psutil</span><span class="o">.</span><span class="n">ZombieProcess</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при принудительном завершении процесса: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Дополнительная проверка через taskkill для Windows</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+        <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s1">&#39;taskkill&#39;</span><span class="p">,</span> <span class="s1">&#39;/f&#39;</span><span class="p">,</span> <span class="s1">&#39;/im&#39;</span><span class="p">,</span> <span class="s1">&#39;chrome.exe&#39;</span><span class="p">],</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s1">&#39;taskkill&#39;</span><span class="p">,</span> <span class="s1">&#39;/f&#39;</span><span class="p">,</span> <span class="s1">&#39;/im&#39;</span><span class="p">,</span> <span class="s1">&#39;chromedriver.exe&#39;</span><span class="p">],</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s2">&quot;✅ Дополнительное завершение через taskkill выполнено&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка taskkill: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Все процессы браузера завершены. Завершено процессов: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">killed_processes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Все процессы браузера успешно завершены. Завершено процессов: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">killed_processes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Критическая ошибка при завершении процессов Chrome/Chromedriver: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Ошибка при завершении процессов: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,648 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.security.rate_limiter &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">core.security.rate_limiter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код core.security.rate_limiter</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Модуль защиты от DDoS атак с rate limiting</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">redis</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">Request</span><span class="p">,</span> <span class="n">status</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONResponse</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Настройки rate limiting</span>
+<span class="n">RATE_LIMIT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;requests_per_minute&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+        <span class="s2">&quot;burst_limit&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s2">&quot;window_size&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>  <span class="c1"># секунды</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;auth&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;requests_per_minute&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="s2">&quot;burst_limit&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">&quot;window_size&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;api&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;requests_per_minute&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+        <span class="s2">&quot;burst_limit&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="s2">&quot;window_size&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;parser&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;requests_per_minute&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="s2">&quot;burst_limit&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">&quot;window_size&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="c1"># Настройки блокировки IP</span>
+<span class="n">IP_BAN_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;max_violations&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>  <span class="c1"># Уменьшили с 5 до 3</span>
+    <span class="s2">&quot;ban_duration&quot;</span><span class="p">:</span> <span class="mi">3600</span><span class="p">,</span>  <span class="c1"># 1 час</span>
+    <span class="s2">&quot;violation_window&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>  <span class="c1"># 5 минут</span>
+<span class="p">}</span>
+
+<span class="c1"># Настройки мониторинга</span>
+<span class="n">MONITORING_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;suspicious_threshold&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>  <span class="c1"># запросов в минуту</span>
+    <span class="s2">&quot;alert_threshold&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>  <span class="c1"># запросов в минуту</span>
+    <span class="s2">&quot;monitoring_window&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>  <span class="c1"># секунды</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="RateLimiter">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.rate_limiter.RateLimiter">[документация]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RateLimiter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Класс для управления rate limiting&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="RateLimiter.__init__">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.rate_limiter.RateLimiter.__init__">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6379</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Инициализация Redis клиента для rate limiting&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">Redis</span><span class="p">(</span>
+            <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span>
+            <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span>
+            <span class="n">db</span><span class="o">=</span><span class="n">db</span><span class="p">,</span>
+            <span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">socket_connect_timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+            <span class="n">socket_timeout</span><span class="o">=</span><span class="mi">5</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_test_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Проверка подключения к Redis&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">ping</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_client_identifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение идентификатора клиента&quot;&quot;&quot;</span>
+        <span class="c1"># Приоритет заголовков для определения реального IP</span>
+        <span class="n">headers_to_check</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;X-Real-IP&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;X-Client-IP&quot;</span><span class="p">,</span> 
+            <span class="s2">&quot;X-Forwarded-For&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;CF-Connecting-IP&quot;</span><span class="p">,</span>  <span class="c1"># Cloudflare</span>
+            <span class="s2">&quot;X-Forwarded&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Forwarded-For&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Forwarded&quot;</span>
+        <span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">headers_to_check</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+                <span class="n">ip</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">header</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">ip</span> <span class="ow">and</span> <span class="n">ip</span> <span class="o">!=</span> <span class="s2">&quot;unknown&quot;</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;User-Agent&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        
+        <span class="c1"># Fallback на client.host</span>
+        <span class="n">client_ip</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">host</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">client</span> <span class="k">else</span> <span class="s2">&quot;unknown&quot;</span>
+        <span class="n">user_agent</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;User-Agent&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">client_ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">user_agent</span><span class="si">}</span><span class="s2">&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_authenticated_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Проверка авторизации пользователя&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Проверяем наличие сессионного токена</span>
+            <span class="n">session_token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;session_token&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">session_token</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            
+            <span class="c1"># Проверяем JWT токен в заголовках</span>
+            <span class="n">auth_header</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Authorization&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">auth_header</span> <span class="ow">and</span> <span class="n">auth_header</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Bearer &quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            
+            <span class="c1"># Проверяем, есть ли пользователь в request.state (для декораторов)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">user</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            
+            <span class="c1"># Для внутренних эндпоинтов (не auth) считаем пользователя авторизованным</span>
+            <span class="c1"># если у него есть session_token, даже если мы не можем его валидировать здесь</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/auth/&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">session_token</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_rate_limit_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение конфигурации rate limit для пути&quot;&quot;&quot;</span>
+        <span class="c1"># Исключаем статические файлы и страницу безопасности</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/static/&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/security&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;requests_per_minute&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="s2">&quot;burst_limit&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;window_size&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">}</span>
+        
+        <span class="c1"># Исключаем API эндпоинты безопасности для авторизованных пользователей</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/security/status&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/security/alerts&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;requests_per_minute&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="s2">&quot;burst_limit&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;window_size&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">}</span>
+        
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/auth/&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">RATE_LIMIT_CONFIG</span><span class="p">[</span><span class="s2">&quot;auth&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/api_parse&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">RATE_LIMIT_CONFIG</span><span class="p">[</span><span class="s2">&quot;parser&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/api/&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">RATE_LIMIT_CONFIG</span><span class="p">[</span><span class="s2">&quot;api&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">RATE_LIMIT_CONFIG</span><span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">]</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_auth_attack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Определение атаки на аутентификацию&quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span>
+        
+        <span class="c1"># Проверяем только auth эндпоинты</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/auth/&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="c1"># Проверяем метод POST (попытки входа)</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">!=</span> <span class="s2">&quot;POST&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="c1"># Проверяем наличие данных для входа в заголовках</span>
+        <span class="n">content_type</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content-type&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Для form data</span>
+        <span class="k">if</span> <span class="s2">&quot;application/x-www-form-urlencoded&quot;</span> <span class="ow">in</span> <span class="n">content_type</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="c1"># Для JSON</span>
+        <span class="k">if</span> <span class="s2">&quot;application/json&quot;</span> <span class="ow">in</span> <span class="n">content_type</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_get_request_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">window</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение количества запросов из Redis&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_connection</span><span class="p">():</span>
+                <span class="n">current_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+                <span class="n">window_start</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">window</span>
+                
+                <span class="c1"># Используем Redis для хранения запросов</span>
+                <span class="n">redis_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;rate_limit:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">window_start</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">redis_key</span><span class="p">)</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="k">if</span> <span class="n">count</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Fallback на локальный кеш</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка получения количества запросов: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_increment_request_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">window</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Увеличение счетчика запросов&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_connection</span><span class="p">():</span>
+                <span class="n">current_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+                <span class="n">window_start</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">window</span>
+                
+                <span class="n">redis_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;rate_limit:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">window_start</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="n">redis_key</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">expire</span><span class="p">(</span><span class="n">redis_key</span><span class="p">,</span> <span class="n">window</span> <span class="o">+</span> <span class="mi">10</span><span class="p">)</span>  <span class="c1"># TTL</span>
+                <span class="k">return</span> <span class="n">count</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Fallback на локальный кеш</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;window_start&quot;</span><span class="p">:</span> <span class="n">window</span><span class="p">}</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;count&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка увеличения счетчика запросов: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">1</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_check_ip_banned</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Проверка блокировки IP&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="n">client_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_connection</span><span class="p">():</span>
+                <span class="n">ban_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ip_ban:</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">banned_until</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ban_key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">banned_until</span><span class="p">:</span>
+                    <span class="n">ban_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">banned_until</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">ban_time</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">True</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># Удаляем истекший бан</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">ban_key</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Fallback на локальный кеш</span>
+                <span class="k">if</span> <span class="n">ip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="p">[</span><span class="n">ip</span><span class="p">]:</span>
+                        <span class="k">return</span> <span class="kc">True</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span>
+            
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка проверки блокировки IP: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_ban_ip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">duration</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Блокировка IP адреса&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="n">client_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ban_until</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">duration</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_connection</span><span class="p">():</span>
+                <span class="n">ban_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ip_ban:</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">ban_key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">ban_until</span><span class="p">),</span> <span class="n">ex</span><span class="o">=</span><span class="n">duration</span> <span class="o">+</span> <span class="mi">60</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span> <span class="o">=</span> <span class="n">ban_until</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;IP заблокирован: </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2"> до </span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">ban_until</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка блокировки IP: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_record_violation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Запись нарушения rate limit&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="n">client_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">current_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_connection</span><span class="p">():</span>
+                <span class="n">violation_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;violations:</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">violations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">lrange</span><span class="p">(</span><span class="n">violation_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                
+                <span class="c1"># Удаляем старые нарушения</span>
+                <span class="n">recent_violations</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">violations</span> 
+                    <span class="k">if</span> <span class="n">current_time</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">IP_BAN_CONFIG</span><span class="p">[</span><span class="s2">&quot;violation_window&quot;</span><span class="p">]</span>
+                <span class="p">]</span>
+                
+                <span class="c1"># Добавляем новое нарушение</span>
+                <span class="n">recent_violations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">current_time</span><span class="p">))</span>
+                
+                <span class="c1"># Обновляем список нарушений</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">violation_key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">recent_violations</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">lpush</span><span class="p">(</span><span class="n">violation_key</span><span class="p">,</span> <span class="o">*</span><span class="n">recent_violations</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">expire</span><span class="p">(</span><span class="n">violation_key</span><span class="p">,</span> <span class="n">IP_BAN_CONFIG</span><span class="p">[</span><span class="s2">&quot;violation_window&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">60</span><span class="p">)</span>
+                
+                <span class="n">violation_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">recent_violations</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Fallback на локальный кеш</span>
+                <span class="n">violation_count</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Упрощенная логика для локального кеша</span>
+            
+            <span class="k">return</span> <span class="n">violation_count</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка записи нарушения: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">1</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_monitor_suspicious_activity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">request_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Мониторинг подозрительной активности&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="n">client_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            
+            <span class="k">if</span> <span class="n">request_count</span> <span class="o">&gt;=</span> <span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;alert_threshold&quot;</span><span class="p">]:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 КРИТИЧЕСКАЯ АКТИВНОСТЬ: IP </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">request_count</span><span class="si">}</span><span class="s2"> запросов в минуту&quot;</span><span class="p">)</span>
+                <span class="c1"># Здесь можно добавить отправку уведомлений</span>
+            <span class="k">elif</span> <span class="n">request_count</span> <span class="o">&gt;=</span> <span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;suspicious_threshold&quot;</span><span class="p">]:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ ПОДОЗРИТЕЛЬНАЯ АКТИВНОСТЬ: IP </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">request_count</span><span class="si">}</span><span class="s2"> запросов в минуту&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка мониторинга активности: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="RateLimiter.check_rate_limit">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.rate_limiter.RateLimiter.check_rate_limit">[документация]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">check_rate_limit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Проверка rate limit для запроса</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[bool, Optional[str]]: (разрешено, сообщение об ошибке)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">client_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_identifier</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_rate_limit_config</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            
+            <span class="c1"># Проверяем авторизацию пользователя</span>
+            <span class="n">is_authenticated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_authenticated_user</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+            
+            <span class="c1"># Проверяем, является ли это атакой на аутентификацию</span>
+            <span class="n">is_auth_attack</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_auth_attack</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+            
+            <span class="c1"># Если пользователь авторизован, применяем более мягкие лимиты</span>
+            <span class="k">if</span> <span class="n">is_authenticated</span><span class="p">:</span>
+                <span class="c1"># Для авторизованных пользователей увеличиваем лимиты в 10 раз</span>
+                <span class="n">adjusted_config</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;requests_per_minute&quot;</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;requests_per_minute&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;burst_limit&quot;</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;burst_limit&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span>
+                    <span class="s2">&quot;window_size&quot;</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;window_size&quot;</span><span class="p">]</span>
+                <span class="p">}</span>
+                <span class="n">config</span> <span class="o">=</span> <span class="n">adjusted_config</span>
+            <span class="k">elif</span> <span class="n">is_auth_attack</span><span class="p">:</span>
+                <span class="c1"># Для атак на аутентификацию применяем более строгие лимиты</span>
+                <span class="n">adjusted_config</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;requests_per_minute&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>  <span class="c1"># Очень строгий лимит</span>
+                    <span class="s2">&quot;burst_limit&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># Один запрос за раз</span>
+                    <span class="s2">&quot;window_size&quot;</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;window_size&quot;</span><span class="p">]</span>
+                <span class="p">}</span>
+                <span class="n">config</span> <span class="o">=</span> <span class="n">adjusted_config</span>
+            
+            <span class="c1"># Проверяем блокировку IP</span>
+            <span class="k">if</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_ip_banned</span><span class="p">(</span><span class="n">client_id</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;IP адрес заблокирован за нарушение rate limit&quot;</span>
+            
+            <span class="c1"># Получаем текущее количество запросов</span>
+            <span class="n">current_count</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_request_count</span><span class="p">(</span><span class="n">client_id</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;window_size&quot;</span><span class="p">])</span>
+            
+            <span class="c1"># Проверяем burst limit</span>
+            <span class="k">if</span> <span class="n">current_count</span> <span class="o">&gt;=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;burst_limit&quot;</span><span class="p">]:</span>
+                <span class="c1"># Для авторизованных пользователей просто возвращаем ошибку без блокировки</span>
+                <span class="k">if</span> <span class="n">is_authenticated</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Превышен лимит запросов. Попробуйте позже.&quot;</span>
+                
+                <span class="c1"># Для неавторизованных пользователей записываем нарушения</span>
+                <span class="n">violations</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_violation</span><span class="p">(</span><span class="n">client_id</span><span class="p">)</span>
+                
+                <span class="c1"># Для атак на аутентификацию блокируем быстрее</span>
+                <span class="n">max_violations</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">is_auth_attack</span> <span class="k">else</span> <span class="n">IP_BAN_CONFIG</span><span class="p">[</span><span class="s2">&quot;max_violations&quot;</span><span class="p">]</span>
+                
+                <span class="k">if</span> <span class="n">violations</span> <span class="o">&gt;=</span> <span class="n">max_violations</span><span class="p">:</span>
+                    <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ban_ip</span><span class="p">(</span><span class="n">client_id</span><span class="p">,</span> <span class="n">IP_BAN_CONFIG</span><span class="p">[</span><span class="s2">&quot;ban_duration&quot;</span><span class="p">])</span>
+                    <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;IP заблокирован за множественные попытки входа&quot;</span>
+                
+                <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Превышен лимит запросов. Попробуйте позже.&quot;</span>
+            
+            <span class="c1"># Проверяем общий лимит</span>
+            <span class="k">if</span> <span class="n">current_count</span> <span class="o">&gt;=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;requests_per_minute&quot;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Превышен лимит </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;requests_per_minute&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> запросов в минуту&quot;</span>
+            
+            <span class="c1"># Увеличиваем счетчик</span>
+            <span class="n">new_count</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_increment_request_count</span><span class="p">(</span><span class="n">client_id</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;window_size&quot;</span><span class="p">])</span>
+            
+            <span class="c1"># Мониторим подозрительную активность только для неавторизованных</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_authenticated</span><span class="p">:</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_monitor_suspicious_activity</span><span class="p">(</span><span class="n">client_id</span><span class="p">,</span> <span class="n">new_count</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">None</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка проверки rate limit: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># В случае ошибки разрешаем запрос</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">None</span></div>
+
+    
+<div class="viewcode-block" id="RateLimiter.get_rate_limit_info">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.rate_limiter.RateLimiter.get_rate_limit_info">[документация]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_rate_limit_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение информации о rate limit для клиента&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">client_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_identifier</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_rate_limit_config</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            
+            <span class="n">current_count</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_request_count</span><span class="p">(</span><span class="n">client_id</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;window_size&quot;</span><span class="p">])</span>
+            <span class="n">remaining</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;requests_per_minute&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">current_count</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;limit&quot;</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;requests_per_minute&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;remaining&quot;</span><span class="p">:</span> <span class="n">remaining</span><span class="p">,</span>
+                <span class="s2">&quot;reset_time&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;window_size&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;burst_limit&quot;</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;burst_limit&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка получения информации о rate limit: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{}</span></div>
+
+    
+<div class="viewcode-block" id="RateLimiter.get_statistics">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.rate_limiter.RateLimiter.get_statistics">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение статистики rate limiting&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;banned_ips_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="p">),</span>
+                <span class="s2">&quot;cache_size&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">),</span>
+                <span class="s2">&quot;redis_connected&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_connection</span><span class="p">(),</span>
+                <span class="s2">&quot;banned_ips&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="p">}</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка получения статистики rate limiting: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{}</span></div>
+
+    
+<div class="viewcode-block" id="RateLimiter.unban_ip">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.rate_limiter.RateLimiter.unban_ip">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unban_ip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Разблокировка IP адреса&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Удаляем из локального кеша</span>
+            <span class="k">if</span> <span class="n">ip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span>
+            
+            <span class="c1"># Удаляем из Redis</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_connection</span><span class="p">():</span>
+                <span class="n">ban_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ip_ban:</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">ban_key</span><span class="p">)</span>
+                
+                <span class="c1"># Также удаляем нарушения</span>
+                <span class="n">violation_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;violations:</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">violation_key</span><span class="p">)</span>
+                
+                <span class="c1"># Очищаем rate limit счетчики</span>
+                <span class="n">current_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+                <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3600</span><span class="p">,</span> <span class="mi">60</span><span class="p">):</span>  <span class="c1"># Очищаем за последний час</span>
+                    <span class="n">window_start</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">window</span>
+                    <span class="n">redis_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;rate_limit:</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">window_start</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">redis_key</span><span class="p">)</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;IP </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2"> разблокирован&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка разблокировки IP </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+    
+<div class="viewcode-block" id="RateLimiter.get_banned_ips">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.rate_limiter.RateLimiter.get_banned_ips">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_banned_ips</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение списка заблокированных IP&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">banned_ips</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            
+            <span class="c1"># Добавляем из Redis</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_connection</span><span class="p">():</span>
+                <span class="c1"># Ищем все ключи с префиксом ip_ban:</span>
+                <span class="n">pattern</span> <span class="o">=</span> <span class="s2">&quot;ip_ban:*&quot;</span>
+                <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">keys</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+                    <span class="n">ip</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;ip_ban:&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">ip</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">banned_ips</span><span class="p">:</span>
+                        <span class="n">banned_ips</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">banned_ips</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка получения списка заблокированных IP: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ban_list</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+</div>
+
+
+
+<span class="c1"># Глобальный экземпляр rate limiter</span>
+<span class="n">rate_limiter</span> <span class="o">=</span> <span class="n">RateLimiter</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="rate_limit_middleware">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.rate_limiter.rate_limit_middleware">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">rate_limit_middleware</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">call_next</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Middleware для rate limiting&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Пропускаем статические файлы</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/static/&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        
+        <span class="c1"># Пропускаем страницу безопасности (но не API эндпоинты)</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="s2">&quot;/security&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем rate limit</span>
+        <span class="n">allowed</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="k">await</span> <span class="n">rate_limiter</span><span class="o">.</span><span class="n">check_rate_limit</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">allowed</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JSONResponse</span><span class="p">(</span>
+                <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_429_TOO_MANY_REQUESTS</span><span class="p">,</span>
+                <span class="n">content</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Rate limit exceeded&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">error_message</span><span class="p">,</span>
+                    <span class="s2">&quot;retry_after&quot;</span><span class="p">:</span> <span class="mi">60</span>
+                <span class="p">},</span>
+                <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;Retry-After&quot;</span><span class="p">:</span> <span class="s2">&quot;60&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;X-RateLimit-Limit&quot;</span><span class="p">:</span> <span class="s2">&quot;60&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;X-RateLimit-Remaining&quot;</span><span class="p">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;X-RateLimit-Reset&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="mi">60</span><span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+        
+        <span class="c1"># Добавляем информацию о rate limit в заголовки</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="n">rate_info</span> <span class="o">=</span> <span class="k">await</span> <span class="n">rate_limiter</span><span class="o">.</span><span class="n">get_rate_limit_info</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">rate_info</span><span class="p">:</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;X-RateLimit-Limit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">rate_info</span><span class="p">[</span><span class="s2">&quot;limit&quot;</span><span class="p">])</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;X-RateLimit-Remaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">rate_info</span><span class="p">[</span><span class="s2">&quot;remaining&quot;</span><span class="p">])</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;X-RateLimit-Reset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">rate_info</span><span class="p">[</span><span class="s2">&quot;reset_time&quot;</span><span class="p">])</span>
+        
+        <span class="k">return</span> <span class="n">response</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка в rate limit middleware: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># В случае ошибки пропускаем запрос</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span> </div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

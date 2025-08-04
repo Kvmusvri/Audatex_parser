@@ -1,0 +1,951 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Модуль аутентификации (auth) &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8b205fae" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../genindex.html" />
+    <link rel="search" title="Поиск" href="../search.html" />
+    <link rel="next" title="Модуль базы данных (database)" href="database.html" />
+    <link rel="prev" title="Документация Audotex Parser" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Модуль аутентификации (auth)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Обзор</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">Модули</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#core-auth-routes">core.auth.routes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.routes.login_page"><code class="docutils literal notranslate"><span class="pre">login_page()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.routes.login"><code class="docutils literal notranslate"><span class="pre">login()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.routes.logout"><code class="docutils literal notranslate"><span class="pre">logout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.routes.logout_get"><code class="docutils literal notranslate"><span class="pre">logout_get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.routes.api_login"><code class="docutils literal notranslate"><span class="pre">api_login()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.routes.api_refresh_token"><code class="docutils literal notranslate"><span class="pre">api_refresh_token()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.routes.get_profile"><code class="docutils literal notranslate"><span class="pre">get_profile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.routes.change_password"><code class="docutils literal notranslate"><span class="pre">change_password()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.routes.api_change_password"><code class="docutils literal notranslate"><span class="pre">api_change_password()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-auth-users">core.auth.users</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.users.UserManager"><code class="docutils literal notranslate"><span class="pre">UserManager</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.create_user"><code class="docutils literal notranslate"><span class="pre">UserManager.create_user()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.get_user_by_username"><code class="docutils literal notranslate"><span class="pre">UserManager.get_user_by_username()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.get_user_by_id"><code class="docutils literal notranslate"><span class="pre">UserManager.get_user_by_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.authenticate_user"><code class="docutils literal notranslate"><span class="pre">UserManager.authenticate_user()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.create_session"><code class="docutils literal notranslate"><span class="pre">UserManager.create_session()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.validate_session"><code class="docutils literal notranslate"><span class="pre">UserManager.validate_session()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.delete_session"><code class="docutils literal notranslate"><span class="pre">UserManager.delete_session()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.cleanup_expired_sessions"><code class="docutils literal notranslate"><span class="pre">UserManager.cleanup_expired_sessions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.get_all_users"><code class="docutils literal notranslate"><span class="pre">UserManager.get_all_users()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.update_user_role"><code class="docutils literal notranslate"><span class="pre">UserManager.update_user_role()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.deactivate_user"><code class="docutils literal notranslate"><span class="pre">UserManager.deactivate_user()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.auth.users.UserManager.change_password"><code class="docutils literal notranslate"><span class="pre">UserManager.change_password()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.users.create_default_users"><code class="docutils literal notranslate"><span class="pre">create_default_users()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-auth-decorators">core.auth.decorators</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.decorators.require_auth"><code class="docutils literal notranslate"><span class="pre">require_auth()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.decorators.require_role"><code class="docutils literal notranslate"><span class="pre">require_role()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.decorators.require_admin"><code class="docutils literal notranslate"><span class="pre">require_admin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.decorators.require_api_user"><code class="docutils literal notranslate"><span class="pre">require_api_user()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.decorators.get_current_user"><code class="docutils literal notranslate"><span class="pre">get_current_user()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.decorators.get_current_admin"><code class="docutils literal notranslate"><span class="pre">get_current_admin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.decorators.get_current_api_user"><code class="docutils literal notranslate"><span class="pre">get_current_api_user()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.decorators.verify_api_token"><code class="docutils literal notranslate"><span class="pre">verify_api_token()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.decorators.verify_api_admin_token"><code class="docutils literal notranslate"><span class="pre">verify_api_admin_token()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-auth-db-routes">core.auth.db_routes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_routes.login_page"><code class="docutils literal notranslate"><span class="pre">login_page()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_routes.login"><code class="docutils literal notranslate"><span class="pre">login()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_routes.logout"><code class="docutils literal notranslate"><span class="pre">logout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_routes.logout_get"><code class="docutils literal notranslate"><span class="pre">logout_get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_routes.api_login"><code class="docutils literal notranslate"><span class="pre">api_login()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_routes.get_profile"><code class="docutils literal notranslate"><span class="pre">get_profile()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-auth-db-auth">core.auth.db_auth</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.verify_password"><code class="docutils literal notranslate"><span class="pre">verify_password()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.get_password_hash"><code class="docutils literal notranslate"><span class="pre">get_password_hash()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.authenticate_user"><code class="docutils literal notranslate"><span class="pre">authenticate_user()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.create_session"><code class="docutils literal notranslate"><span class="pre">create_session()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.validate_session"><code class="docutils literal notranslate"><span class="pre">validate_session()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.delete_session"><code class="docutils literal notranslate"><span class="pre">delete_session()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.cleanup_expired_sessions"><code class="docutils literal notranslate"><span class="pre">cleanup_expired_sessions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.get_user_by_username"><code class="docutils literal notranslate"><span class="pre">get_user_by_username()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.create_user"><code class="docutils literal notranslate"><span class="pre">create_user()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.change_password"><code class="docutils literal notranslate"><span class="pre">change_password()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_auth.create_default_users"><code class="docutils literal notranslate"><span class="pre">create_default_users()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-auth-db-decorators">core.auth.db_decorators</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_decorators.require_auth"><code class="docutils literal notranslate"><span class="pre">require_auth()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_decorators.require_role"><code class="docutils literal notranslate"><span class="pre">require_role()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_decorators.require_admin"><code class="docutils literal notranslate"><span class="pre">require_admin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_decorators.require_api_user"><code class="docutils literal notranslate"><span class="pre">require_api_user()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_decorators.get_current_user"><code class="docutils literal notranslate"><span class="pre">get_current_user()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_decorators.get_current_admin"><code class="docutils literal notranslate"><span class="pre">get_current_admin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.auth.db_decorators.get_current_api_user"><code class="docutils literal notranslate"><span class="pre">get_current_api_user()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="database.html#id3">Структура базы данных</a></li>
+<li class="toctree-l1"><a class="reference internal" href="database.html#er">ER-диаграмма</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Модуль аутентификации (auth)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/modules/auth.rst.txt" rel="nofollow"> Просмотреть исходный код страницы</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="auth">
+<h1>Модуль аутентификации (auth)<a class="headerlink" href="#auth" title="Ссылка на этот заголовок"></a></h1>
+<section id="id1">
+<h2>Обзор<a class="headerlink" href="#id1" title="Ссылка на этот заголовок"></a></h2>
+<p>Модуль аутентификации обеспечивает управление пользователями, сессиями и авторизацией в системе.</p>
+<p>Основные компоненты:</p>
+<ul class="simple">
+<li><p><strong>routes.py</strong> - HTTP эндпоинты для аутентификации</p></li>
+<li><p><strong>users.py</strong> - Управление пользователями и сессиями</p></li>
+<li><p><strong>decorators.py</strong> - Декораторы для проверки авторизации</p></li>
+<li><p><strong>db_routes.py</strong> - API эндпоинты для работы с пользователями</p></li>
+<li><p><strong>db_auth.py</strong> - Функции аутентификации для базы данных</p></li>
+<li><p><strong>db_decorators.py</strong> - Декораторы для API аутентификации</p></li>
+</ul>
+</section>
+<section id="id2">
+<h2>Модули<a class="headerlink" href="#id2" title="Ссылка на этот заголовок"></a></h2>
+</section>
+<section id="core-auth-routes">
+<h2>core.auth.routes<a class="headerlink" href="#core-auth-routes" title="Ссылка на этот заголовок"></a></h2>
+<p>HTTP эндпоинты для веб-интерфейса аутентификации.</p>
+<p id="module-core.auth.routes">Эндпоинты для аутентификации</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.routes.login_page">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.routes.</span></span><span class="sig-name descname"><span class="pre">login_page</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.routes.login_page" title="Ссылка на это определение"></a></dt>
+<dd><p>Страница входа в систему</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.routes.login">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.routes.</span></span><span class="sig-name descname"><span class="pre">login</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remember</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.routes.login" title="Ссылка на это определение"></a></dt>
+<dd><p>Обработка входа в систему</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>fastapi.Request</em>)</p></li>
+<li><p><strong>username</strong> (<em>str</em>)</p></li>
+<li><p><strong>password</strong> (<em>str</em>)</p></li>
+<li><p><strong>remember</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.routes.logout">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.routes.</span></span><span class="sig-name descname"><span class="pre">logout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.routes.logout" title="Ссылка на это определение"></a></dt>
+<dd><p>Выход из системы</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.routes.logout_get">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.routes.</span></span><span class="sig-name descname"><span class="pre">logout_get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.routes.logout_get" title="Ссылка на это определение"></a></dt>
+<dd><p>GET запрос для выхода из системы</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.routes.api_login">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.routes.</span></span><span class="sig-name descname"><span class="pre">api_login</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.routes.api_login" title="Ссылка на это определение"></a></dt>
+<dd><p>API эндпоинт для входа (возвращает JWT токены)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>fastapi.Request</em>)</p></li>
+<li><p><strong>username</strong> (<em>str</em>)</p></li>
+<li><p><strong>password</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.routes.api_refresh_token">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.routes.</span></span><span class="sig-name descname"><span class="pre">api_refresh_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.routes.api_refresh_token" title="Ссылка на это определение"></a></dt>
+<dd><p>Обновление JWT токена</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.routes.get_profile">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.routes.</span></span><span class="sig-name descname"><span class="pre">get_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Depends</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.routes.get_profile" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение профиля текущего пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.routes.change_password">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.routes.</span></span><span class="sig-name descname"><span class="pre">change_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Depends</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.routes.change_password" title="Ссылка на это определение"></a></dt>
+<dd><p>Смена пароля пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>fastapi.Request</em>)</p></li>
+<li><p><strong>current_password</strong> (<em>str</em>)</p></li>
+<li><p><strong>new_password</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.routes.api_change_password">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.routes.</span></span><span class="sig-name descname"><span class="pre">api_change_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Depends</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.routes.api_change_password" title="Ссылка на это определение"></a></dt>
+<dd><p>API эндпоинт для смены пароля</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>fastapi.Request</em>)</p></li>
+<li><p><strong>current_password</strong> (<em>str</em>)</p></li>
+<li><p><strong>new_password</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-auth-users">
+<h2>core.auth.users<a class="headerlink" href="#core-auth-users" title="Ссылка на этот заголовок"></a></h2>
+<p>Управление пользователями, сессиями и аутентификацией.</p>
+<p id="module-core.auth.users">Модуль для работы с пользователями</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="core.auth.users.UserManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.users.</span></span><span class="sig-name descname"><span class="pre">UserManager</span></span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager" title="Ссылка на это определение"></a></dt>
+<dd><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Менеджер для работы с пользователями</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.create_user">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'api'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">email</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.create_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.create_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Создание нового пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>username</strong> (<em>str</em>)</p></li>
+<li><p><strong>password</strong> (<em>str</em>)</p></li>
+<li><p><strong>role</strong> (<em>str</em>)</p></li>
+<li><p><strong>email</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="database.html#core.database.models.User" title="core.database.models.User"><em>User</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.get_user_by_username">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_user_by_username</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.get_user_by_username"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.get_user_by_username" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение пользователя по имени</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>username</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="database.html#core.database.models.User" title="core.database.models.User"><em>User</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.get_user_by_id">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_user_by_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.get_user_by_id"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.get_user_by_id" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение пользователя по ID</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>user_id</strong> (<em>int</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="database.html#core.database.models.User" title="core.database.models.User"><em>User</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.authenticate_user">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">authenticate_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.authenticate_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.authenticate_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Аутентификация пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>username</strong> (<em>str</em>)</p></li>
+<li><p><strong>password</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="database.html#core.database.models.User" title="core.database.models.User"><em>User</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.create_session">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.create_session"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.create_session" title="Ссылка на это определение"></a></dt>
+<dd><p>Создание сессии пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>user_id</strong> (<em>int</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.validate_session">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">validate_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.validate_session"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.validate_session" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверка сессии пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>token</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="database.html#core.database.models.User" title="core.database.models.User"><em>User</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.delete_session">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">delete_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.delete_session"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.delete_session" title="Ссылка на это определение"></a></dt>
+<dd><p>Удаление сессии пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>token</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.cleanup_expired_sessions">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cleanup_expired_sessions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.cleanup_expired_sessions"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.cleanup_expired_sessions" title="Ссылка на это определение"></a></dt>
+<dd><p>Очистка истекших сессий</p>
+<dl class="field-list simple">
+<dt class="field-odd">Тип результата<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.get_all_users">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_all_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.get_all_users"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.get_all_users" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение всех пользователей</p>
+<dl class="field-list simple">
+<dt class="field-odd">Тип результата<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>List</em>[<a class="reference internal" href="database.html#core.database.models.User" title="core.database.models.User"><em>User</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.update_user_role">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">update_user_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_role</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.update_user_role"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.update_user_role" title="Ссылка на это определение"></a></dt>
+<dd><p>Обновление роли пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>user_id</strong> (<em>int</em>)</p></li>
+<li><p><strong>new_role</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.deactivate_user">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deactivate_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.deactivate_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.deactivate_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Деактивация пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>user_id</strong> (<em>int</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.auth.users.UserManager.change_password">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">change_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_password</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#UserManager.change_password"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.UserManager.change_password" title="Ссылка на это определение"></a></dt>
+<dd><p>Смена пароля пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>user_id</strong> (<em>int</em>)</p></li>
+<li><p><strong>new_password</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.users.create_default_users">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.users.</span></span><span class="sig-name descname"><span class="pre">create_default_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/users.html#create_default_users"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.users.create_default_users" title="Ссылка на это определение"></a></dt>
+<dd><p>Создание пользователей по умолчанию</p>
+</dd></dl>
+
+</section>
+<section id="core-auth-decorators">
+<h2>core.auth.decorators<a class="headerlink" href="#core-auth-decorators" title="Ссылка на этот заголовок"></a></h2>
+<p>Декораторы для проверки авторизации пользователей.</p>
+<p id="module-core.auth.decorators">Декораторы для защиты эндпоинтов</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.decorators.require_auth">
+<span class="sig-prename descclassname"><span class="pre">core.auth.decorators.</span></span><span class="sig-name descname"><span class="pre">require_auth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">redirect_to_login</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/decorators.html#require_auth"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.decorators.require_auth" title="Ссылка на это определение"></a></dt>
+<dd><p>Декоратор для проверки аутентификации</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>redirect_to_login</strong> (<em>bool</em>) – Если True, перенаправляет на страницу входа для веб-интерфейса</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.decorators.require_role">
+<span class="sig-prename descclassname"><span class="pre">core.auth.decorators.</span></span><span class="sig-name descname"><span class="pre">require_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">required_role</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/decorators.html#require_role"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.decorators.require_role" title="Ссылка на это определение"></a></dt>
+<dd><p>Декоратор для проверки роли пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>required_role</strong> (<em>str</em>) – Требуемая роль („admin“ или „api“)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.decorators.require_admin">
+<span class="sig-prename descclassname"><span class="pre">core.auth.decorators.</span></span><span class="sig-name descname"><span class="pre">require_admin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/decorators.html#require_admin"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.decorators.require_admin" title="Ссылка на это определение"></a></dt>
+<dd><p>Декоратор для проверки прав администратора</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> (<em>Callable</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.decorators.require_api_user">
+<span class="sig-prename descclassname"><span class="pre">core.auth.decorators.</span></span><span class="sig-name descname"><span class="pre">require_api_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/decorators.html#require_api_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.decorators.require_api_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Декоратор для проверки прав API пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> (<em>Callable</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.decorators.get_current_user">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.decorators.</span></span><span class="sig-name descname"><span class="pre">get_current_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/decorators.html#get_current_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.decorators.get_current_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение текущего пользователя для использования с Depends</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.decorators.get_current_admin">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.decorators.</span></span><span class="sig-name descname"><span class="pre">get_current_admin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/decorators.html#get_current_admin"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.decorators.get_current_admin" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение текущего администратора для использования с Depends</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.decorators.get_current_api_user">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.decorators.</span></span><span class="sig-name descname"><span class="pre">get_current_api_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/decorators.html#get_current_api_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.decorators.get_current_api_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение текущего API пользователя для использования с Depends</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.decorators.verify_api_token">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.decorators.</span></span><span class="sig-name descname"><span class="pre">verify_api_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/decorators.html#verify_api_token"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.decorators.verify_api_token" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверка JWT токена для API запросов</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.decorators.verify_api_admin_token">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.decorators.</span></span><span class="sig-name descname"><span class="pre">verify_api_admin_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/decorators.html#verify_api_admin_token"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.decorators.verify_api_admin_token" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверка JWT токена администратора для API запросов</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-auth-db-routes">
+<h2>core.auth.db_routes<a class="headerlink" href="#core-auth-db-routes" title="Ссылка на этот заголовок"></a></h2>
+<p>API эндпоинты для работы с пользователями через REST API.</p>
+<p id="module-core.auth.db_routes">Маршруты для аутентификации через базу данных</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_routes.login_page">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.db_routes.</span></span><span class="sig-name descname"><span class="pre">login_page</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.db_routes.login_page" title="Ссылка на это определение"></a></dt>
+<dd><p>Страница входа в систему</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_routes.login">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.db_routes.</span></span><span class="sig-name descname"><span class="pre">login</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remember</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.db_routes.login" title="Ссылка на это определение"></a></dt>
+<dd><p>Обработка входа в систему</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>fastapi.Request</em>)</p></li>
+<li><p><strong>username</strong> (<em>str</em>)</p></li>
+<li><p><strong>password</strong> (<em>str</em>)</p></li>
+<li><p><strong>remember</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_routes.logout">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.db_routes.</span></span><span class="sig-name descname"><span class="pre">logout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.db_routes.logout" title="Ссылка на это определение"></a></dt>
+<dd><p>Выход из системы</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_routes.logout_get">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.db_routes.</span></span><span class="sig-name descname"><span class="pre">logout_get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.db_routes.logout_get" title="Ссылка на это определение"></a></dt>
+<dd><p>GET запрос для выхода из системы</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_routes.api_login">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.db_routes.</span></span><span class="sig-name descname"><span class="pre">api_login</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fastapi.Form</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.db_routes.api_login" title="Ссылка на это определение"></a></dt>
+<dd><p>API эндпоинт для входа</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>fastapi.Request</em>)</p></li>
+<li><p><strong>username</strong> (<em>str</em>)</p></li>
+<li><p><strong>password</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_routes.get_profile">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.db_routes.</span></span><span class="sig-name descname"><span class="pre">get_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#core.auth.db_routes.get_profile" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение профиля текущего пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-auth-db-auth">
+<h2>core.auth.db_auth<a class="headerlink" href="#core-auth-db-auth" title="Ссылка на этот заголовок"></a></h2>
+<p>Функции аутентификации для работы с базой данных.</p>
+<p id="module-core.auth.db_auth">Безопасная аутентификация через базу данных с солеными хешами</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.verify_password">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">verify_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plain_password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hashed_password</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#verify_password"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.verify_password" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверяет пароль против хеша</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>plain_password</strong> (<em>str</em>)</p></li>
+<li><p><strong>hashed_password</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.get_password_hash">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">get_password_hash</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">password</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#get_password_hash"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.get_password_hash" title="Ссылка на это определение"></a></dt>
+<dd><p>Создает хеш пароля с солью</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>password</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.authenticate_user">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">authenticate_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#authenticate_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.authenticate_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Аутентифицирует пользователя по логину и паролю</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>username</strong> (<em>str</em>)</p></li>
+<li><p><strong>password</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Dict</em>[str, <em>Any</em>] | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.create_session">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">create_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#create_session"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.create_session" title="Ссылка на это определение"></a></dt>
+<dd><p>Создает сессию для пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>user_data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.validate_session">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">validate_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#validate_session"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.validate_session" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверяет валидность сессии</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>session_token</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Dict</em>[str, <em>Any</em>] | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.delete_session">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">delete_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#delete_session"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.delete_session" title="Ссылка на это определение"></a></dt>
+<dd><p>Удаляет сессию пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>session_token</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.cleanup_expired_sessions">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">cleanup_expired_sessions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#cleanup_expired_sessions"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.cleanup_expired_sessions" title="Ссылка на это определение"></a></dt>
+<dd><p>Очищает истекшие сессии</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.get_user_by_username">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">get_user_by_username</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#get_user_by_username"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.get_user_by_username" title="Ссылка на это определение"></a></dt>
+<dd><p>Получает пользователя по имени</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>username</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Dict</em>[str, <em>Any</em>] | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.create_user">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">create_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'api'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">email</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#create_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.create_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Создает нового пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>username</strong> (<em>str</em>)</p></li>
+<li><p><strong>password</strong> (<em>str</em>)</p></li>
+<li><p><strong>role</strong> (<em>str</em>)</p></li>
+<li><p><strong>email</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.change_password">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">change_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_password</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#change_password"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.change_password" title="Ссылка на это определение"></a></dt>
+<dd><p>Меняет пароль пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>username</strong> (<em>str</em>)</p></li>
+<li><p><strong>new_password</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_auth.create_default_users">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_auth.</span></span><span class="sig-name descname"><span class="pre">create_default_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_auth.html#create_default_users"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_auth.create_default_users" title="Ссылка на это определение"></a></dt>
+<dd><p>Создает пользователей по умолчанию из переменных окружения</p>
+</dd></dl>
+
+</section>
+<section id="core-auth-db-decorators">
+<h2>core.auth.db_decorators<a class="headerlink" href="#core-auth-db-decorators" title="Ссылка на этот заголовок"></a></h2>
+<p>Декораторы для API аутентификации и авторизации.</p>
+<p id="module-core.auth.db_decorators">Декораторы для аутентификации через базу данных</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_decorators.require_auth">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_decorators.</span></span><span class="sig-name descname"><span class="pre">require_auth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">redirect_to_login</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_decorators.html#require_auth"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_decorators.require_auth" title="Ссылка на это определение"></a></dt>
+<dd><p>Декоратор для проверки аутентификации</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>redirect_to_login</strong> (<em>bool</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_decorators.require_role">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_decorators.</span></span><span class="sig-name descname"><span class="pre">require_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">required_role</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_decorators.html#require_role"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_decorators.require_role" title="Ссылка на это определение"></a></dt>
+<dd><p>Декоратор для проверки роли пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>required_role</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_decorators.require_admin">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_decorators.</span></span><span class="sig-name descname"><span class="pre">require_admin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_decorators.html#require_admin"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_decorators.require_admin" title="Ссылка на это определение"></a></dt>
+<dd><p>Декоратор для проверки прав администратора</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> (<em>Callable</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_decorators.require_api_user">
+<span class="sig-prename descclassname"><span class="pre">core.auth.db_decorators.</span></span><span class="sig-name descname"><span class="pre">require_api_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_decorators.html#require_api_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_decorators.require_api_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Декоратор для проверки прав API пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> (<em>Callable</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_decorators.get_current_user">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.db_decorators.</span></span><span class="sig-name descname"><span class="pre">get_current_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_decorators.html#get_current_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_decorators.get_current_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение текущего пользователя для использования с Depends</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_decorators.get_current_admin">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.db_decorators.</span></span><span class="sig-name descname"><span class="pre">get_current_admin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_decorators.html#get_current_admin"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_decorators.get_current_admin" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение текущего администратора для использования с Depends</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.auth.db_decorators.get_current_api_user">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.auth.db_decorators.</span></span><span class="sig-name descname"><span class="pre">get_current_api_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/auth/db_decorators.html#get_current_api_user"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.auth.db_decorators.get_current_api_user" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение текущего API пользователя для использования с Depends</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Нижняя область">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Документация Audotex Parser" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Предыдущая</a>
+        <a href="database.html" class="btn btn-neutral float-right" title="Модуль базы данных (database)" accesskey="n" rel="next">Следующая <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

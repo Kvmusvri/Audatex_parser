@@ -1,0 +1,277 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sqlalchemy.orm &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/database.html#id3">Структура базы данных</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">sqlalchemy.orm</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код sqlalchemy.orm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># orm/__init__.py</span>
+<span class="c1"># Copyright (C) 2005-2025 the SQLAlchemy authors and contributors</span>
+<span class="c1"># &lt;see AUTHORS file&gt;</span>
+<span class="c1">#</span>
+<span class="c1"># This module is part of SQLAlchemy and is released under</span>
+<span class="c1"># the MIT License: https://www.opensource.org/licenses/mit-license.php</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functional constructs for ORM configuration.</span>
+
+<span class="sd">See the SQLAlchemy object relational tutorial and mapper configuration</span>
+<span class="sd">documentation for an overview of how this module is used.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">exc</span> <span class="k">as</span> <span class="n">exc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">mapper</span> <span class="k">as</span> <span class="n">mapperlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">strategy_options</span> <span class="k">as</span> <span class="n">strategy_options</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">_mapper_fn</span> <span class="k">as</span> <span class="n">mapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">aliased</span> <span class="k">as</span> <span class="n">aliased</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">backref</span> <span class="k">as</span> <span class="n">backref</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_mappers</span> <span class="k">as</span> <span class="n">clear_mappers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">column_property</span> <span class="k">as</span> <span class="n">column_property</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">composite</span> <span class="k">as</span> <span class="n">composite</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">contains_alias</span> <span class="k">as</span> <span class="n">contains_alias</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_session</span> <span class="k">as</span> <span class="n">create_session</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">deferred</span> <span class="k">as</span> <span class="n">deferred</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">dynamic_loader</span> <span class="k">as</span> <span class="n">dynamic_loader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">join</span> <span class="k">as</span> <span class="n">join</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">mapped_column</span> <span class="k">as</span> <span class="n">mapped_column</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">orm_insert_sentinel</span> <span class="k">as</span> <span class="n">orm_insert_sentinel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">outerjoin</span> <span class="k">as</span> <span class="n">outerjoin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">query_expression</span> <span class="k">as</span> <span class="n">query_expression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">relationship</span> <span class="k">as</span> <span class="n">relationship</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">synonym</span> <span class="k">as</span> <span class="n">synonym</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">with_loader_criteria</span> <span class="k">as</span> <span class="n">with_loader_criteria</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._orm_constructors</span><span class="w"> </span><span class="kn">import</span> <span class="n">with_polymorphic</span> <span class="k">as</span> <span class="n">with_polymorphic</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.attributes</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttributeEventToken</span> <span class="k">as</span> <span class="n">AttributeEventToken</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.attributes</span><span class="w"> </span><span class="kn">import</span> <span class="n">InstrumentedAttribute</span> <span class="k">as</span> <span class="n">InstrumentedAttribute</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.attributes</span><span class="w"> </span><span class="kn">import</span> <span class="n">QueryableAttribute</span> <span class="k">as</span> <span class="n">QueryableAttribute</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">class_mapper</span> <span class="k">as</span> <span class="n">class_mapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynamicMapped</span> <span class="k">as</span> <span class="n">DynamicMapped</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">InspectionAttrExtensionType</span> <span class="k">as</span> <span class="n">InspectionAttrExtensionType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LoaderCallableStatus</span> <span class="k">as</span> <span class="n">LoaderCallableStatus</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapped</span> <span class="k">as</span> <span class="n">Mapped</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotExtension</span> <span class="k">as</span> <span class="n">NotExtension</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ORMDescriptor</span> <span class="k">as</span> <span class="n">ORMDescriptor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PassiveFlag</span> <span class="k">as</span> <span class="n">PassiveFlag</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLORMExpression</span> <span class="k">as</span> <span class="n">SQLORMExpression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">WriteOnlyMapped</span> <span class="k">as</span> <span class="n">WriteOnlyMapped</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">FromStatement</span> <span class="k">as</span> <span class="n">FromStatement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">QueryContext</span> <span class="k">as</span> <span class="n">QueryContext</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_mapped_attribute</span> <span class="k">as</span> <span class="n">add_mapped_attribute</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">as_declarative</span> <span class="k">as</span> <span class="n">as_declarative</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">declarative_base</span> <span class="k">as</span> <span class="n">declarative_base</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">declarative_mixin</span> <span class="k">as</span> <span class="n">declarative_mixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeclarativeBase</span> <span class="k">as</span> <span class="n">DeclarativeBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeclarativeBaseNoMeta</span> <span class="k">as</span> <span class="n">DeclarativeBaseNoMeta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeclarativeMeta</span> <span class="k">as</span> <span class="n">DeclarativeMeta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">declared_attr</span> <span class="k">as</span> <span class="n">declared_attr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">has_inherited_table</span> <span class="k">as</span> <span class="n">has_inherited_table</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappedAsDataclass</span> <span class="k">as</span> <span class="n">MappedAsDataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span> <span class="k">as</span> <span class="n">registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">synonym_for</span> <span class="k">as</span> <span class="n">synonym_for</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.decl_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappedClassProtocol</span> <span class="k">as</span> <span class="n">MappedClassProtocol</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.descriptor_props</span><span class="w"> </span><span class="kn">import</span> <span class="n">Composite</span> <span class="k">as</span> <span class="n">Composite</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.descriptor_props</span><span class="w"> </span><span class="kn">import</span> <span class="n">CompositeProperty</span> <span class="k">as</span> <span class="n">CompositeProperty</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.descriptor_props</span><span class="w"> </span><span class="kn">import</span> <span class="n">Synonym</span> <span class="k">as</span> <span class="n">Synonym</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.descriptor_props</span><span class="w"> </span><span class="kn">import</span> <span class="n">SynonymProperty</span> <span class="k">as</span> <span class="n">SynonymProperty</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dynamic</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppenderQuery</span> <span class="k">as</span> <span class="n">AppenderQuery</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttributeEvents</span> <span class="k">as</span> <span class="n">AttributeEvents</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">InstanceEvents</span> <span class="k">as</span> <span class="n">InstanceEvents</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">InstrumentationEvents</span> <span class="k">as</span> <span class="n">InstrumentationEvents</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">MapperEvents</span> <span class="k">as</span> <span class="n">MapperEvents</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">QueryEvents</span> <span class="k">as</span> <span class="n">QueryEvents</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionEvents</span> <span class="k">as</span> <span class="n">SessionEvents</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.identity</span><span class="w"> </span><span class="kn">import</span> <span class="n">IdentityMap</span> <span class="k">as</span> <span class="n">IdentityMap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.instrumentation</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassManager</span> <span class="k">as</span> <span class="n">ClassManager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">EXT_CONTINUE</span> <span class="k">as</span> <span class="n">EXT_CONTINUE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">EXT_SKIP</span> <span class="k">as</span> <span class="n">EXT_SKIP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">EXT_STOP</span> <span class="k">as</span> <span class="n">EXT_STOP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">InspectionAttr</span> <span class="k">as</span> <span class="n">InspectionAttr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">InspectionAttrInfo</span> <span class="k">as</span> <span class="n">InspectionAttrInfo</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">MANYTOMANY</span> <span class="k">as</span> <span class="n">MANYTOMANY</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">MANYTOONE</span> <span class="k">as</span> <span class="n">MANYTOONE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">MapperProperty</span> <span class="k">as</span> <span class="n">MapperProperty</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">NO_KEY</span> <span class="k">as</span> <span class="n">NO_KEY</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">NO_VALUE</span> <span class="k">as</span> <span class="n">NO_VALUE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">ONETOMANY</span> <span class="k">as</span> <span class="n">ONETOMANY</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">PropComparator</span> <span class="k">as</span> <span class="n">PropComparator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">RelationshipDirection</span> <span class="k">as</span> <span class="n">RelationshipDirection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserDefinedOption</span> <span class="k">as</span> <span class="n">UserDefinedOption</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.loading</span><span class="w"> </span><span class="kn">import</span> <span class="n">merge_frozen_result</span> <span class="k">as</span> <span class="n">merge_frozen_result</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.loading</span><span class="w"> </span><span class="kn">import</span> <span class="n">merge_result</span> <span class="k">as</span> <span class="n">merge_result</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapped_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">attribute_keyed_dict</span> <span class="k">as</span> <span class="n">attribute_keyed_dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapped_collection</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">attribute_mapped_collection</span> <span class="k">as</span> <span class="n">attribute_mapped_collection</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapped_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">column_keyed_dict</span> <span class="k">as</span> <span class="n">column_keyed_dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapped_collection</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">column_mapped_collection</span> <span class="k">as</span> <span class="n">column_mapped_collection</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapped_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">keyfunc_mapping</span> <span class="k">as</span> <span class="n">keyfunc_mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapped_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyFuncDict</span> <span class="k">as</span> <span class="n">KeyFuncDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapped_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">mapped_collection</span> <span class="k">as</span> <span class="n">mapped_collection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapped_collection</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappedCollection</span> <span class="k">as</span> <span class="n">MappedCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure_mappers</span> <span class="k">as</span> <span class="n">configure_mappers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapper</span> <span class="k">as</span> <span class="n">Mapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">reconstructor</span> <span class="k">as</span> <span class="n">reconstructor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.mapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">validates</span> <span class="k">as</span> <span class="n">validates</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.properties</span><span class="w"> </span><span class="kn">import</span> <span class="n">ColumnProperty</span> <span class="k">as</span> <span class="n">ColumnProperty</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.properties</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappedColumn</span> <span class="k">as</span> <span class="n">MappedColumn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.properties</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappedSQLExpression</span> <span class="k">as</span> <span class="n">MappedSQLExpression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.query</span><span class="w"> </span><span class="kn">import</span> <span class="n">AliasOption</span> <span class="k">as</span> <span class="n">AliasOption</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.query</span><span class="w"> </span><span class="kn">import</span> <span class="n">Query</span> <span class="k">as</span> <span class="n">Query</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.relationships</span><span class="w"> </span><span class="kn">import</span> <span class="n">foreign</span> <span class="k">as</span> <span class="n">foreign</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.relationships</span><span class="w"> </span><span class="kn">import</span> <span class="n">Relationship</span> <span class="k">as</span> <span class="n">Relationship</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.relationships</span><span class="w"> </span><span class="kn">import</span> <span class="n">RelationshipProperty</span> <span class="k">as</span> <span class="n">RelationshipProperty</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.relationships</span><span class="w"> </span><span class="kn">import</span> <span class="n">remote</span> <span class="k">as</span> <span class="n">remote</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.scoping</span><span class="w"> </span><span class="kn">import</span> <span class="n">QueryPropertyDescriptor</span> <span class="k">as</span> <span class="n">QueryPropertyDescriptor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.scoping</span><span class="w"> </span><span class="kn">import</span> <span class="n">scoped_session</span> <span class="k">as</span> <span class="n">scoped_session</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">close_all_sessions</span> <span class="k">as</span> <span class="n">close_all_sessions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_transient</span> <span class="k">as</span> <span class="n">make_transient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_transient_to_detached</span> <span class="k">as</span> <span class="n">make_transient_to_detached</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">object_session</span> <span class="k">as</span> <span class="n">object_session</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">ORMExecuteState</span> <span class="k">as</span> <span class="n">ORMExecuteState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span> <span class="k">as</span> <span class="n">Session</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">sessionmaker</span> <span class="k">as</span> <span class="n">sessionmaker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionTransaction</span> <span class="k">as</span> <span class="n">SessionTransaction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionTransactionOrigin</span> <span class="k">as</span> <span class="n">SessionTransactionOrigin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttributeState</span> <span class="k">as</span> <span class="n">AttributeState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">InstanceState</span> <span class="k">as</span> <span class="n">InstanceState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">contains_eager</span> <span class="k">as</span> <span class="n">contains_eager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultload</span> <span class="k">as</span> <span class="n">defaultload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">defer</span> <span class="k">as</span> <span class="n">defer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">immediateload</span> <span class="k">as</span> <span class="n">immediateload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">joinedload</span> <span class="k">as</span> <span class="n">joinedload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">lazyload</span> <span class="k">as</span> <span class="n">lazyload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">Load</span> <span class="k">as</span> <span class="n">Load</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_only</span> <span class="k">as</span> <span class="n">load_only</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">noload</span> <span class="k">as</span> <span class="n">noload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">raiseload</span> <span class="k">as</span> <span class="n">raiseload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">selectin_polymorphic</span> <span class="k">as</span> <span class="n">selectin_polymorphic</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">selectinload</span> <span class="k">as</span> <span class="n">selectinload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">subqueryload</span> <span class="k">as</span> <span class="n">subqueryload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">undefer</span> <span class="k">as</span> <span class="n">undefer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">undefer_group</span> <span class="k">as</span> <span class="n">undefer_group</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.strategy_options</span><span class="w"> </span><span class="kn">import</span> <span class="n">with_expression</span> <span class="k">as</span> <span class="n">with_expression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.unitofwork</span><span class="w"> </span><span class="kn">import</span> <span class="n">UOWTransaction</span> <span class="k">as</span> <span class="n">UOWTransaction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">Bundle</span> <span class="k">as</span> <span class="n">Bundle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">CascadeOptions</span> <span class="k">as</span> <span class="n">CascadeOptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">LoaderCriteriaOption</span> <span class="k">as</span> <span class="n">LoaderCriteriaOption</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">object_mapper</span> <span class="k">as</span> <span class="n">object_mapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">polymorphic_union</span> <span class="k">as</span> <span class="n">polymorphic_union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">was_deleted</span> <span class="k">as</span> <span class="n">was_deleted</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">with_parent</span> <span class="k">as</span> <span class="n">with_parent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.writeonly</span><span class="w"> </span><span class="kn">import</span> <span class="n">WriteOnlyCollection</span> <span class="k">as</span> <span class="n">WriteOnlyCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">util</span> <span class="k">as</span> <span class="n">_sa_util</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__go</span><span class="p">(</span><span class="n">lcls</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">_sa_util</span><span class="o">.</span><span class="n">preloaded</span><span class="o">.</span><span class="n">import_prefix</span><span class="p">(</span><span class="s2">&quot;sqlalchemy.orm&quot;</span><span class="p">)</span>
+    <span class="n">_sa_util</span><span class="o">.</span><span class="n">preloaded</span><span class="o">.</span><span class="n">import_prefix</span><span class="p">(</span><span class="s2">&quot;sqlalchemy.ext&quot;</span><span class="p">)</span>
+
+
+<span class="n">__go</span><span class="p">(</span><span class="nb">locals</span><span class="p">())</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

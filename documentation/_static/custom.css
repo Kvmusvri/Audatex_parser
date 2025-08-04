@@ -1,0 +1,94 @@
+/* Улучшение форматирования документации */
+
+/* Убираем повторы в заголовках модулей */
+.section h1:first-of-type + .section h1,
+.section h2:first-of-type + .section h2 {
+    display: none;
+}
+
+/* Улучшаем форматирование списков в docstring'ах */
+.doc-contents ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+.doc-contents ul li {
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
+/* Форматируем списки констант */
+.doc-contents ul li:contains("-") {
+    padding-left: 10px;
+}
+
+/* Улучшаем читаемость блоков кода */
+.doc-contents pre {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 10px 0;
+    overflow-x: auto;
+}
+
+/* Улучшаем заголовки функций */
+.function dt {
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    border-left: 4px solid #007bff;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+/* Улучшаем описания функций */
+.function dd {
+    margin-left: 20px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+}
+
+/* Улучшаем секции Args и Returns */
+.doc-contents .field-list {
+    margin: 10px 0;
+}
+
+.doc-contents .field-list dt {
+    font-weight: bold;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.doc-contents .field-list dd {
+    margin-left: 20px;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+}
+
+/* Улучшаем общий вид документации */
+.doc-contents {
+    line-height: 1.6;
+    color: #333;
+}
+
+/* Убираем лишние отступы */
+.doc-contents p {
+    margin-bottom: 10px;
+}
+
+/* Улучшаем заголовки секций */
+.doc-contents h1,
+.doc-contents h2,
+.doc-contents h3 {
+    color: #2c3e50;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 5px;
+    margin-top: 25px;
+    margin-bottom: 15px;
+} 

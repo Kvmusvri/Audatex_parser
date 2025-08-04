@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.parser.folder_manager &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8b205fae" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#id3">Структура базы данных</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#er">ER-диаграмма</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">core.parser.folder_manager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код core.parser.folder_manager</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Управление файлами и папками для сохранения данных</span>
+
+<span class="sd">Основные функции:</span>
+<span class="sd">    * safe_remove_directory: Безопасно удаляет директорию и все её содержимое</span>
+<span class="sd">    * create_folders: Создаёт папки для сохранения данных с перезаписью существующих</span>
+<span class="sd">    * extract_vin_and_claim_number: Извлекает VIN и claim_number со страницы</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Модуль для управления папками и извлечения данных со страниц</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.common.by</span><span class="w"> </span><span class="kn">import</span> <span class="n">By</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.support.ui</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebDriverWait</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.support</span><span class="w"> </span><span class="kn">import</span> <span class="n">expected_conditions</span> <span class="k">as</span> <span class="n">EC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.common.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeoutException</span><span class="p">,</span> <span class="n">StaleElementReferenceException</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">SCREENSHOT_DIR</span><span class="p">,</span> <span class="n">SVG_DIR</span><span class="p">,</span> <span class="n">DATA_DIR</span><span class="p">,</span> <span class="n">TIMEOUT</span><span class="p">,</span> <span class="n">CLAIM_NUMBER_SELECTOR</span><span class="p">,</span> <span class="n">VIN_SELECTOR</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.actions</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_vin_status</span><span class="p">,</span> <span class="n">add_human_behavior</span><span class="p">,</span> <span class="n">add_extended_human_behavior</span><span class="p">,</span> <span class="n">check_for_bot_detection</span><span class="p">,</span> <span class="n">handle_bot_detection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.stealth</span><span class="w"> </span><span class="kn">import</span> <span class="n">stealth_open_url</span><span class="p">,</span> <span class="n">stealth_wait_for_element</span><span class="p">,</span> <span class="n">check_stealth_detection</span><span class="p">,</span> <span class="n">handle_stealth_detection</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="safe_remove_directory">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.folder_manager.safe_remove_directory">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">safe_remove_directory</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Безопасно удаляет директорию и все её содержимое кроссплатформенно</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🗑️ Удаляем существующую папку: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Папка успешно удалена: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">PermissionError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка прав доступа при удалении </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка ОС при удалении </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Неожиданная ошибка при удалении </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<span class="c1"># Создаёт папки для сохранения данных с перезаписью существующих</span>
+<div class="viewcode-block" id="create_folders">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.folder_manager.create_folders">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_folders</span><span class="p">(</span><span class="n">claim_number</span><span class="p">,</span> <span class="n">vin</span><span class="p">):</span>
+    <span class="c1"># Очищаем строки от лишних пробелов и символов табуляции</span>
+    <span class="n">clean_claim_number</span> <span class="o">=</span> <span class="n">claim_number</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">claim_number</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">clean_vin</span> <span class="o">=</span> <span class="n">vin</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">vin</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    
+    <span class="c1"># Заменяем / на _ чтобы избежать создания подпапок</span>
+    <span class="n">safe_claim_number</span> <span class="o">=</span> <span class="n">clean_claim_number</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Проверяем, что данные не пустые</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">safe_claim_number</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">clean_vin</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Невозможно создать папку: claim_number и vin пустые&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;claim_number и vin не могут быть пустыми одновременно&quot;</span><span class="p">)</span>
+    
+    <span class="n">folder_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">safe_claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">clean_vin</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📁 Создаем папку с именем: &#39;</span><span class="si">{</span><span class="n">folder_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    
+    <span class="n">screenshot_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SCREENSHOT_DIR</span><span class="p">,</span> <span class="n">folder_name</span><span class="p">)</span>
+    <span class="n">svg_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SVG_DIR</span><span class="p">,</span> <span class="n">folder_name</span><span class="p">)</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">DATA_DIR</span><span class="p">,</span> <span class="n">folder_name</span><span class="p">)</span>
+    
+    <span class="c1"># Удаляем существующие папки если они есть</span>
+    <span class="n">safe_remove_directory</span><span class="p">(</span><span class="n">screenshot_dir</span><span class="p">)</span>
+    <span class="n">safe_remove_directory</span><span class="p">(</span><span class="n">svg_dir</span><span class="p">)</span>
+    <span class="n">safe_remove_directory</span><span class="p">(</span><span class="n">data_dir</span><span class="p">)</span>
+    
+    <span class="c1"># Создаем новые папки</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📁 Создаем папки для: </span><span class="si">{</span><span class="n">folder_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Исходные данные: claim_number=&#39;</span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&#39;, vin=&#39;</span><span class="si">{</span><span class="n">vin</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Очищенные данные: clean_claim_number=&#39;</span><span class="si">{</span><span class="n">clean_claim_number</span><span class="si">}</span><span class="s2">&#39;, clean_vin=&#39;</span><span class="si">{</span><span class="n">clean_vin</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">screenshot_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">svg_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Папки успешно созданы: screenshots=</span><span class="si">{</span><span class="n">screenshot_dir</span><span class="si">}</span><span class="s2">, svg=</span><span class="si">{</span><span class="n">svg_dir</span><span class="si">}</span><span class="s2">, data=</span><span class="si">{</span><span class="n">data_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">screenshot_dir</span><span class="p">,</span> <span class="n">svg_dir</span><span class="p">,</span> <span class="n">data_dir</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка создания папок: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Пути: screenshot_dir=</span><span class="si">{</span><span class="n">screenshot_dir</span><span class="si">}</span><span class="s2">, svg_dir=</span><span class="si">{</span><span class="n">svg_dir</span><span class="si">}</span><span class="s2">, data_dir=</span><span class="si">{</span><span class="n">data_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+
+<span class="c1"># Извлекает VIN и claim_number со страницы с расширенным человеческим поведением для обхода детекции</span>
+<div class="viewcode-block" id="extract_vin_and_claim_number">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.folder_manager.extract_vin_and_claim_number">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_vin_and_claim_number</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">current_url</span><span class="p">):</span>
+    <span class="n">base_url</span> <span class="o">=</span> <span class="n">current_url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;step&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="n">base_url</span> <span class="o">+</span> <span class="s1">&#39;&amp;step=General+Data+Ingos&#39;</span><span class="p">,</span> <span class="s1">&#39;selector&#39;</span><span class="p">:</span> <span class="n">CLAIM_NUMBER_SELECTOR</span><span class="p">,</span> <span class="s1">&#39;log_name&#39;</span><span class="p">:</span> <span class="s1">&#39;CLAIM NUMBER&#39;</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;claim_number&#39;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="n">base_url</span> <span class="o">+</span> <span class="s1">&#39;&amp;step=Osago+Vehicle+Identification&#39;</span><span class="p">,</span> <span class="s1">&#39;selector&#39;</span><span class="p">:</span> <span class="n">VIN_SELECTOR</span><span class="p">,</span> <span class="s1">&#39;log_name&#39;</span><span class="p">:</span> <span class="s1">&#39;VIN&#39;</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;vin&#39;</span><span class="p">}</span>
+    <span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="c1"># Добавляем расширенное человеческое поведение перед началом извлечения данных</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🤖 Начинаем этап извлечения данных с расширенным человеческим поведением&quot;</span><span class="p">)</span>
+    <span class="n">add_extended_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">total_delay</span><span class="o">=</span><span class="mf">60.0</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">configs</span><span class="p">:</span>
+        <span class="n">max_page_refresh_attempts</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Начинаем извлечение </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;log_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> с URL: </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_page_refresh_attempts</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📄 Попытка </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">max_page_refresh_attempts</span><span class="si">}</span><span class="s2">: Переход на URL для </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;log_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+                <span class="c1"># Используем stealth-методы для открытия URL</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">stealth_open_url</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">],</span> <span class="n">reconnect_time</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Не удалось скрытно открыть URL для </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;log_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                
+                <span class="c1"># Добавляем человеческое поведение после загрузки страницы</span>
+                <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+                
+                <span class="c1"># Проверяем готовность страницы</span>
+                <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">)))</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">))</span>  <span class="c1"># Человеческая задержка для прогрузки элементов</span>
+                
+                <span class="c1"># Проверяем на детекцию бота и stealth-детекцию</span>
+                <span class="k">if</span> <span class="n">check_for_bot_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span> <span class="ow">or</span> <span class="n">check_stealth_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 Обнаружена детекция бота! Попытка </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">handle_bot_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+                    <span class="n">handle_stealth_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">])</span>
+                    <span class="k">continue</span>
+                
+                <span class="c1"># Пытаемся найти целевой элемент с stealth-методами</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔎 Ищем элемент по селектору: </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;selector&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">stealth_wait_for_element</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;selector&#39;</span><span class="p">]):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Элемент </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;selector&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> не найден скрытно&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                
+                <span class="n">input_element</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;selector&#39;</span><span class="p">])</span>
+                
+                <span class="c1"># Проверяем, что элемент действительно загружен и доступен</span>
+                <span class="k">if</span> <span class="n">input_element</span> <span class="ow">and</span> <span class="n">input_element</span><span class="o">.</span><span class="n">is_displayed</span><span class="p">():</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">input_element</span><span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Успешно извлечён </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;log_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: &#39;</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39; (попытка </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                    <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>  <span class="c1"># Стабилизация перед следующим полем</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Элемент найден, но не отображается&quot;</span><span class="p">)</span>
+                    
+            <span class="k">except</span> <span class="p">(</span><span class="n">TimeoutException</span><span class="p">,</span> <span class="n">StaleElementReferenceException</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">error_msg</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Попытка </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">: Ошибка при извлечении </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;log_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+                <span class="c1"># Проверяем на детекцию бота</span>
+                <span class="k">if</span> <span class="s2">&quot;GetHandleVerifier&quot;</span> <span class="ow">in</span> <span class="n">error_msg</span> <span class="ow">or</span> <span class="s2">&quot;white screen&quot;</span> <span class="ow">in</span> <span class="n">driver</span><span class="o">.</span><span class="n">page_source</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 Обнаружена детекция бота! Попытка </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="c1"># Добавляем длительную паузу и человеческое поведение</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
+                    <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_page_refresh_attempts</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔄 Обновляем страницу и повторяем попытку...&quot;</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">driver</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">))</span>  <span class="c1"># Человеческая задержка</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">refresh_error</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при обновлении страницы: </span><span class="si">{</span><span class="n">refresh_error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ КРИТИЧЕСКАЯ ОШИБКА: Не удалось извлечь </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;log_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> после </span><span class="si">{</span><span class="n">max_page_refresh_attempts</span><span class="si">}</span><span class="s2"> попыток!&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Это указывает на серьезные проблемы с сайтом. Требуется полный перезапуск парсера.&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Если не удалось извлечь поле после всех попыток - возвращаем ошибку</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Не удалось извлечь </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;log_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> после </span><span class="si">{</span><span class="n">max_page_refresh_attempts</span><span class="si">}</span><span class="s2"> обновлений страницы&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ </span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Все поля успешно извлечены: claim_number=&#39;</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;claim_number&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;, vin=&#39;</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vin&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Получаем статус VIN кнопок сразу после извлечения VIN</span>
+    <span class="n">vin_status</span> <span class="o">=</span> <span class="n">get_vin_status</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📊 VIN статус определен: </span><span class="si">{</span><span class="n">vin_status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;claim_number&#39;</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;vin&#39;</span><span class="p">],</span> <span class="n">vin_status</span> </div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

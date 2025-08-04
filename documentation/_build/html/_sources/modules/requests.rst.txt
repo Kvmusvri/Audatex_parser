@@ -1,0 +1,7 @@
+requests module
+===============
+
+.. automodule:: requests
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,3 +1,28 @@
+"""
+Константы и настройки парсера Audatex
+
+Основные константы:
+    * BASE_URL: str - Базовый URL сайта Audatex
+    * COOKIES_FILE: str - Файл для сохранения cookies
+    * SCREENSHOT_DIR: str - Директория для скриншотов
+    * SVG_DIR: str - Директория для SVG файлов
+    * DATA_DIR: str - Директория для данных
+    * TIMEOUT: int - Таймаут в секундах (30)
+
+CSS селекторы:
+    * MODAL_BUTTON_SELECTOR: str - Селектор кнопки модального окна
+    * MORE_ICON_SELECTOR: str - Селектор иконки "больше"
+    * VIN_SELECTOR: str - Селектор поля VIN
+    * CLAIM_NUMBER_SELECTOR: str - Селектор номера заявки
+    * OUTGOING_TABLE_SELECTOR: str - Селектор таблицы исходящих заявок
+    * OPEN_TABLE_SELECTOR: str - Селектор таблицы открытых заявок
+    * ROW_SELECTOR: str - Селектор строки таблицы
+    * IFRAME_ID: str - ID iframe для веб-пада
+    * EMPTY_TABLE_TEXT_SELECTOR: str - Селектор текста пустой таблицы
+
+Текстовые константы:
+    * EMPTY_TABLE_TEXT: str - Текст пустой таблицы
+"""
 # Константы для парсера Audatex
 import urllib3
 

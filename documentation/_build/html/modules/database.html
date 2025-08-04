@@ -1,0 +1,1252 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Модуль базы данных (database) &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8b205fae" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../genindex.html" />
+    <link rel="search" title="Поиск" href="../search.html" />
+    <link rel="next" title="Модуль парсера (parser)" href="parser.html" />
+    <link rel="prev" title="Модуль аутентификации (auth)" href="auth.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Модуль базы данных (database)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Обзор</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">Модули</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#core-database-models">core.database.models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.Base"><code class="docutils literal notranslate"><span class="pre">Base</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarDetail"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarOptions"><code class="docutils literal notranslate"><span class="pre">ParserCarOptions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserScheduleSettings"><code class="docutils literal notranslate"><span class="pre">ParserScheduleSettings</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.User"><code class="docutils literal notranslate"><span class="pre">User</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.sessions"><code class="docutils literal notranslate"><span class="pre">User.sessions</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.UserSession"><code class="docutils literal notranslate"><span class="pre">UserSession</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.UserSession.user"><code class="docutils literal notranslate"><span class="pre">UserSession.user</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.start_db"><code class="docutils literal notranslate"><span class="pre">start_db()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.close_db"><code class="docutils literal notranslate"><span class="pre">close_db()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.DatabaseSession"><code class="docutils literal notranslate"><span class="pre">DatabaseSession</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.DatabaseSession.__init__"><code class="docutils literal notranslate"><span class="pre">DatabaseSession.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.get_moscow_time"><code class="docutils literal notranslate"><span class="pre">get_moscow_time()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-database-requests">core.database.requests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.get_db"><code class="docutils literal notranslate"><span class="pre">get_db()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.validate_request_data"><code class="docutils literal notranslate"><span class="pre">validate_request_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.is_letter_code"><code class="docutils literal notranslate"><span class="pre">is_letter_code()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.parse_detail_title"><code class="docutils literal notranslate"><span class="pre">parse_detail_title()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.extract_option_code"><code class="docutils literal notranslate"><span class="pre">extract_option_code()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.clean_option_title"><code class="docutils literal notranslate"><span class="pre">clean_option_title()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.upsert_request_status"><code class="docutils literal notranslate"><span class="pre">upsert_request_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.save_details_batch"><code class="docutils literal notranslate"><span class="pre">save_details_batch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.save_zones_batch"><code class="docutils literal notranslate"><span class="pre">save_zones_batch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.save_options_batch"><code class="docutils literal notranslate"><span class="pre">save_options_batch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.delete_existing_request_data"><code class="docutils literal notranslate"><span class="pre">delete_existing_request_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.save_parser_data_to_db"><code class="docutils literal notranslate"><span class="pre">save_parser_data_to_db()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.update_json_with_claim_number"><code class="docutils literal notranslate"><span class="pre">update_json_with_claim_number()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.save_updated_json_to_file"><code class="docutils literal notranslate"><span class="pre">save_updated_json_to_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.get_schedule_settings"><code class="docutils literal notranslate"><span class="pre">get_schedule_settings()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.save_schedule_settings"><code class="docutils literal notranslate"><span class="pre">save_schedule_settings()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.is_time_in_working_hours"><code class="docutils literal notranslate"><span class="pre">is_time_in_working_hours()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.get_time_to_start"><code class="docutils literal notranslate"><span class="pre">get_time_to_start()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.requests.get_time_to_end"><code class="docutils literal notranslate"><span class="pre">get_time_to_end()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-database-init-db">core.database.init_db</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.init_db.init_database"><code class="docutils literal notranslate"><span class="pre">init_database()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#id3">Структура базы данных</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#parser-car-detail">parser_car_detail</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parser-car-detail-group-zone">parser_car_detail_group_zone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parser-car-request-status">parser_car_request_status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parser-car-options">parser_car_options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parser-schedule-settings">parser_schedule_settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#users">users</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#user-sessions">user_sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#er">ER-диаграмма</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Модуль базы данных (database)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/modules/database.rst.txt" rel="nofollow"> Просмотреть исходный код страницы</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="database">
+<h1>Модуль базы данных (database)<a class="headerlink" href="#database" title="Ссылка на этот заголовок"></a></h1>
+<section id="id1">
+<h2>Обзор<a class="headerlink" href="#id1" title="Ссылка на этот заголовок"></a></h2>
+<p>Модуль базы данных обеспечивает работу с PostgreSQL базой данных через SQLAlchemy ORM.</p>
+<p>Основные компоненты:</p>
+<ul class="simple">
+<li><p><strong>models.py</strong> - SQLAlchemy модели данных</p></li>
+<li><p><strong>requests.py</strong> - Функции для работы с данными парсера</p></li>
+<li><p><strong>init_db.py</strong> - Инициализация и настройка базы данных</p></li>
+</ul>
+</section>
+<section id="id2">
+<h2>Модули<a class="headerlink" href="#id2" title="Ссылка на этот заголовок"></a></h2>
+</section>
+<section id="core-database-models">
+<h2>core.database.models<a class="headerlink" href="#core-database-models" title="Ссылка на этот заголовок"></a></h2>
+<p>SQLAlchemy модели для всех таблиц базы данных.</p>
+<dl class="py class" id="module-core.database.models">
+<dt class="sig sig-object py" id="core.database.models.Base">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">Base</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#Base"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.Base" title="Ссылка на это определение"></a></dt>
+<dd><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">AsyncAttrs</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DeclarativeBase</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>Any</em>)</p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetail">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">ParserCarDetail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#ParserCarDetail"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.ParserCarDetail" title="Ссылка на это определение"></a></dt>
+<dd><p>Базовые классы: <a class="reference internal" href="#core.database.models.Base" title="core.database.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>Any</em>)</p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetailGroupZone">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">ParserCarDetailGroupZone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#ParserCarDetailGroupZone"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.ParserCarDetailGroupZone" title="Ссылка на это определение"></a></dt>
+<dd><p>Базовые классы: <a class="reference internal" href="#core.database.models.Base" title="core.database.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>Any</em>)</p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.database.models.ParserCarRequestStatus">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">ParserCarRequestStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#ParserCarRequestStatus"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.ParserCarRequestStatus" title="Ссылка на это определение"></a></dt>
+<dd><p>Базовые классы: <a class="reference internal" href="#core.database.models.Base" title="core.database.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>Any</em>)</p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.database.models.ParserCarOptions">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">ParserCarOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#ParserCarOptions"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.ParserCarOptions" title="Ссылка на это определение"></a></dt>
+<dd><p>Базовые классы: <a class="reference internal" href="#core.database.models.Base" title="core.database.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>Any</em>)</p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.database.models.ParserScheduleSettings">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">ParserScheduleSettings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#ParserScheduleSettings"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.ParserScheduleSettings" title="Ссылка на это определение"></a></dt>
+<dd><p>Базовые классы: <a class="reference internal" href="#core.database.models.Base" title="core.database.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>Any</em>)</p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.database.models.User">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">User</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#User"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.User" title="Ссылка на это определение"></a></dt>
+<dd><p>Базовые классы: <a class="reference internal" href="#core.database.models.Base" title="core.database.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>Any</em>)</p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>Any</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.sessions">
+<span class="sig-name descname"><span class="pre">sessions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.list</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'UserSession'</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'UserSession'</span></em><a class="headerlink" href="#core.database.models.User.sessions" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.database.models.UserSession">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">UserSession</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#UserSession"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.UserSession" title="Ссылка на это определение"></a></dt>
+<dd><p>Базовые классы: <a class="reference internal" href="#core.database.models.Base" title="core.database.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>Any</em>)</p></li>
+<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>Any</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.UserSession.user">
+<span class="sig-name descname"><span class="pre">user</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'core.database.models.User'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'User'</span></em><a class="headerlink" href="#core.database.models.UserSession.user" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.models.start_db">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">start_db</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#start_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.start_db" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.models.close_db">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">close_db</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#close_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.close_db" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.database.models.DatabaseSession">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">DatabaseSession</span></span><a class="reference internal" href="../_modules/core/database/models.html#DatabaseSession"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.DatabaseSession" title="Ссылка на это определение"></a></dt>
+<dd><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.database.models.DatabaseSession.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#DatabaseSession.__init__"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.DatabaseSession.__init__" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.models.get_moscow_time">
+<span class="sig-prename descclassname"><span class="pre">core.database.models.</span></span><span class="sig-name descname"><span class="pre">get_moscow_time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/models.html#get_moscow_time"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.models.get_moscow_time" title="Ссылка на это определение"></a></dt>
+<dd><p>Возвращает текущее время в московском часовом поясе</p>
+<dl class="field-list simple">
+<dt class="field-odd">Тип результата<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>datetime</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-database-requests">
+<h2>core.database.requests<a class="headerlink" href="#core-database-requests" title="Ссылка на этот заголовок"></a></h2>
+<p>Функции для сохранения и получения данных парсера из базы данных.</p>
+<dl class="py function" id="module-core.database.requests">
+<dt class="sig sig-object py" id="core.database.requests.get_db">
+<span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">get_db</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#get_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.get_db" title="Ссылка на это определение"></a></dt>
+<dd><p>Получение синхронной сессии БД</p>
+<dl class="field-list simple">
+<dt class="field-odd">Тип результата<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sqlalchemy.orm.Session</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.validate_request_data">
+<span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">validate_request_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#validate_request_data"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.validate_request_data" title="Ссылка на это определение"></a></dt>
+<dd><p>Валидация входных данных</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.is_letter_code">
+<span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">is_letter_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#is_letter_code"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.is_letter_code" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверяет, содержит ли код буквы</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>code</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.parse_detail_title">
+<span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">parse_detail_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detail_title</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#parse_detail_title"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.parse_detail_title" title="Ссылка на это определение"></a></dt>
+<dd><p>Парсит заголовок детали на код и название</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>detail_title</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>List</em>[tuple[str, str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.extract_option_code">
+<span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">extract_option_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#extract_option_code"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.extract_option_code" title="Ссылка на это определение"></a></dt>
+<dd><p>Извлекает код опции из заголовка</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>title</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.clean_option_title">
+<span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">clean_option_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#clean_option_title"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.clean_option_title" title="Ссылка на это определение"></a></dt>
+<dd><p>Очищает заголовок опции от кода</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>title</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.upsert_request_status">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">upsert_request_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">status_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#upsert_request_status"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.upsert_request_status" title="Ссылка на это определение"></a></dt>
+<dd><p>UPSERT для статуса заявки</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
+<li><p><strong>vin</strong> (<em>str</em>)</p></li>
+<li><p><strong>status_data</strong> (<em>dict</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.save_details_batch">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">save_details_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#save_details_batch"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.save_details_batch" title="Ссылка на это определение"></a></dt>
+<dd><p>Batch сохранение деталей</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
+<li><p><strong>vin</strong> (<em>str</em>)</p></li>
+<li><p><strong>details</strong> (<em>List</em><em>[</em><em>dict</em><em>]</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.save_zones_batch">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">save_zones_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zones</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#save_zones_batch"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.save_zones_batch" title="Ссылка на это определение"></a></dt>
+<dd><p>Batch сохранение зон</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
+<li><p><strong>vin</strong> (<em>str</em>)</p></li>
+<li><p><strong>zones</strong> (<em>List</em><em>[</em><em>dict</em><em>]</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.save_options_batch">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">save_options_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#save_options_batch"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.save_options_batch" title="Ссылка на это определение"></a></dt>
+<dd><p>Batch сохранение опций</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
+<li><p><strong>vin</strong> (<em>str</em>)</p></li>
+<li><p><strong>options</strong> (<em>List</em><em>[</em><em>dict</em><em>]</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.delete_existing_request_data">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">delete_existing_request_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#delete_existing_request_data"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.delete_existing_request_data" title="Ссылка на это определение"></a></dt>
+<dd><p>Быстрое удаление всех данных заявки по индексам</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
+<li><p><strong>vin</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.save_parser_data_to_db">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">save_parser_data_to_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">started_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">completed_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#save_parser_data_to_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.save_parser_data_to_db" title="Ссылка на это определение"></a></dt>
+<dd><p>Оптимизированное сохранение данных парсера с batch операциями</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parser_data</strong> (<em>dict</em>)</p></li>
+<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
+<li><p><strong>vin</strong> (<em>str</em>)</p></li>
+<li><p><strong>is_success</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.update_json_with_claim_number">
+<span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">update_json_with_claim_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#update_json_with_claim_number"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.update_json_with_claim_number" title="Ссылка на это определение"></a></dt>
+<dd><p>Обновляет JSON данные, добавляя claim_number</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>json_data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p></li>
+<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Dict</em>[str, <em>Any</em>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.save_updated_json_to_file">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">save_updated_json_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#save_updated_json_to_file"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.save_updated_json_to_file" title="Ссылка на это определение"></a></dt>
+<dd><p>Сохраняет обновленный JSON в файл</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>json_data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p></li>
+<li><p><strong>file_path</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.get_schedule_settings">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">get_schedule_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#get_schedule_settings"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.get_schedule_settings" title="Ссылка на это определение"></a></dt>
+<dd><p>Получает текущие настройки расписания парсера</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>session</strong> (<em>sqlalchemy.ext.asyncio.AsyncSession</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Dict</em>[str, <em>Any</em>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.save_schedule_settings">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">save_schedule_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#save_schedule_settings"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.save_schedule_settings" title="Ссылка на это определение"></a></dt>
+<dd><p>Сохраняет настройки расписания парсера</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> (<em>sqlalchemy.ext.asyncio.AsyncSession</em>)</p></li>
+<li><p><strong>start_time</strong> (<em>str</em>)</p></li>
+<li><p><strong>end_time</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.is_time_in_working_hours">
+<span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">is_time_in_working_hours</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#is_time_in_working_hours"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.is_time_in_working_hours" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверяет, находится ли текущее время в рабочем диапазоне</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_time</strong> (<em>str</em>)</p></li>
+<li><p><strong>end_time</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.get_time_to_start">
+<span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">get_time_to_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#get_time_to_start"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.get_time_to_start" title="Ссылка на это определение"></a></dt>
+<dd><p>Возвращает количество минут до начала работы</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>start_time</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.requests.get_time_to_end">
+<span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">get_time_to_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">end_time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#get_time_to_end"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.get_time_to_end" title="Ссылка на это определение"></a></dt>
+<dd><p>Возвращает количество минут до окончания работы</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>end_time</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-database-init-db">
+<h2>core.database.init_db<a class="headerlink" href="#core-database-init-db" title="Ссылка на этот заголовок"></a></h2>
+<p>Инициализация базы данных и создание таблиц.</p>
+<p id="module-core.database.init_db">Скрипт для инициализации базы данных</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.database.init_db.init_database">
+<span class="sig-prename descclassname"><span class="pre">core.database.init_db.</span></span><span class="sig-name descname"><span class="pre">init_database</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/init_db.html#init_database"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.init_db.init_database" title="Ссылка на это определение"></a></dt>
+<dd><p>Инициализация базы данных</p>
+</dd></dl>
+
+</section>
+</section>
+<section id="id3">
+<h1>Структура базы данных<a class="headerlink" href="#id3" title="Ссылка на этот заголовок"></a></h1>
+<section id="parser-car-detail">
+<h2>parser_car_detail<a class="headerlink" href="#parser-car-detail" title="Ссылка на этот заголовок"></a></h2>
+<p>Детали автомобиля</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Поле</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head"><p>Nullable</p></th>
+<th class="head"><p>Primary Key</p></th>
+<th class="head"><p>Foreign Key</p></th>
+<th class="head"><p>Индекс</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>id</p></td>
+<td><p>INTEGER</p></td>
+<td><p>✗</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>request_id</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>vin</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>group_zone</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>code</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>title</p></td>
+<td><p>TEXT</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>source_from</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>created_date</p></td>
+<td><p>DATE</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="parser-car-detail-group-zone">
+<h2>parser_car_detail_group_zone<a class="headerlink" href="#parser-car-detail-group-zone" title="Ссылка на этот заголовок"></a></h2>
+<p>Группы зон деталей</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Поле</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head"><p>Nullable</p></th>
+<th class="head"><p>Primary Key</p></th>
+<th class="head"><p>Foreign Key</p></th>
+<th class="head"><p>Индекс</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>id</p></td>
+<td><p>INTEGER</p></td>
+<td><p>✗</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>request_id</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>vin</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>title</p></td>
+<td><p>TEXT</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>source_from</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>created_date</p></td>
+<td><p>DATE</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="parser-car-request-status">
+<h2>parser_car_request_status<a class="headerlink" href="#parser-car-request-status" title="Ссылка на этот заголовок"></a></h2>
+<p>Статус обработки заявок</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Поле</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head"><p>Nullable</p></th>
+<th class="head"><p>Primary Key</p></th>
+<th class="head"><p>Foreign Key</p></th>
+<th class="head"><p>Индекс</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>id</p></td>
+<td><p>INTEGER</p></td>
+<td><p>✗</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>request_id</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>vin</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>vin_status</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>comment</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>started_at</p></td>
+<td><p>DATETIME</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>completed_at</p></td>
+<td><p>DATETIME</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>created_date</p></td>
+<td><p>DATE</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="parser-car-options">
+<h2>parser_car_options<a class="headerlink" href="#parser-car-options" title="Ссылка на этот заголовок"></a></h2>
+<p>Опции автомобиля</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Поле</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head"><p>Nullable</p></th>
+<th class="head"><p>Primary Key</p></th>
+<th class="head"><p>Foreign Key</p></th>
+<th class="head"><p>Индекс</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>id</p></td>
+<td><p>INTEGER</p></td>
+<td><p>✗</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>request_id</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>vin</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>zone_name</p></td>
+<td><p>VARCHAR(100)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>option_code</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>option_title</p></td>
+<td><p>TEXT</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>is_selected</p></td>
+<td><p>BOOLEAN</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>source_from</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>created_date</p></td>
+<td><p>DATE</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="parser-schedule-settings">
+<h2>parser_schedule_settings<a class="headerlink" href="#parser-schedule-settings" title="Ссылка на этот заголовок"></a></h2>
+<p>Настройки расписания работы парсера</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Поле</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head"><p>Nullable</p></th>
+<th class="head"><p>Primary Key</p></th>
+<th class="head"><p>Foreign Key</p></th>
+<th class="head"><p>Индекс</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>id</p></td>
+<td><p>INTEGER</p></td>
+<td><p>✗</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>start_time</p></td>
+<td><p>VARCHAR(5)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>end_time</p></td>
+<td><p>VARCHAR(5)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>is_active</p></td>
+<td><p>BOOLEAN</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>created_at</p></td>
+<td><p>DATETIME</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>updated_at</p></td>
+<td><p>DATETIME</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="users">
+<h2>users<a class="headerlink" href="#users" title="Ссылка на этот заголовок"></a></h2>
+<p>Пользователи системы</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Поле</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head"><p>Nullable</p></th>
+<th class="head"><p>Primary Key</p></th>
+<th class="head"><p>Foreign Key</p></th>
+<th class="head"><p>Индекс</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>id</p></td>
+<td><p>INTEGER</p></td>
+<td><p>✗</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>username</p></td>
+<td><p>VARCHAR(50)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>email</p></td>
+<td><p>VARCHAR(100)</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>hashed_password</p></td>
+<td><p>VARCHAR(255)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>role</p></td>
+<td><p>VARCHAR(20)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>is_active</p></td>
+<td><p>BOOLEAN</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>last_login</p></td>
+<td><p>DATETIME</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>failed_login_attempts</p></td>
+<td><p>INTEGER</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>locked_until</p></td>
+<td><p>DATETIME</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>created_at</p></td>
+<td><p>DATETIME</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>updated_at</p></td>
+<td><p>DATETIME</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="user-sessions">
+<h2>user_sessions<a class="headerlink" href="#user-sessions" title="Ссылка на этот заголовок"></a></h2>
+<p>Сессии пользователей</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Поле</p></th>
+<th class="head"><p>Тип</p></th>
+<th class="head"><p>Nullable</p></th>
+<th class="head"><p>Primary Key</p></th>
+<th class="head"><p>Foreign Key</p></th>
+<th class="head"><p>Индекс</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>id</p></td>
+<td><p>INTEGER</p></td>
+<td><p>✗</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>user_id</p></td>
+<td><p>INTEGER</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td><p>✓</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>token_hash</p></td>
+<td><p>VARCHAR(255)</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>expires_at</p></td>
+<td><p>DATETIME</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>ip_address</p></td>
+<td><p>VARCHAR(45)</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>user_agent</p></td>
+<td><p>TEXT</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>created_at</p></td>
+<td><p>DATETIME</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Связи:</strong>
+- user_sessions.user_id → users.id</p>
+</section>
+</section>
+<section id="er">
+<h1>ER-диаграмма<a class="headerlink" href="#er" title="Ссылка на этот заголовок"></a></h1>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------+       +------------------+
+| users          |       | user_sessions    |
++----------------+       +------------------+
+| id (PK)        |&lt;------| user_id (FK)     |
+| username       |       | token_hash       |
+| email          |       | expires_at       |
+| hashed_password|       | ip_address       |
+| role           |       | user_agent       |
+| is_active      |       | created_at       |
+| last_login     |       +------------------+
+| failed_login_  |
+| attempts       |
+| locked_until   |
+| created_at     |
+| updated_at     |
++----------------+
+
++----------------------+       +------------------------+
+| parser_car_detail    |       | parser_car_options     |
++----------------------+       +------------------------+
+| id (PK)              |       | id (PK)                |
+| request_id (INDEX)   |       | request_id (INDEX)     |
+| vin (INDEX)          |       | vin (INDEX)            |
+| group_zone           |       | zone_name              |
+| code                 |       | option_code            |
+| title                |       | option_title           |
+| source_from          |       | is_selected            |
+| created_date         |       | source_from            |
++----------------------+       | created_date           |
+                                +------------------------+
+
++---------------------------+       +------------------------+
+| parser_car_detail_group_  |       | parser_car_request_    |
+| zone                      |       | status                 |
++---------------------------+       +------------------------+
+| id (PK)                  |       | id (PK)                |
+| request_id (INDEX)       |       | request_id (INDEX)     |
+| vin (INDEX)              |       | vin (INDEX)            |
+| type                     |       | vin_status             |
+| title                    |       | comment                |
+| source_from              |       | started_at             |
+| created_date             |       | completed_at           |
++---------------------------+       | created_date           |
+                                     +------------------------+
+
++------------------------+
+| parser_schedule_       |
+| settings               |
++------------------------+
+| id (PK)                |
+| start_time             |
+| end_time               |
+| is_active              |
+| created_at             |
+| updated_at             |
++------------------------+
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Нижняя область">
+        <a href="auth.html" class="btn btn-neutral float-left" title="Модуль аутентификации (auth)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Предыдущая</a>
+        <a href="parser.html" class="btn btn-neutral float-right" title="Модуль парсера (parser)" accesskey="n" rel="next">Следующая <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

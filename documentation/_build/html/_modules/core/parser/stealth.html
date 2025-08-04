@@ -1,0 +1,911 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.parser.stealth &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">core.parser.stealth</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код core.parser.stealth</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Модуль для stealth-методов обхода детекции бота</span>
+<span class="c1"># Основан на техниках SeleniumBase UC Mode и современных методах обхода бот-детекта</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.remote.webdriver</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebDriver</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.common.by</span><span class="w"> </span><span class="kn">import</span> <span class="n">By</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.support.ui</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebDriverWait</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.support</span><span class="w"> </span><span class="kn">import</span> <span class="n">expected_conditions</span> <span class="k">as</span> <span class="n">EC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">selenium.common.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeoutException</span><span class="p">,</span> <span class="n">WebDriverException</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="apply_advanced_stealth_masking">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.apply_advanced_stealth_masking">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_advanced_stealth_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Применяет расширенные настройки для маскировки headless режима</span>
+<span class="sd">    Основано на современных методах обхода бот-детекта</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            // Безопасная функция для определения свойств</span>
+<span class="s2">            function safeDefineProperty(obj, prop, descriptor) {</span>
+<span class="s2">                try {</span>
+<span class="s2">                    const existingDescriptor = Object.getOwnPropertyDescriptor(obj, prop);</span>
+<span class="s2">                    if (existingDescriptor &amp;&amp; !existingDescriptor.configurable) {</span>
+<span class="s2">                        return false; // Свойство неконфигурируемое</span>
+<span class="s2">                    }</span>
+<span class="s2">                    Object.defineProperty(obj, prop, descriptor);</span>
+<span class="s2">                    return true;</span>
+<span class="s2">                } catch (e) {</span>
+<span class="s2">                    return false;</span>
+<span class="s2">                }</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Расширенная маскировка webdriver</span>
+<span class="s2">            try {</span>
+<span class="s2">                const originalQuery = window.navigator.permissions.query;</span>
+<span class="s2">                window.navigator.permissions.query = (parameters) =&gt; (</span>
+<span class="s2">                    parameters.name === &#39;notifications&#39; ?</span>
+<span class="s2">                        Promise.resolve({ state: Notification.permission }) :</span>
+<span class="s2">                        originalQuery(parameters)</span>
+<span class="s2">                );</span>
+<span class="s2">            } catch (e) {</span>
+<span class="s2">                // Игнорируем ошибки</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем webdriver</span>
+<span class="s2">            safeDefineProperty(navigator, &#39;webdriver&#39;, {</span>
+<span class="s2">                get: () =&gt; undefined,</span>
+<span class="s2">                configurable: true</span>
+<span class="s2">            });</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем chrome runtime</span>
+<span class="s2">            if (window.chrome) {</span>
+<span class="s2">                try {</span>
+<span class="s2">                    window.chrome = {</span>
+<span class="s2">                        runtime: </span><span class="si">{}</span><span class="s2">,</span>
+<span class="s2">                        loadTimes: function() </span><span class="si">{}</span><span class="s2">,</span>
+<span class="s2">                        csi: function() </span><span class="si">{}</span><span class="s2">,</span>
+<span class="s2">                        app: </span><span class="si">{}</span>
+<span class="s2">                    };</span>
+<span class="s2">                } catch (e) {</span>
+<span class="s2">                    // Игнорируем ошибки</span>
+<span class="s2">                }</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем permissions</span>
+<span class="s2">            try {</span>
+<span class="s2">                const originalPermissions = navigator.permissions;</span>
+<span class="s2">                navigator.permissions = {</span>
+<span class="s2">                    ...originalPermissions,</span>
+<span class="s2">                    query: (parameters) =&gt; {</span>
+<span class="s2">                        if (parameters.name === &#39;notifications&#39;) {</span>
+<span class="s2">                            return Promise.resolve({ state: &#39;granted&#39; });</span>
+<span class="s2">                        }</span>
+<span class="s2">                        return originalPermissions.query(parameters);</span>
+<span class="s2">                    }</span>
+<span class="s2">                };</span>
+<span class="s2">            } catch (e) {</span>
+<span class="s2">                // Игнорируем ошибки</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем plugins</span>
+<span class="s2">            safeDefineProperty(navigator, &#39;plugins&#39;, {</span>
+<span class="s2">                get: () =&gt; [1, 2, 3, 4, 5],</span>
+<span class="s2">                configurable: true</span>
+<span class="s2">            });</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем languages</span>
+<span class="s2">            safeDefineProperty(navigator, &#39;languages&#39;, {</span>
+<span class="s2">                get: () =&gt; [&#39;ru-RU&#39;, &#39;ru&#39;, &#39;en-US&#39;, &#39;en&#39;],</span>
+<span class="s2">                configurable: true</span>
+<span class="s2">            });</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем connection</span>
+<span class="s2">            safeDefineProperty(navigator, &#39;connection&#39;, {</span>
+<span class="s2">                get: () =&gt; ({</span>
+<span class="s2">                    effectiveType: &#39;4g&#39;,</span>
+<span class="s2">                    rtt: 50,</span>
+<span class="s2">                    downlink: 10,</span>
+<span class="s2">                    saveData: false,</span>
+<span class="s2">                }),</span>
+<span class="s2">                configurable: true</span>
+<span class="s2">            });</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем hardwareConcurrency</span>
+<span class="s2">            safeDefineProperty(navigator, &#39;hardwareConcurrency&#39;, {</span>
+<span class="s2">                get: () =&gt; 8,</span>
+<span class="s2">                configurable: true</span>
+<span class="s2">            });</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем deviceMemory</span>
+<span class="s2">            safeDefineProperty(navigator, &#39;deviceMemory&#39;, {</span>
+<span class="s2">                get: () =&gt; 8,</span>
+<span class="s2">                configurable: true</span>
+<span class="s2">            });</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем userAgent</span>
+<span class="s2">            try {</span>
+<span class="s2">                const originalUserAgent = navigator.userAgent;</span>
+<span class="s2">                </span>
+<span class="s2">                // Добавляем дополнительные методы обхода детекции</span>
+<span class="s2">                safeDefineProperty(navigator, &#39;maxTouchPoints&#39;, {</span>
+<span class="s2">                    get: () =&gt; 0,</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                safeDefineProperty(navigator, &#39;vendor&#39;, {</span>
+<span class="s2">                    get: () =&gt; &#39;Google Inc.&#39;,</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                safeDefineProperty(navigator, &#39;platform&#39;, {</span>
+<span class="s2">                    get: () =&gt; &#39;Win32&#39;,</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем WebGL</span>
+<span class="s2">                try {</span>
+<span class="s2">                    const getParameter = WebGLRenderingContext.prototype.getParameter;</span>
+<span class="s2">                    WebGLRenderingContext.prototype.getParameter = function(parameter) {</span>
+<span class="s2">                        if (parameter === 37445) {</span>
+<span class="s2">                            return &#39;Intel Inc.&#39;;</span>
+<span class="s2">                        }</span>
+<span class="s2">                        if (parameter === 37446) {</span>
+<span class="s2">                            return &#39;Intel(R) Iris(TM) Graphics 6100&#39;;</span>
+<span class="s2">                        }</span>
+<span class="s2">                        return getParameter.call(this, parameter);</span>
+<span class="s2">                    };</span>
+<span class="s2">                } catch (e) {</span>
+<span class="s2">                    // Игнорируем ошибки WebGL</span>
+<span class="s2">                }</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем Canvas fingerprinting</span>
+<span class="s2">                try {</span>
+<span class="s2">                    const originalGetContext = HTMLCanvasElement.prototype.getContext;</span>
+<span class="s2">                    HTMLCanvasElement.prototype.getContext = function(type, ...args) {</span>
+<span class="s2">                        const context = originalGetContext.call(this, type, ...args);</span>
+<span class="s2">                        if (type === &#39;2d&#39;) {</span>
+<span class="s2">                            const originalFillText = context.fillText;</span>
+<span class="s2">                            context.fillText = function(...args) {</span>
+<span class="s2">                                return originalFillText.apply(this, args);</span>
+<span class="s2">                            };</span>
+<span class="s2">                        }</span>
+<span class="s2">                        return context;</span>
+<span class="s2">                    };</span>
+<span class="s2">                } catch (e) {</span>
+<span class="s2">                    // Игнорируем ошибки Canvas</span>
+<span class="s2">                }</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем Audio fingerprinting</span>
+<span class="s2">                try {</span>
+<span class="s2">                    const originalGetChannelData = AudioBuffer.prototype.getChannelData;</span>
+<span class="s2">                    AudioBuffer.prototype.getChannelData = function(channel) {</span>
+<span class="s2">                        const data = originalGetChannelData.call(this, channel);</span>
+<span class="s2">                        // Добавляем небольшие изменения для уникальности</span>
+<span class="s2">                        for (let i = 0; i &lt; data.length; i += 100) {</span>
+<span class="s2">                            data[i] += Math.random() * 0.0001;</span>
+<span class="s2">                        }</span>
+<span class="s2">                        return data;</span>
+<span class="s2">                    };</span>
+<span class="s2">                } catch (e) {</span>
+<span class="s2">                    // Игнорируем ошибки Audio</span>
+<span class="s2">                }</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;userAgent&#39;, {</span>
+<span class="s2">                    get: () =&gt; originalUserAgent.replace(&#39;HeadlessChrome&#39;, &#39;Chrome&#39;),</span>
+<span class="s2">                });</span>
+<span class="s2">            } catch (e) {</span>
+<span class="s2">                // Свойство уже определено, пропускаем</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Удаляем признаки автоматизации</span>
+<span class="s2">            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;</span>
+<span class="s2">            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;</span>
+<span class="s2">            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем screen свойства безопасно</span>
+<span class="s2">            safeDefineProperty(screen, &#39;width&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">            safeDefineProperty(screen, &#39;height&#39;, { get: () =&gt; 1080 });</span>
+<span class="s2">            safeDefineProperty(screen, &#39;availWidth&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">            safeDefineProperty(screen, &#39;availHeight&#39;, { get: () =&gt; 1040 });</span>
+<span class="s2">            safeDefineProperty(screen, &#39;colorDepth&#39;, { get: () =&gt; 24 });</span>
+<span class="s2">            safeDefineProperty(screen, &#39;pixelDepth&#39;, { get: () =&gt; 24 });</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем window свойства безопасно</span>
+<span class="s2">            safeDefineProperty(window, &#39;outerWidth&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">            safeDefineProperty(window, &#39;outerHeight&#39;, { get: () =&gt; 1080 });</span>
+<span class="s2">            safeDefineProperty(window, &#39;innerWidth&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">            safeDefineProperty(window, &#39;innerHeight&#39;, { get: () =&gt; 937 });</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем devicePixelRatio безопасно</span>
+<span class="s2">            safeDefineProperty(window, &#39;devicePixelRatio&#39;, { get: () =&gt; 1 });</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;✅ Расширенная маскировка headless режима применена&quot;</span><span class="p">)</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка при применении расширенной маскировки: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="apply_headless_masking">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.apply_headless_masking">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_headless_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Применяет дополнительные настройки для маскировки headless режима</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            // Маскируем headless режим</span>
+<span class="s2">            try {</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;webdriver&#39;, {</span>
+<span class="s2">                    get: () =&gt; undefined,</span>
+<span class="s2">                });</span>
+<span class="s2">            } catch (e) {</span>
+<span class="s2">                // Свойство уже определено, пропускаем</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем chrome</span>
+<span class="s2">            try {</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;languages&#39;, {</span>
+<span class="s2">                    get: () =&gt; [&#39;ru-RU&#39;, &#39;ru&#39;, &#39;en-US&#39;, &#39;en&#39;],</span>
+<span class="s2">                });</span>
+<span class="s2">            } catch (e) {</span>
+<span class="s2">                // Свойство уже определено, пропускаем</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем permissions</span>
+<span class="s2">            try {</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;permissions&#39;, {</span>
+<span class="s2">                    get: () =&gt; ({</span>
+<span class="s2">                        query: () =&gt; Promise.resolve({ state: &#39;granted&#39; }),</span>
+<span class="s2">                    }),</span>
+<span class="s2">                });</span>
+<span class="s2">            } catch (e) {</span>
+<span class="s2">                // Свойство уже определено, пропускаем</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем plugins</span>
+<span class="s2">            try {</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;plugins&#39;, {</span>
+<span class="s2">                    get: () =&gt; [1, 2, 3, 4, 5],</span>
+<span class="s2">                });</span>
+<span class="s2">            } catch (e) {</span>
+<span class="s2">                // Свойство уже определено, пропускаем</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем connection</span>
+<span class="s2">            try {</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;connection&#39;, {</span>
+<span class="s2">                    get: () =&gt; ({</span>
+<span class="s2">                        effectiveType: &#39;4g&#39;,</span>
+<span class="s2">                        rtt: 50,</span>
+<span class="s2">                        downlink: 10,</span>
+<span class="s2">                    }),</span>
+<span class="s2">                });</span>
+<span class="s2">            } catch (e) {</span>
+<span class="s2">                // Свойство уже определено, пропускаем</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем hardwareConcurrency</span>
+<span class="s2">            try {</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;hardwareConcurrency&#39;, {</span>
+<span class="s2">                    get: () =&gt; 8,</span>
+<span class="s2">                });</span>
+<span class="s2">            } catch (e) {</span>
+<span class="s2">                // Свойство уже определено, пропускаем</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем deviceMemory</span>
+<span class="s2">            try {</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;deviceMemory&#39;, {</span>
+<span class="s2">                    get: () =&gt; 8,</span>
+<span class="s2">                });</span>
+<span class="s2">            } catch (e) {</span>
+<span class="s2">                // Свойство уже определено, пропускаем</span>
+<span class="s2">            }</span>
+<span class="s2">            </span>
+<span class="s2">            // Удаляем признаки автоматизации</span>
+<span class="s2">            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;</span>
+<span class="s2">            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;</span>
+<span class="s2">            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;</span>
+<span class="s2">            </span>
+<span class="s2">            // Маскируем screen свойства безопасно (используем уже определенную safeDefineProperty)</span>
+<span class="s2">            if (typeof safeDefineProperty === &#39;function&#39;) {</span>
+<span class="s2">                safeDefineProperty(screen, &#39;width&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">                safeDefineProperty(screen, &#39;height&#39;, { get: () =&gt; 1080 });</span>
+<span class="s2">                safeDefineProperty(screen, &#39;availWidth&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">                safeDefineProperty(screen, &#39;availHeight&#39;, { get: () =&gt; 1040 });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем window свойства безопасно</span>
+<span class="s2">                safeDefineProperty(window, &#39;outerWidth&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">                safeDefineProperty(window, &#39;outerHeight&#39;, { get: () =&gt; 1080 });</span>
+<span class="s2">                safeDefineProperty(window, &#39;innerWidth&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">                safeDefineProperty(window, &#39;innerHeight&#39;, { get: () =&gt; 937 });</span>
+<span class="s2">            }</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;✅ Дополнительная маскировка headless режима применена&quot;</span><span class="p">)</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка при применении маскировки headless: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="stealth_open_url">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.stealth_open_url">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">stealth_open_url</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reconnect_time</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Скрытное открытие URL с методами обхода детекции</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔒 Скрытное открытие URL: </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Применяем расширенную маскировку для headless режима с дополнительной защитой</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">apply_advanced_stealth_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">stealth_error</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка при применении stealth маскировки: </span><span class="si">{</span><span class="n">stealth_error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Продолжаем выполнение даже если маскировка не удалась</span>
+        
+        <span class="c1"># Открываем URL</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        
+        <span class="c1"># Ждем загрузки DOM модели</span>
+        <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return document.readyState === &#39;complete&#39;&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Человеческая задержка только если указана</span>
+        <span class="k">if</span> <span class="n">reconnect_time</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">reconnect_time</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ URL успешно открыт скрытно&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+        
+    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Страница не загрузилась за 10 секунд: </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при скрытном открытии URL: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="stealth_click">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.stealth_click">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">stealth_click</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">selector</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">use_actions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Скрытный клик с обходом детекции</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_perform_click</span><span class="p">():</span>
+        <span class="c1"># Ждем элемент с WebDriverWait без хардкод таймаута</span>
+        <span class="n">element</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">selector</span><span class="p">))</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Добавляем человеческое поведение</span>
+        <span class="n">add_stealth_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">use_actions</span><span class="p">:</span>
+            <span class="c1"># Используем ActionChains для более человечного клика</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">selenium.webdriver.common.action_chains</span><span class="w"> </span><span class="kn">import</span> <span class="n">ActionChains</span>
+            <span class="n">actions</span> <span class="o">=</span> <span class="n">ActionChains</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">move_to_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">))</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">perform</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Обычный клик с задержкой</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">))</span>
+            <span class="n">element</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="kc">True</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔒 Скрытный клик по селектору: </span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Используем безопасное выполнение с повторными попытками</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">safe_stealth_execution</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;клик по </span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">_perform_click</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Скрытный клик выполнен&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+        
+    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Элемент не найден для клика: </span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при скрытном клике: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="add_stealth_behavior">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.add_stealth_behavior">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_stealth_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Добавляет stealth-поведение для обхода детекции</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Случайные движения мыши в пределах окна</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">window_size</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">get_window_size</span><span class="p">()</span>
+            <span class="n">max_x</span> <span class="o">=</span> <span class="n">window_size</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">100</span>
+            <span class="n">max_y</span> <span class="o">=</span> <span class="n">window_size</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">100</span>
+            
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_x</span><span class="p">))</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_y</span><span class="p">))</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;window.scrollTo(</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">);&quot;</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка движения мыши в stealth: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Случайный скролл</span>
+        <span class="n">scroll_amount</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;window.scrollBy(0, </span><span class="si">{</span><span class="n">scroll_amount</span><span class="si">}</span><span class="s2">);&quot;</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Добавлено stealth-поведение&quot;</span><span class="p">)</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при добавлении stealth-поведения: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="check_stealth_detection">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.check_stealth_detection">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_stealth_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Проверяет признаки детекции stealth-методов</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Проверяем содержимое страницы</span>
+        <span class="n">page_source</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">page_source</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">detection_indicators</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;gethandleverifier&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;white screen&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;bot detected&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;automation detected&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;captcha&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;cloudflare&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;access denied&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;blocked&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;security check&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;verify you are human&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;please wait&quot;</span>
+        <span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">detection_indicators</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">page_source</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 Обнаружен индикатор детекции: </span><span class="si">{</span><span class="n">indicator</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="c1"># Проверяем JavaScript признаки детекции</span>
+        <span class="n">js_detection_checks</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;return navigator.webdriver&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;return window.chrome &amp;&amp; window.chrome.runtime&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;return navigator.plugins.length === 0&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;return navigator.languages.length === 0&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;return !navigator.connection&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;return !navigator.hardwareConcurrency&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;return !navigator.deviceMemory&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;return !navigator.maxTouchPoints&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;return !navigator.vendor&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;return !navigator.platform&quot;</span>
+        <span class="p">]</span>
+        
+        <span class="n">detection_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">check</span> <span class="ow">in</span> <span class="n">js_detection_checks</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="n">check</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+                    <span class="n">detection_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 Обнаружена JavaScript детекция: </span><span class="si">{</span><span class="n">check</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">continue</span>
+        
+        <span class="k">if</span> <span class="n">detection_count</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 Обнаружено </span><span class="si">{</span><span class="n">detection_count</span><span class="si">}</span><span class="s2"> признаков JavaScript детекции&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Детекция не обнаружена&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при проверке stealth-детекции: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="restore_stealth_masking">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.restore_stealth_masking">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">restore_stealth_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Восстанавливает stealth маскировку при обнаружении детекции</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🔄 Восстанавливаем stealth маскировку&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Применяем расширенную маскировку</span>
+        <span class="n">apply_advanced_stealth_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="c1"># Добавляем человеческое поведение</span>
+        <span class="n">add_stealth_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем результат</span>
+        <span class="k">if</span> <span class="n">check_stealth_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Не удалось восстановить stealth маскировку&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Stealth маскировка восстановлена&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при восстановлении stealth маскировки: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="safe_stealth_execution">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.safe_stealth_execution">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">safe_stealth_execution</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">operation_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">operation_func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Безопасное выполнение stealth операций с восстановлением после ошибок</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">max_retries</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_retries</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔒 Попытка </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">max_retries</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">operation_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">operation_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ </span><span class="si">{</span><span class="n">operation_name</span><span class="si">}</span><span class="s2"> выполнена успешно&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка в </span><span class="si">{</span><span class="n">operation_name</span><span class="si">}</span><span class="s2"> (попытка </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retries</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># Применяем базовую маскировку перед повторной попыткой</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">apply_headless_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">mask_error</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при повторной маскировке: </span><span class="si">{</span><span class="n">mask_error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ </span><span class="si">{</span><span class="n">operation_name</span><span class="si">}</span><span class="s2"> не удалась после </span><span class="si">{</span><span class="n">max_retries</span><span class="si">}</span><span class="s2"> попыток&quot;</span><span class="p">)</span>
+                <span class="k">raise</span></div>
+
+
+
+<div class="viewcode-block" id="handle_stealth_detection">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.handle_stealth_detection">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">handle_stealth_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Обрабатывает детекцию stealth-методов с расширенным человеческим поведением</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;🚨 Обрабатываем stealth-детекцию...&quot;</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Добавляем расширенное человеческое поведение</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.actions</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_extended_human_behavior</span>
+        <span class="n">add_extended_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">total_delay</span><span class="o">=</span><span class="mf">60.0</span><span class="p">)</span>
+        
+        <span class="c1"># Пробуем обновить страницу</span>
+        <span class="k">if</span> <span class="n">url</span><span class="p">:</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        
+        <span class="c1"># Ждем загрузки DOM модели</span>
+        <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return document.readyState === &#39;complete&#39;&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Применяем маскировку headless режима</span>
+        <span class="n">apply_advanced_stealth_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        <span class="n">add_stealth_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем снова</span>
+        <span class="k">if</span> <span class="n">check_stealth_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;🚨 Детекция сохраняется после обработки&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Stealth-детекция обработана&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при обработке stealth-детекции: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="stealth_type">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.stealth_type">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">stealth_type</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">selector</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Скрытный ввод текста с человеческими паузами</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔒 Скрытный ввод в селектор: </span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Ждем элемент с WebDriverWait без хардкод таймаута</span>
+        <span class="n">element</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">selector</span><span class="p">))</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Очищаем поле</span>
+        <span class="n">element</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">))</span>
+        
+        <span class="c1"># Вводим текст посимвольно с человеческими паузами</span>
+        <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">text</span><span class="p">:</span>
+            <span class="n">element</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">))</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Скрытный ввод выполнен&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+        
+    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Элемент не найден для ввода: </span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при скрытном вводе: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="stealth_wait_for_element">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.stealth.stealth_wait_for_element">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">stealth_wait_for_element</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">selector</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Скрытное ожидание элемента с проверкой детекции</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔒 Скрытное ожидание элемента: </span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Применяем расширенную маскировку headless режима</span>
+        <span class="n">apply_advanced_stealth_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        
+        <span class="c1"># Добавляем случайную задержку для имитации человеческого поведения</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">))</span>
+        
+        <span class="c1"># Ждем DOM модель с WebDriverWait без хардкод таймаута</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Используем короткий таймаут для быстрой проверки</span>
+            <span class="n">element</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+                <span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">selector</span><span class="p">))</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># Дополнительно проверяем, что элемент видим</span>
+            <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">is_displayed</span><span class="p">():</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Элемент найден скрытно&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ Элемент найден, но не видим&quot;</span><span class="p">)</span>
+                <span class="c1"># Попробуем прокрутить к элементу</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;arguments[0].scrollIntoView({behavior: &#39;smooth&#39;, block: &#39;center&#39;});&quot;</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">is_displayed</span><span class="p">():</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Элемент стал видим после прокрутки&quot;</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="kc">True</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">scroll_error</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Не удалось прокрутить к элементу: </span><span class="si">{</span><span class="n">scroll_error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+                
+        <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Элемент не найден: </span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Проверяем, не связана ли проблема с детекцией</span>
+            <span class="k">if</span> <span class="n">check_stealth_detection</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;🚨 Обнаружена детекция, пытаемся восстановить маскировку&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">restore_stealth_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+                    <span class="c1"># Повторяем попытку после восстановления маскировки</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">element</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+                            <span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">selector</span><span class="p">))</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">is_displayed</span><span class="p">():</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Элемент найден после восстановления маскировки&quot;</span><span class="p">)</span>
+                            <span class="k">return</span> <span class="kc">True</span>
+                    <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+                        <span class="k">pass</span>
+            
+            <span class="c1"># Попробуем альтернативные селекторы</span>
+            <span class="n">alternative_selectors</span> <span class="o">=</span> <span class="p">[]</span>
+            
+            <span class="c1"># Если селектор содержит точку, пробуем разные варианты</span>
+            <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">selector</span><span class="p">:</span>
+                <span class="c1"># Убираем экранирование и пробуем как есть</span>
+                <span class="n">clean_selector</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">.&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">clean_selector</span><span class="p">)</span>
+                
+                <span class="c1"># Пробуем с экранированием</span>
+                <span class="n">escaped_selector</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">.&#39;</span><span class="p">)</span>
+                <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">escaped_selector</span><span class="p">)</span>
+                
+                <span class="c1"># Пробуем как атрибут class (убираем экранирование для поиска)</span>
+                <span class="n">clean_for_class</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">.&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">class_parts</span> <span class="o">=</span> <span class="n">clean_for_class</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">class_parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">class_name</span> <span class="o">=</span> <span class="n">class_parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Берем последнюю часть как имя класса</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[class*=&quot;</span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s1">&quot;]&#39;</span><span class="p">)</span>
+                    
+                <span class="c1"># Пробуем найти по частичному совпадению класса</span>
+                <span class="k">if</span> <span class="s1">&#39;task&#39;</span> <span class="ow">in</span> <span class="n">clean_for_class</span><span class="p">:</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;[class*=&quot;task&quot;]&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;claimNumber&#39;</span> <span class="ow">in</span> <span class="n">clean_for_class</span><span class="p">:</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;[class*=&quot;claimNumber&quot;]&#39;</span><span class="p">)</span>
+                    
+                <span class="c1"># Пробуем найти по комбинации классов</span>
+                <span class="k">if</span> <span class="s1">&#39;task&#39;</span> <span class="ow">in</span> <span class="n">clean_for_class</span> <span class="ow">and</span> <span class="s1">&#39;claimNumber&#39;</span> <span class="ow">in</span> <span class="n">clean_for_class</span><span class="p">:</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;[class*=&quot;task&quot;][class*=&quot;claimNumber&quot;]&#39;</span><span class="p">)</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;.task.claimNumber&#39;</span><span class="p">)</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;#root .task .claimNumber&#39;</span><span class="p">)</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;#root.task.claimNumber&#39;</span><span class="p">)</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;input[class*=&quot;claimNumber&quot;]&#39;</span><span class="p">)</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;input[name*=&quot;claimNumber&quot;]&#39;</span><span class="p">)</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;input[id*=&quot;claimNumber&quot;]&#39;</span><span class="p">)</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;[data-testid*=&quot;claimNumber&quot;]&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Если селектор содержит #, пробуем как id</span>
+            <span class="k">if</span> <span class="s1">&#39;#&#39;</span> <span class="ow">in</span> <span class="n">selector</span><span class="p">:</span>
+                <span class="n">id_parts</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">id_parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">id_name</span> <span class="o">=</span> <span class="n">id_parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Берем последнюю часть как id</span>
+                    <span class="c1"># Убираем экранирование из id</span>
+                    <span class="n">clean_id</span> <span class="o">=</span> <span class="n">id_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">.&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[id=&quot;</span><span class="si">{</span><span class="n">clean_id</span><span class="si">}</span><span class="s1">&quot;]&#39;</span><span class="p">)</span>
+                    <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[id*=&quot;</span><span class="si">{</span><span class="n">clean_id</span><span class="si">}</span><span class="s1">&quot;]&#39;</span><span class="p">)</span>
+                    
+                    <span class="c1"># Пробуем найти по частичному совпадению id</span>
+                    <span class="k">if</span> <span class="s1">&#39;root&#39;</span> <span class="ow">in</span> <span class="n">clean_id</span><span class="p">:</span>
+                        <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;[id*=&quot;root&quot;]&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s1">&#39;task&#39;</span> <span class="ow">in</span> <span class="n">clean_id</span><span class="p">:</span>
+                        <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;[id*=&quot;task&quot;]&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s1">&#39;claimNumber&#39;</span> <span class="ow">in</span> <span class="n">clean_id</span><span class="p">:</span>
+                        <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;[id*=&quot;claimNumber&quot;]&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Добавляем общие альтернативы</span>
+            <span class="n">clean_selector_for_attr</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">clean_selector_for_attr</span><span class="p">:</span>
+                <span class="n">alternative_selectors</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+                    <span class="sa">f</span><span class="s1">&#39;*[data-testid*=&quot;</span><span class="si">{</span><span class="n">clean_selector_for_attr</span><span class="si">}</span><span class="s1">&quot;]&#39;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;*[aria-label*=&quot;</span><span class="si">{</span><span class="n">clean_selector_for_attr</span><span class="si">}</span><span class="s1">&quot;]&#39;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;*[name*=&quot;</span><span class="si">{</span><span class="n">clean_selector_for_attr</span><span class="si">}</span><span class="s1">&quot;]&#39;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;*[placeholder*=&quot;</span><span class="si">{</span><span class="n">clean_selector_for_attr</span><span class="si">}</span><span class="s1">&quot;]&#39;</span>
+                <span class="p">])</span>
+            
+            <span class="c1"># Убираем дублирующиеся селекторы</span>
+            <span class="n">alternative_selectors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">alternative_selectors</span><span class="p">))</span>
+            
+            <span class="c1"># Логируем сгенерированные альтернативные селекторы для отладки</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Сгенерировано </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">alternative_selectors</span><span class="p">)</span><span class="si">}</span><span class="s2"> альтернативных селекторов для &#39;</span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">alt_sel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">alternative_selectors</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">. </span><span class="si">{</span><span class="n">alt_sel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="k">for</span> <span class="n">alt_selector</span> <span class="ow">in</span> <span class="n">alternative_selectors</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Проверяем валидность селектора</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">alt_selector</span> <span class="ow">or</span> <span class="n">alt_selector</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                        
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔄 Пробуем альтернативный селектор: </span><span class="si">{</span><span class="n">alt_selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">element</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+                        <span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">alt_selector</span><span class="p">))</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">is_displayed</span><span class="p">():</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Элемент найден по альтернативному селектору: </span><span class="si">{</span><span class="n">alt_selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="kc">True</span>
+                <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">selector_error</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Некорректный селектор &#39;</span><span class="si">{</span><span class="n">alt_selector</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">selector_error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+            
+            <span class="k">return</span> <span class="kc">False</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при скрытном ожидании элемента: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span> </div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

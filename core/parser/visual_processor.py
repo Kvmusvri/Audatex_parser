@@ -23,7 +23,14 @@ logger = logging.getLogger(__name__)
 def is_zone_file(filename: str) -> bool:
     """
     Проверяет, является ли файл файлом зоны.
-    Зоны всегда начинаются с 'zone_' и не содержат 'pictogram' в названии.
+    
+    Файлы зон всегда начинаются с 'zone_' и не содержат 'pictogram' в названии.
+    
+    Args:
+        filename: str - имя файла для проверки
+    
+    Returns:
+        bool - True если файл является файлом зоны
     """
     filename_lower = filename.lower()
     is_zone = (filename_lower.startswith('zone_') and 

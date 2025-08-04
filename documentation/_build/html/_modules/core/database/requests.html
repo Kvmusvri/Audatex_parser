@@ -1,0 +1,684 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.database.requests &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">core.database.requests</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код core.database.requests</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">date</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.ext.asyncio</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncSession</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">select</span><span class="p">,</span> <span class="n">and_</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">insert</span><span class="p">,</span> <span class="n">delete</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.dialects.postgresql</span><span class="w"> </span><span class="kn">import</span> <span class="n">insert</span> <span class="k">as</span> <span class="n">pg_insert</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.exc</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLAlchemyError</span><span class="p">,</span> <span class="n">IntegrityError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.database.models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParserCarRequestStatus</span><span class="p">,</span> <span class="n">ParserCarDetailGroupZone</span><span class="p">,</span> 
+    <span class="n">ParserCarDetail</span><span class="p">,</span> <span class="n">ParserCarOptions</span><span class="p">,</span> <span class="n">ParserScheduleSettings</span><span class="p">,</span> <span class="n">DatabaseSession</span><span class="p">,</span> <span class="n">get_moscow_time</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_engine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">sessionmaker</span><span class="p">,</span> <span class="n">Session</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Создаем синхронный движок для аутентификации</span>
+<span class="n">sync_engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;DATABASE_URL&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+asyncpg&#39;</span><span class="p">,</span> <span class="s1">&#39;+psycopg2&#39;</span><span class="p">))</span>
+<span class="n">SyncSessionLocal</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">autocommit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">autoflush</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bind</span><span class="o">=</span><span class="n">sync_engine</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_db">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.get_db">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_db</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Session</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Получение синхронной сессии БД&quot;&quot;&quot;</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">SyncSessionLocal</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">db</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">raise</span></div>
+
+
+<div class="viewcode-block" id="validate_request_data">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.validate_request_data">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_request_data</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Валидация входных данных&quot;&quot;&quot;</span>
+    <span class="n">required_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;request_id&#39;</span><span class="p">,</span> <span class="s1">&#39;vin&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">field</span> <span class="ow">in</span> <span class="n">data</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">required_fields</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_letter_code">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.is_letter_code">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_letter_code</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Проверяет, содержит ли код буквы&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">int</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="parse_detail_title">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.parse_detail_title">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_detail_title</span><span class="p">(</span><span class="n">detail_title</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Парсит заголовок детали на код и название&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Разделяем по запятым</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">detail_title</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">part</span><span class="p">:</span>
+                <span class="k">continue</span>
+                
+            <span class="c1"># Ищем код в начале (цифры и буквы)</span>
+            <span class="n">code_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^([A-Za-z0-9]+)&#39;</span><span class="p">,</span> <span class="n">part</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">code_match</span><span class="p">:</span>
+                <span class="n">code</span> <span class="o">=</span> <span class="n">code_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">title</span> <span class="o">=</span> <span class="n">part</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">code</span><span class="p">):]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;- &#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">code</span><span class="p">,</span> <span class="n">title</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Если нет названия после кода, используем весь текст как название</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">code</span><span class="p">,</span> <span class="n">part</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Если нет кода в начале, используем весь текст как название</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">part</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка парсинга заголовка &#39;</span><span class="si">{</span><span class="n">detail_title</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="extract_option_code">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.extract_option_code">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_option_code</span><span class="p">(</span><span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Извлекает код опции из заголовка&quot;&quot;&quot;</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^([A-Z0-9]+)&#39;</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">match</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span></div>
+
+
+<div class="viewcode-block" id="clean_option_title">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.clean_option_title">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">clean_option_title</span><span class="p">(</span><span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Очищает заголовок опции от кода&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^[A-Z0-9]+\s*[-–—]\s*&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="upsert_request_status">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.upsert_request_status">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">upsert_request_status</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">status_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;UPSERT для статуса заявки&quot;&quot;&quot;</span>
+    <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="n">pg_insert</span><span class="p">(</span><span class="n">ParserCarRequestStatus</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">(</span>
+            <span class="n">request_id</span><span class="o">=</span><span class="n">claim_number</span><span class="p">,</span>
+        <span class="n">vin</span><span class="o">=</span><span class="n">vin</span><span class="p">,</span>
+            <span class="n">vin_status</span><span class="o">=</span><span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vin_status&#39;</span><span class="p">,</span> <span class="s1">&#39;Неизвестно&#39;</span><span class="p">),</span>
+            <span class="n">comment</span><span class="o">=</span><span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;comment&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="n">started_at</span><span class="o">=</span><span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;started_at&#39;</span><span class="p">),</span>
+            <span class="n">completed_at</span><span class="o">=</span><span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;completed_at&#39;</span><span class="p">),</span>
+            <span class="n">created_date</span><span class="o">=</span><span class="n">func</span><span class="o">.</span><span class="n">current_date</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">on_conflict_do_update</span><span class="p">(</span>
+            <span class="n">index_elements</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;request_id&#39;</span><span class="p">,</span> <span class="s1">&#39;vin&#39;</span><span class="p">,</span> <span class="s1">&#39;created_date&#39;</span><span class="p">],</span>
+            <span class="n">set_</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;vin_status&#39;</span><span class="p">:</span> <span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vin_status&#39;</span><span class="p">,</span> <span class="s1">&#39;Неизвестно&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;comment&#39;</span><span class="p">:</span> <span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;comment&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;started_at&#39;</span><span class="p">:</span> <span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;started_at&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;completed_at&#39;</span><span class="p">:</span> <span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;completed_at&#39;</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="save_details_batch">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.save_details_batch">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_details_batch</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Batch сохранение деталей&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">details</span><span class="p">:</span>
+        <span class="k">return</span>
+    
+    <span class="n">batch_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">current_date</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">detail</span> <span class="ow">in</span> <span class="n">details</span><span class="p">:</span>
+        <span class="n">batch_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
+            <span class="s2">&quot;vin&quot;</span><span class="p">:</span> <span class="n">vin</span><span class="p">,</span>
+            <span class="s2">&quot;group_zone&quot;</span><span class="p">:</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;group_zone&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_from&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">current_date</span>
+        <span class="p">})</span>
+    
+    <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">insert</span><span class="p">(</span><span class="n">ParserCarDetail</span><span class="p">),</span> <span class="n">batch_data</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Batch сохранено </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> деталей&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="save_zones_batch">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.save_zones_batch">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_zones_batch</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">zones</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Batch сохранение зон&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">zones</span><span class="p">:</span>
+        <span class="k">return</span>
+    
+    <span class="n">batch_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">current_date</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">zone</span> <span class="ow">in</span> <span class="n">zones</span><span class="p">:</span>
+        <span class="n">batch_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
+            <span class="s2">&quot;vin&quot;</span><span class="p">:</span> <span class="n">vin</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_from&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">current_date</span>
+        <span class="p">})</span>
+    
+    <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">insert</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="p">),</span> <span class="n">batch_data</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Batch сохранено </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> зон&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="save_options_batch">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.save_options_batch">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_options_batch</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Batch сохранение опций&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">options</span><span class="p">:</span>
+        <span class="k">return</span>
+    
+    <span class="n">batch_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">current_date</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+        <span class="n">batch_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
+            <span class="s2">&quot;vin&quot;</span><span class="p">:</span> <span class="n">vin</span><span class="p">,</span>
+            <span class="s2">&quot;zone_name&quot;</span><span class="p">:</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;zone_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;option_code&quot;</span><span class="p">:</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;option_code&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;option_title&quot;</span><span class="p">:</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;option_title&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;is_selected&quot;</span><span class="p">:</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_selected&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_from&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">current_date</span>
+        <span class="p">})</span>
+    
+    <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">insert</span><span class="p">(</span><span class="n">ParserCarOptions</span><span class="p">),</span> <span class="n">batch_data</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Batch сохранено </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> опций&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="delete_existing_request_data">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.delete_existing_request_data">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">delete_existing_request_data</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Быстрое удаление всех данных заявки по индексам&quot;&quot;&quot;</span>
+    <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="n">delete</span><span class="p">(</span><span class="n">ParserCarOptions</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarOptions</span><span class="o">.</span><span class="n">request_id</span> <span class="o">==</span> <span class="n">claim_number</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarOptions</span><span class="o">.</span><span class="n">vin</span> <span class="o">==</span> <span class="n">vin</span><span class="p">)</span>
+    <span class="p">)</span>
+    
+    <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="n">delete</span><span class="p">(</span><span class="n">ParserCarDetail</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarDetail</span><span class="o">.</span><span class="n">request_id</span> <span class="o">==</span> <span class="n">claim_number</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarDetail</span><span class="o">.</span><span class="n">vin</span> <span class="o">==</span> <span class="n">vin</span><span class="p">)</span>
+    <span class="p">)</span>
+    
+    <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="n">delete</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">request_id</span> <span class="o">==</span> <span class="n">claim_number</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">vin</span> <span class="o">==</span> <span class="n">vin</span><span class="p">)</span>
+    <span class="p">)</span>
+    
+    <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="n">delete</span><span class="p">(</span><span class="n">ParserCarRequestStatus</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarRequestStatus</span><span class="o">.</span><span class="n">request_id</span> <span class="o">==</span> <span class="n">claim_number</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarRequestStatus</span><span class="o">.</span><span class="n">vin</span> <span class="o">==</span> <span class="n">vin</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="save_parser_data_to_db">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.save_parser_data_to_db">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_parser_data_to_db</span><span class="p">(</span><span class="n">parser_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">is_success</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">started_at</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Оптимизированное сохранение данных парсера с batch операциями&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="n">DatabaseSession</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="c1"># Удаляем существующие данные</span>
+            <span class="k">await</span> <span class="n">delete_existing_request_data</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin</span><span class="p">)</span>
+            
+            <span class="c1"># Подготавливаем данные для batch операций</span>
+            <span class="n">details</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">zones</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="p">[]</span>
+            
+            <span class="c1"># Создаем зоны и получаем их ID</span>
+            <span class="n">zone_ids</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">equipment_zone_id</span> <span class="o">=</span> <span class="kc">None</span>
+            
+            <span class="c1"># Обрабатываем зоны и детали</span>
+            <span class="k">for</span> <span class="n">zone</span> <span class="ow">in</span> <span class="n">parser_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;zone_data&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="n">zone_title</span> <span class="o">=</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">has_pictograms</span> <span class="o">=</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;has_pictograms&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                
+                <span class="c1"># Определяем тип зоны</span>
+                <span class="k">if</span> <span class="n">has_pictograms</span><span class="p">:</span>
+                    <span class="n">zone_type</span> <span class="o">=</span> <span class="s2">&quot;WORKS&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">zone_type</span> <span class="o">=</span> <span class="s2">&quot;DETAILS&quot;</span>
+                
+                <span class="c1"># Создаем зону</span>
+                <span class="n">zone_data</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
+                    <span class="s2">&quot;vin&quot;</span><span class="p">:</span> <span class="n">vin</span><span class="p">,</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">zone_type</span><span class="p">,</span>
+                    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">zone_title</span><span class="p">,</span>
+                    <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="s2">&quot;AUDATEX&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+                <span class="p">}</span>
+                <span class="n">zones</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">zone_data</span><span class="p">)</span>
+                
+                <span class="c1"># Сохраняем зону и получаем ID</span>
+                <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">insert</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="p">),</span> <span class="p">[</span><span class="n">zone_data</span><span class="p">])</span>
+                <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+                
+                <span class="c1"># Получаем ID созданной зоны</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                    <span class="n">select</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">request_id</span> <span class="o">==</span> <span class="n">claim_number</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">vin</span> <span class="o">==</span> <span class="n">vin</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="n">zone_title</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span>
+                <span class="p">)</span>
+                <span class="n">zone_id</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
+                <span class="n">zone_ids</span><span class="p">[</span><span class="n">zone_title</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">zone_id</span><span class="p">)</span>
+                
+                <span class="c1"># Обрабатываем детали в зоне</span>
+                <span class="k">for</span> <span class="n">detail</span> <span class="ow">in</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;details&#39;</span><span class="p">,</span> <span class="p">[]):</span>
+                    <span class="c1"># Детали приходят в формате {&quot;title&quot;: &quot;название детали&quot;, &quot;svg_path&quot;: &quot;путь&quot;}</span>
+                    <span class="n">detail_title</span> <span class="o">=</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                    
+                    <span class="c1"># Парсим заголовок детали на код и название</span>
+                    <span class="n">parsed_details</span> <span class="o">=</span> <span class="n">parse_detail_title</span><span class="p">(</span><span class="n">detail_title</span><span class="p">)</span>
+                    
+                    <span class="k">for</span> <span class="n">parsed_detail</span> <span class="ow">in</span> <span class="n">parsed_details</span><span class="p">:</span>
+                        <span class="n">code</span> <span class="o">=</span> <span class="n">parsed_detail</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">title</span> <span class="o">=</span> <span class="n">parsed_detail</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                        
+                        <span class="c1"># Определяем, к какой зоне относится деталь</span>
+                        <span class="k">if</span> <span class="n">is_letter_code</span><span class="p">(</span><span class="n">code</span><span class="p">):</span>
+                            <span class="c1"># Детали с буквенными кодами идут в EQUIPMENT</span>
+                            <span class="k">if</span> <span class="n">equipment_zone_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">equipment_zone_data</span> <span class="o">=</span> <span class="p">{</span>
+                                    <span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
+                                    <span class="s2">&quot;vin&quot;</span><span class="p">:</span> <span class="n">vin</span><span class="p">,</span>
+                                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;EQUIPMENT&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Комплектация&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="s2">&quot;AUDATEX&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+                                <span class="p">}</span>
+                                <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">insert</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="p">),</span> <span class="p">[</span><span class="n">equipment_zone_data</span><span class="p">])</span>
+                                <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+                                
+                                <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                                    <span class="n">select</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                                    <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">request_id</span> <span class="o">==</span> <span class="n">claim_number</span><span class="p">)</span>
+                                    <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">vin</span> <span class="o">==</span> <span class="n">vin</span><span class="p">)</span>
+                                    <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="s2">&quot;Комплектация&quot;</span><span class="p">)</span>
+                                <span class="p">)</span>
+                                <span class="n">equipment_zone_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">scalar</span><span class="p">())</span>
+                            
+                            <span class="n">group_zone</span> <span class="o">=</span> <span class="n">equipment_zone_id</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="c1"># Обычные детали идут в текущую зону</span>
+                            <span class="n">group_zone</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">zone_id</span><span class="p">)</span>
+                        
+                        <span class="n">detail_data</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
+                            <span class="s2">&quot;vin&quot;</span><span class="p">:</span> <span class="n">vin</span><span class="p">,</span>
+                            <span class="s2">&quot;group_zone&quot;</span><span class="p">:</span> <span class="n">group_zone</span><span class="p">,</span>
+                            <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+                            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+                            <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="s2">&quot;AUDATEX&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+                        <span class="p">}</span>
+                        <span class="n">details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">detail_data</span><span class="p">)</span>
+            
+            <span class="c1"># Обрабатываем опции автомобиля</span>
+            <span class="n">options_data</span> <span class="o">=</span> <span class="n">parser_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;options_data&#39;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="k">if</span> <span class="n">options_data</span> <span class="ow">and</span> <span class="n">options_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;success&#39;</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">zone</span> <span class="ow">in</span> <span class="n">options_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;zones&#39;</span><span class="p">,</span> <span class="p">[]):</span>
+                    <span class="n">zone_title</span> <span class="o">=</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;zone_title&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;options&#39;</span><span class="p">,</span> <span class="p">[]):</span>
+                        <span class="n">option_title</span> <span class="o">=</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                        
+                        <span class="c1"># Специальная обработка только для зоны &quot;ПОДГОТОВКА К ОКРАСКЕ AZT&quot;</span>
+                        <span class="k">if</span> <span class="s2">&quot;ПОДГОТОВКА К ОКРАСКЕ AZT&quot;</span> <span class="ow">in</span> <span class="n">zone_title</span><span class="p">:</span>
+                            <span class="n">option_code</span> <span class="o">=</span> <span class="n">extract_option_code</span><span class="p">(</span><span class="n">option_title</span><span class="p">)</span>
+                            <span class="n">option_title</span> <span class="o">=</span> <span class="n">clean_option_title</span><span class="p">(</span><span class="n">option_title</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="c1"># Для всех остальных зон используем код из поля code</span>
+                            <span class="n">option_code</span> <span class="o">=</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;code&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                        
+                        <span class="c1"># Берем статус выбора из поля selected (не is_selected)</span>
+                        <span class="n">is_selected</span> <span class="o">=</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;selected&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                        
+                        <span class="n">option_data</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
+                            <span class="s2">&quot;vin&quot;</span><span class="p">:</span> <span class="n">vin</span><span class="p">,</span>
+                            <span class="s2">&quot;zone_name&quot;</span><span class="p">:</span> <span class="n">zone_title</span><span class="p">,</span>
+                            <span class="s2">&quot;option_code&quot;</span><span class="p">:</span> <span class="n">option_code</span><span class="p">,</span>
+                            <span class="s2">&quot;option_title&quot;</span><span class="p">:</span> <span class="n">option_title</span><span class="p">,</span>
+                            <span class="s2">&quot;is_selected&quot;</span><span class="p">:</span> <span class="n">is_selected</span><span class="p">,</span>
+                            <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="s2">&quot;AUDATEX&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+                        <span class="p">}</span>
+                        <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">option_data</span><span class="p">)</span>
+            
+            <span class="c1"># Используем переданные временные метки или текущее время</span>
+            <span class="k">if</span> <span class="n">started_at</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">started_at</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">completed_at</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">completed_at</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+            
+            <span class="n">status_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;vin_status&quot;</span><span class="p">:</span> <span class="n">parser_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vin_status&quot;</span><span class="p">,</span> <span class="s2">&quot;Неизвестно&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="s2">&quot;ysvg&quot;</span> <span class="k">if</span> <span class="n">is_success</span> <span class="k">else</span> <span class="s2">&quot;nsvg&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;started_at&quot;</span><span class="p">:</span> <span class="n">started_at</span><span class="p">,</span>
+                <span class="s2">&quot;completed_at&quot;</span><span class="p">:</span> <span class="n">completed_at</span>
+            <span class="p">}</span>
+            
+            <span class="c1"># Batch операции</span>
+            <span class="k">await</span> <span class="n">upsert_request_status</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin</span><span class="p">,</span> <span class="n">status_data</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">save_details_batch</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin</span><span class="p">,</span> <span class="n">details</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">save_options_batch</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Данные успешно сохранены: </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка сохранения в БД: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="update_json_with_claim_number">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.update_json_with_claim_number">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_json_with_claim_number</span><span class="p">(</span><span class="n">json_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Обновляет JSON данные, добавляя claim_number&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">updated_data</span> <span class="o">=</span> <span class="n">json_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">updated_data</span><span class="p">[</span><span class="s1">&#39;claim_number&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">claim_number</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ JSON обновлен с claim_number: </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">updated_data</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка обновления JSON с claim_number: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">json_data</span></div>
+
+
+<div class="viewcode-block" id="save_updated_json_to_file">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.save_updated_json_to_file">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_updated_json_to_file</span><span class="p">(</span><span class="n">json_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Сохраняет обновленный JSON в файл&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">json_data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ JSON успешно обновлен и сохранен: </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка сохранения JSON: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<span class="c1"># Функции для работы с настройками расписания парсера</span>
+
+<div class="viewcode-block" id="get_schedule_settings">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.get_schedule_settings">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_schedule_settings</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Получает текущие настройки расписания парсера&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="n">select</span><span class="p">(</span><span class="n">ParserScheduleSettings</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserScheduleSettings</span><span class="o">.</span><span class="n">is_active</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">ParserScheduleSettings</span><span class="o">.</span><span class="n">updated_at</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span>
+            <span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="n">settings</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalar_one_or_none</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">settings</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
+                <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">end_time</span><span class="p">,</span>
+                <span class="s1">&#39;is_active&#39;</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">is_active</span><span class="p">,</span>
+                <span class="s1">&#39;updated_at&#39;</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">updated_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">updated_at</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Возвращаем дефолтные настройки если нет сохраненных</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="s1">&#39;09:00&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="s1">&#39;18:00&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;is_active&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;updated_at&#39;</span><span class="p">:</span> <span class="kc">None</span>
+            <span class="p">}</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка получения настроек расписания: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="s1">&#39;09:00&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="s1">&#39;18:00&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;is_active&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;updated_at&#39;</span><span class="p">:</span> <span class="kc">None</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="save_schedule_settings">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.save_schedule_settings">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_schedule_settings</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="n">start_time</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">end_time</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Сохраняет настройки расписания парсера&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Деактивируем все предыдущие настройки</span>
+        <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="n">ParserScheduleSettings</span><span class="o">.</span><span class="n">__table__</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ParserScheduleSettings</span><span class="o">.</span><span class="n">is_active</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="n">is_active</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Создаем новые настройки</span>
+        <span class="n">new_settings</span> <span class="o">=</span> <span class="n">ParserScheduleSettings</span><span class="p">(</span>
+            <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span>
+            <span class="n">end_time</span><span class="o">=</span><span class="n">end_time</span><span class="p">,</span>
+            <span class="n">is_active</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        
+        <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">new_settings</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Настройки расписания сохранены: </span><span class="si">{</span><span class="n">start_time</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">end_time</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка сохранения настроек расписания: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="is_time_in_working_hours">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.is_time_in_working_hours">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_time_in_working_hours</span><span class="p">(</span><span class="n">start_time</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">end_time</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Проверяет, находится ли текущее время в рабочем диапазоне&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">moscow_time</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">moscow_time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%H:%M&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># Конвертируем время в минуты для сравнения</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">time_to_minutes</span><span class="p">(</span><span class="n">time_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="n">hours</span><span class="p">,</span> <span class="n">minutes</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">time_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">hours</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">+</span> <span class="n">minutes</span>
+        
+        <span class="n">current_minutes</span> <span class="o">=</span> <span class="n">time_to_minutes</span><span class="p">(</span><span class="n">current_time</span><span class="p">)</span>
+        <span class="n">start_minutes</span> <span class="o">=</span> <span class="n">time_to_minutes</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+        <span class="n">end_minutes</span> <span class="o">=</span> <span class="n">time_to_minutes</span><span class="p">(</span><span class="n">end_time</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">start_minutes</span> <span class="o">&lt;=</span> <span class="n">end_minutes</span><span class="p">:</span>
+            <span class="c1"># Обычный случай: 09:00 - 18:00</span>
+            <span class="k">return</span> <span class="n">start_minutes</span> <span class="o">&lt;=</span> <span class="n">current_minutes</span> <span class="o">&lt;=</span> <span class="n">end_minutes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Переход через полночь: 21:46 - 23:00</span>
+            <span class="c1"># Рабочее время: с 21:46 до 23:00 (включая переход через полночь)</span>
+            <span class="k">return</span> <span class="n">current_minutes</span> <span class="o">&gt;=</span> <span class="n">start_minutes</span> <span class="ow">or</span> <span class="n">current_minutes</span> <span class="o">&lt;=</span> <span class="n">end_minutes</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка проверки рабочего времени: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="get_time_to_start">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.get_time_to_start">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_time_to_start</span><span class="p">(</span><span class="n">start_time</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Возвращает количество минут до начала работы&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">moscow_time</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">moscow_time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%H:%M&#39;</span><span class="p">)</span>
+        
+        <span class="k">def</span><span class="w"> </span><span class="nf">time_to_minutes</span><span class="p">(</span><span class="n">time_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="n">hours</span><span class="p">,</span> <span class="n">minutes</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">time_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">hours</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">+</span> <span class="n">minutes</span>
+        
+        <span class="n">current_minutes</span> <span class="o">=</span> <span class="n">time_to_minutes</span><span class="p">(</span><span class="n">current_time</span><span class="p">)</span>
+        <span class="n">start_minutes</span> <span class="o">=</span> <span class="n">time_to_minutes</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+        
+        <span class="c1"># Если текущее время меньше времени начала, ждем до начала</span>
+        <span class="k">if</span> <span class="n">current_minutes</span> <span class="o">&lt;</span> <span class="n">start_minutes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">start_minutes</span> <span class="o">-</span> <span class="n">current_minutes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Если текущее время больше времени начала, </span>
+            <span class="c1"># то начало уже прошло сегодня, ждем до завтра</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span> <span class="o">-</span> <span class="n">current_minutes</span> <span class="o">+</span> <span class="n">start_minutes</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка расчета времени до начала: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="get_time_to_end">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.requests.get_time_to_end">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_time_to_end</span><span class="p">(</span><span class="n">end_time</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Возвращает количество минут до окончания работы&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">moscow_time</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">moscow_time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%H:%M&#39;</span><span class="p">)</span>
+        
+        <span class="k">def</span><span class="w"> </span><span class="nf">time_to_minutes</span><span class="p">(</span><span class="n">time_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="n">hours</span><span class="p">,</span> <span class="n">minutes</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">time_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">hours</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">+</span> <span class="n">minutes</span>
+        
+        <span class="n">current_minutes</span> <span class="o">=</span> <span class="n">time_to_minutes</span><span class="p">(</span><span class="n">current_time</span><span class="p">)</span>
+        <span class="n">end_minutes</span> <span class="o">=</span> <span class="n">time_to_minutes</span><span class="p">(</span><span class="n">end_time</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">current_minutes</span> <span class="o">&lt;=</span> <span class="n">end_minutes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">end_minutes</span> <span class="o">-</span> <span class="n">current_minutes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># До следующего дня</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span> <span class="o">-</span> <span class="n">current_minutes</span> <span class="o">+</span> <span class="n">end_minutes</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка расчета времени до окончания: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,9 @@
+Main Application
+================
+
+Основной файл приложения FastAPI.
+
+.. automodule:: main
+   :members:
+   :undoc-members:
+   :show-inheritance: 

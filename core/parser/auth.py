@@ -1,3 +1,11 @@
+"""
+Аутентификация на сайте Audatex
+
+Основные функции:
+    * check_if_authorized: Проверяет, авторизован ли пользователь на текущей странице
+    * load_cookies: Загружает cookies и проверяет валидность авторизации
+    * perform_login: Выполняет авторизацию с сохранением cookies
+"""
 # Функции для работы с авторизацией
 import asyncio
 import logging
@@ -18,8 +26,11 @@ def check_if_authorized(driver):
     """
     Проверяет, авторизован ли пользователь на текущей странице.
     
+    Args:
+        driver: WebDriver - экземпляр браузера
+    
     Returns:
-        True если авторизован, False если нужна авторизация
+        bool - True если авторизован, False если нужна авторизация
     """
     try:
         # Проверяем, есть ли поле для логина (если есть - не авторизованы)
@@ -50,8 +61,13 @@ def load_cookies(driver, url, cookies_file):
     """
     Загружает cookies и проверяет валидность авторизации.
     
+    Args:
+        driver: WebDriver - экземпляр браузера
+        url: str - URL для загрузки
+        cookies_file: str - путь к файлу cookies
+    
     Returns:
-        True если авторизация валидна, False если нужно логиниться
+        bool - True если авторизация валидна, False если нужно логиниться
     """
     if not os.path.exists(cookies_file):
         logger.info("Файл cookies не найден, требуется авторизация")
@@ -93,6 +109,15 @@ def load_cookies(driver, url, cookies_file):
 def perform_login(driver, username, password, cookies_file):
     """
     Выполняет авторизацию с сохранением cookies.
+    
+    Args:
+        driver: WebDriver - экземпляр браузера
+        username: str - имя пользователя
+        password: str - пароль
+        cookies_file: str - путь к файлу cookies
+    
+    Returns:
+        bool - True если авторизация успешна
     """
     try:
         # Убеждаемся что мы на странице логина

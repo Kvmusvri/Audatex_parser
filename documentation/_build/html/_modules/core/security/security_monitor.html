@@ -1,0 +1,740 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.security.security_monitor &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">core.security.security_monitor</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код core.security.security_monitor</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Модуль мониторинга безопасности</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Request</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Настройки мониторинга</span>
+<span class="n">MONITORING_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;alert_threshold&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>  <span class="c1"># количество подозрительных запросов для алерта (уменьшил)</span>
+    <span class="s2">&quot;critical_threshold&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>  <span class="c1"># количество для критического алерта (уменьшил)</span>
+    <span class="s2">&quot;time_window&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>  <span class="c1"># 5 минут</span>
+    <span class="s2">&quot;cleanup_interval&quot;</span><span class="p">:</span> <span class="mi">3600</span><span class="p">,</span>  <span class="c1"># 1 час</span>
+    <span class="s2">&quot;max_log_entries&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>  <span class="c1"># максимальное количество записей в логе</span>
+<span class="p">}</span>
+
+<span class="c1"># Типы событий безопасности</span>
+<span class="n">SECURITY_EVENTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;RATE_LIMIT_EXCEEDED&quot;</span><span class="p">:</span> <span class="s2">&quot;Превышен лимит запросов&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;IP_BANNED&quot;</span><span class="p">:</span> <span class="s2">&quot;IP адрес заблокирован&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SUSPICIOUS_USER_AGENT&quot;</span><span class="p">:</span> <span class="s2">&quot;Подозрительный User-Agent&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SUSPICIOUS_HEADERS&quot;</span><span class="p">:</span> <span class="s2">&quot;Подозрительные заголовки&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SUSPICIOUS_PARAMS&quot;</span><span class="p">:</span> <span class="s2">&quot;Подозрительные параметры&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SUSPICIOUS_PATH&quot;</span><span class="p">:</span> <span class="s2">&quot;Подозрительный путь&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HIGH_RISK_REQUEST&quot;</span><span class="p">:</span> <span class="s2">&quot;Высокий риск запроса&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;BRUTE_FORCE_ATTEMPT&quot;</span><span class="p">:</span> <span class="s2">&quot;Попытка брутфорса&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SQL_INJECTION_ATTEMPT&quot;</span><span class="p">:</span> <span class="s2">&quot;Попытка SQL инъекции&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;XSS_ATTEMPT&quot;</span><span class="p">:</span> <span class="s2">&quot;Попытка XSS атаки&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PATH_TRAVERSAL_ATTEMPT&quot;</span><span class="p">:</span> <span class="s2">&quot;Попытка path traversal&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;COMMAND_INJECTION_ATTEMPT&quot;</span><span class="p">:</span> <span class="s2">&quot;Попытка command injection&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FILE_UPLOAD_ATTEMPT&quot;</span><span class="p">:</span> <span class="s2">&quot;Попытка загрузки файла&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;UNAUTHORIZED_ACCESS&quot;</span><span class="p">:</span> <span class="s2">&quot;Неавторизованный доступ&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PRIVILEGE_ESCALATION&quot;</span><span class="p">:</span> <span class="s2">&quot;Попытка повышения привилегий&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="SecurityEvent">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityEvent">[документация]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SecurityEvent</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Класс для представления события безопасности&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="SecurityEvent.__init__">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityEvent.__init__">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">risk_score</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_type</span> <span class="o">=</span> <span class="n">event_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">=</span> <span class="n">ip</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">details</span> <span class="o">=</span> <span class="n">details</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">risk_score</span> <span class="o">=</span> <span class="n">risk_score</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">event_type</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+    
+<div class="viewcode-block" id="SecurityEvent.to_dict">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityEvent.to_dict">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Преобразование в словарь&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_type</span><span class="p">,</span>
+            <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">,</span>
+            <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">details</span><span class="p">,</span>
+            <span class="s2">&quot;risk_score&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">risk_score</span><span class="p">,</span>
+            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">SECURITY_EVENTS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_type</span><span class="p">,</span> <span class="s2">&quot;Неизвестное событие&quot;</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">event_type</span><span class="si">}</span><span class="s2"> - IP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s2">, Risk: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">risk_score</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="SecurityMonitor">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor">[документация]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SecurityMonitor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Класс для мониторинга безопасности&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="SecurityMonitor.__init__">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.__init__">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SecurityEvent</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">SecurityEvent</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;total_events&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;blocked_ips&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;high_risk_events&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;critical_events&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;last_cleanup&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_task</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+    
+<div class="viewcode-block" id="SecurityMonitor.add_event">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.add_event">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">SecurityEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Добавление события безопасности&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Добавляем событие в общий список</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">[</span><span class="s2">&quot;total_events&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="c1"># Добавляем в активность по IP</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">ip</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">ip</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">ip</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+            
+            <span class="c1"># Обновляем статистику</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">risk_score</span> <span class="o">&gt;=</span> <span class="mi">80</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">[</span><span class="s2">&quot;critical_events&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">risk_score</span> <span class="o">&gt;=</span> <span class="mi">50</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">[</span><span class="s2">&quot;high_risk_events&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="c1"># Проверяем необходимость алерта</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_alerts</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+            
+            <span class="c1"># Логируем событие</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔒 Событие безопасности: </span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Ограничиваем размер лога</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;max_log_entries&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_old_events</span><span class="p">()</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка добавления события безопасности: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_alerts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">SecurityEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Проверка необходимости создания алерта&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">current_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+            <span class="n">time_window</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;time_window&quot;</span><span class="p">])</span>
+            
+            <span class="c1"># Подсчитываем события для IP в окне времени</span>
+            <span class="n">ip_events</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">ip</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&gt;=</span> <span class="n">time_window</span>
+            <span class="p">]</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Проверка алертов для IP </span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s2">: событий=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ip_events</span><span class="p">)</span><span class="si">}</span><span class="s2">, порог=</span><span class="si">{</span><span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s1">&#39;alert_threshold&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, критический=</span><span class="si">{</span><span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s1">&#39;critical_threshold&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ip_events</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;critical_threshold&quot;</span><span class="p">]:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 Создаем КРИТИЧЕСКИЙ алерт для IP </span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_create_alert</span><span class="p">(</span><span class="s2">&quot;CRITICAL&quot;</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">ip</span><span class="p">,</span> <span class="n">ip_events</span><span class="p">,</span> <span class="s2">&quot;Критическая активность&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">ip_events</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;alert_threshold&quot;</span><span class="p">]:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Создаем WARNING алерт для IP </span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_create_alert</span><span class="p">(</span><span class="s2">&quot;WARNING&quot;</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">ip</span><span class="p">,</span> <span class="n">ip_events</span><span class="p">,</span> <span class="s2">&quot;Подозрительная активность&quot;</span><span class="p">)</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка проверки алертов: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">events</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SecurityEvent</span><span class="p">],</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Создание алерта&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">alert</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;alert_</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="n">level</span><span class="p">,</span>
+                <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="n">ip</span><span class="p">,</span>
+                <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">message</span><span class="p">,</span>
+                <span class="s2">&quot;events_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">),</span>
+                <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]]</span>  <span class="c1"># Последние 10 событий</span>
+            <span class="p">}</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">alert</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Алерт создан: </span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2"> для IP </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">, всего алертов: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Логируем алерт</span>
+            <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="s2">&quot;CRITICAL&quot;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 КРИТИЧЕСКИЙ АЛЕРТ: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2"> - IP: </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">, Событий: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ АЛЕРТ: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2"> - IP: </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">, Событий: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка создания алерта: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cleanup_old_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Очистка старых событий&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">current_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+            <span class="n">cutoff_time</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;time_window&quot;</span><span class="p">])</span>
+            
+            <span class="c1"># Очищаем общий список событий</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">event</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span>
+                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&gt;=</span> <span class="n">cutoff_time</span>
+            <span class="p">]</span>
+            
+            <span class="c1"># Очищаем активность по IP</span>
+            <span class="k">for</span> <span class="n">ip</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">event</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&gt;=</span> <span class="n">cutoff_time</span>
+                <span class="p">]</span>
+                
+                <span class="c1"># Удаляем пустые записи</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="p">[</span><span class="n">ip</span><span class="p">]:</span>
+                    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span>
+            
+            <span class="c1"># Очищаем старые алерты</span>
+            <span class="n">alert_cutoff</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">alert</span> <span class="k">for</span> <span class="n">alert</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span>
+                <span class="k">if</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">alert</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">alert_cutoff</span>
+            <span class="p">]</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">[</span><span class="s2">&quot;last_cleanup&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_time</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🧹 Очистка завершена. Осталось событий: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка очистки старых событий: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="SecurityMonitor.start_cleanup_task">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.start_cleanup_task">[документация]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start_cleanup_task</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Запуск задачи периодической очистки&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_task</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_task</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_loop</span><span class="p">())</span></div>
+
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_cleanup_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Цикл периодической очистки&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;cleanup_interval&quot;</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_old_events</span><span class="p">()</span>
+            <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка в цикле очистки: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="SecurityMonitor.get_statistics">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.get_statistics">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение статистики мониторинга&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">current_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+            <span class="n">time_window</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;time_window&quot;</span><span class="p">])</span>
+            
+            <span class="c1"># События за последнее время</span>
+            <span class="n">recent_events</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">event</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span>
+                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&gt;=</span> <span class="n">time_window</span>
+            <span class="p">]</span>
+            
+            <span class="c1"># Активные IP</span>
+            <span class="n">active_ips</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="p">)</span>
+            
+            <span class="c1"># Топ подозрительных IP</span>
+            <span class="n">ip_risk_scores</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">ip</span><span class="p">,</span> <span class="n">events</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">recent_ip_events</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">event</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span>
+                    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&gt;=</span> <span class="n">time_window</span>
+                <span class="p">]</span>
+                <span class="k">if</span> <span class="n">recent_ip_events</span><span class="p">:</span>
+                    <span class="n">ip_risk_scores</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">risk_score</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">recent_ip_events</span><span class="p">)</span>
+            
+            <span class="n">top_suspicious_ips</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="n">ip_risk_scores</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span>
+                <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)[:</span><span class="mi">10</span><span class="p">]</span>
+            
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;total_events&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">[</span><span class="s2">&quot;total_events&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;recent_events_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">recent_events</span><span class="p">),</span>
+                <span class="s2">&quot;active_ips&quot;</span><span class="p">:</span> <span class="n">active_ips</span><span class="p">,</span>
+                <span class="s2">&quot;high_risk_events&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">[</span><span class="s2">&quot;high_risk_events&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;critical_events&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">[</span><span class="s2">&quot;critical_events&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;alerts_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="p">),</span>
+                <span class="s2">&quot;top_suspicious_ips&quot;</span><span class="p">:</span> <span class="n">top_suspicious_ips</span><span class="p">,</span>
+                <span class="s2">&quot;last_cleanup&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">[</span><span class="s2">&quot;last_cleanup&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                <span class="s2">&quot;monitoring_window&quot;</span><span class="p">:</span> <span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;time_window&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка получения статистики: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{}</span></div>
+
+    
+<div class="viewcode-block" id="SecurityMonitor.get_events_for_ip">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.get_events_for_ip">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_events_for_ip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение событий для конкретного IP&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">[</span><span class="o">-</span><span class="n">limit</span><span class="p">:]]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка получения событий для IP </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span></div>
+
+    
+<div class="viewcode-block" id="SecurityMonitor.get_recent_alerts">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.get_recent_alerts">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_recent_alerts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение последних алертов&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Запрос алертов: всего алертов=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="p">)</span><span class="si">}</span><span class="s2">, запрошено=</span><span class="si">{</span><span class="n">limit</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">alerts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="p">[</span><span class="o">-</span><span class="n">limit</span><span class="p">:]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Возвращаем </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">alerts</span><span class="p">)</span><span class="si">}</span><span class="s2"> алертов&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Убеждаемся, что возвращаем правильный формат</span>
+            <span class="n">formatted_alerts</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">alert</span> <span class="ow">in</span> <span class="n">alerts</span><span class="p">:</span>
+                <span class="n">formatted_alert</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">alert</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="n">alert</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;level&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="n">alert</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ip&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">alert</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;Событие безопасности&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;events_count&quot;</span><span class="p">:</span> <span class="n">alert</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;events_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">alert</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()),</span>
+                    <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="n">alert</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="p">}</span>
+                <span class="n">formatted_alerts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">formatted_alert</span><span class="p">)</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Отформатировано </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">formatted_alerts</span><span class="p">)</span><span class="si">}</span><span class="s2"> алертов&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">formatted_alerts</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка получения алертов: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span></div>
+
+    
+<div class="viewcode-block" id="SecurityMonitor.export_events">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.export_events">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_events</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">format_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;json&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Экспорт событий&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">format_type</span> <span class="o">==</span> <span class="s2">&quot;json&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                    <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">],</span>
+                    <span class="s2">&quot;alerts&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="p">,</span>
+                    <span class="s2">&quot;statistics&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_statistics</span><span class="p">(),</span>
+                    <span class="s2">&quot;export_time&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+                <span class="p">},</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Неподдерживаемый формат: </span><span class="si">{</span><span class="n">format_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка экспорта событий: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+    
+<div class="viewcode-block" id="SecurityMonitor.clear_all_events">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.clear_all_events">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_all_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Очистка всех событий безопасности&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">old_events_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">)</span>
+            <span class="n">old_alerts_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="p">)</span>
+            <span class="n">old_ip_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="p">)</span>
+            
+            <span class="c1"># Очищаем все события</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            
+            <span class="c1"># Сбрасываем статистику</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;total_events&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;blocked_ips&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;high_risk_events&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;critical_events&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;last_cleanup&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+            <span class="p">}</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Очищено </span><span class="si">{</span><span class="n">old_events_count</span><span class="si">}</span><span class="s2"> событий, </span><span class="si">{</span><span class="n">old_alerts_count</span><span class="si">}</span><span class="s2"> алертов, </span><span class="si">{</span><span class="n">old_ip_count</span><span class="si">}</span><span class="s2"> IP активностей&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка очистки событий: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SecurityMonitor.clear_all_alerts">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.clear_all_alerts">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_all_alerts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Очистка всех алертов&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">old_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Очищено </span><span class="si">{</span><span class="n">old_count</span><span class="si">}</span><span class="s2"> алертов&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка очистки алертов: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SecurityMonitor.create_demo_alerts">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.create_demo_alerts">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_demo_alerts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Создание демонстрационных алертов&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Создаем тестовые алерты для демонстрации</span>
+            <span class="n">demo_alerts</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;demo_alert_</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span><span class="si">}</span><span class="s2">_1&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;CRITICAL&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="s2">&quot;192.168.1.100&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Критическая активность - множественные попытки брутфорса&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;events_count&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                    <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="s2">&quot;192.168.1.100&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;risk_score&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+                            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                            <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;demo_alert_</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span><span class="si">}</span><span class="s2">_2&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;WARNING&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="s2">&quot;10.0.0.50&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Подозрительная активность - попытка SQL инъекции&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;events_count&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                    <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                    <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;SQL_INJECTION&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="s2">&quot;10.0.0.50&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;risk_score&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+                            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                            <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="s2">&quot;SELECT * FROM users&quot;</span><span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;demo_alert_</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span><span class="si">}</span><span class="s2">_3&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;WARNING&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="s2">&quot;172.16.0.25&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Подозрительная активность - попытка XSS атаки&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;events_count&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                    <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;XSS_ATTEMPT&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="s2">&quot;172.16.0.25&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;risk_score&quot;</span><span class="p">:</span> <span class="mi">45</span><span class="p">,</span>
+                            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                            <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;script&gt;&quot;</span><span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">]</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">demo_alerts</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Создано </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">demo_alerts</span><span class="p">)</span><span class="si">}</span><span class="s2"> демонстрационных алертов&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка создания демонстрационных алертов: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SecurityMonitor.generate_alerts_from_events">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.SecurityMonitor.generate_alerts_from_events">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_alerts_from_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Генерация алертов из существующих событий&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Очищаем существующие алерты</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            
+            <span class="c1"># Генерируем алерты для каждого IP с достаточным количеством событий</span>
+            <span class="k">for</span> <span class="n">ip</span><span class="p">,</span> <span class="n">events</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip_activity</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;critical_threshold&quot;</span><span class="p">]:</span>
+                    <span class="c1"># Критический алерт</span>
+                    <span class="n">alert</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;auto_alert_</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;CRITICAL&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="n">ip</span><span class="p">,</span>
+                        <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Критическая активность - </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2"> событий&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;events_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">),</span>
+                        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                        <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]]</span>
+                    <span class="p">}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">alert</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 Создан критический алерт для IP </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2"> событий&quot;</span><span class="p">)</span>
+                    
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MONITORING_CONFIG</span><span class="p">[</span><span class="s2">&quot;alert_threshold&quot;</span><span class="p">]:</span>
+                    <span class="c1"># Предупреждающий алерт</span>
+                    <span class="n">alert</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;auto_alert_</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;WARNING&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="n">ip</span><span class="p">,</span>
+                        <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Подозрительная активность - </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2"> событий&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;events_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">),</span>
+                        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                        <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]]</span>
+                    <span class="p">}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">alert</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Создан предупреждающий алерт для IP </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2"> событий&quot;</span><span class="p">)</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Сгенерировано </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alerts</span><span class="p">)</span><span class="si">}</span><span class="s2"> алертов из существующих событий&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка генерации алертов из событий: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="c1"># Глобальный экземпляр мониторинга</span>
+<span class="n">security_monitor</span> <span class="o">=</span> <span class="n">SecurityMonitor</span><span class="p">()</span>
+
+<span class="c1"># Создаем несколько тестовых алертов для демонстрации</span>
+<div class="viewcode-block" id="create_test_alerts">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.create_test_alerts">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_test_alerts</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Создание тестовых алертов для демонстрации&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Создаем тестовые события только если их нет</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">security_monitor</span><span class="o">.</span><span class="n">events</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Создаем события для одного IP, чтобы сгенерировать алерт</span>
+            <span class="n">malicious_ip</span> <span class="o">=</span> <span class="s2">&quot;192.168.1.100&quot;</span>
+            <span class="n">test_events</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">17</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">19</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">21</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">23</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">24</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
+                <span class="c1"># Дополнительные события от других IP</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;SQL_INJECTION&quot;</span><span class="p">,</span> <span class="s2">&quot;10.0.0.50&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="s2">&quot;SELECT * FROM users&quot;</span><span class="p">},</span> <span class="mi">60</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;XSS_ATTEMPT&quot;</span><span class="p">,</span> <span class="s2">&quot;172.16.0.25&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;script&gt;&quot;</span><span class="p">},</span> <span class="mi">45</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;UNAUTHORIZED_ACCESS&quot;</span><span class="p">,</span> <span class="s2">&quot;203.0.113.10&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/admin&quot;</span><span class="p">},</span> <span class="mi">30</span><span class="p">),</span>
+                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;RATE_LIMIT_EXCEEDED&quot;</span><span class="p">,</span> <span class="s2">&quot;198.51.100.5&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;requests&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span> <span class="mi">35</span><span class="p">)</span>
+            <span class="p">]</span>
+            
+            <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">test_events</span><span class="p">:</span>
+                <span class="n">security_monitor</span><span class="o">.</span><span class="n">add_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Создано </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">test_events</span><span class="p">)</span><span class="si">}</span><span class="s2"> тестовых событий безопасности&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Тестовые события уже существуют: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">security_monitor</span><span class="o">.</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2"> событий&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка создания тестовых алертов: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="log_security_event">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.log_security_event">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_security_event</span><span class="p">(</span><span class="n">event_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">risk_score</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Логирование события безопасности&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Получаем IP адреса</span>
+        <span class="n">client_ip</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">host</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">client</span> <span class="k">else</span> <span class="s2">&quot;unknown&quot;</span>
+        
+        <span class="c1"># Проверяем заголовки для реального IP</span>
+        <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;X-Real-IP&quot;</span><span class="p">,</span> <span class="s2">&quot;X-Client-IP&quot;</span><span class="p">,</span> <span class="s2">&quot;X-Forwarded-For&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+                <span class="n">ip</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">header</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">ip</span> <span class="ow">and</span> <span class="n">ip</span> <span class="o">!=</span> <span class="s2">&quot;unknown&quot;</span><span class="p">:</span>
+                    <span class="n">client_ip</span> <span class="o">=</span> <span class="n">ip</span>
+                    <span class="k">break</span>
+        
+        <span class="c1"># Создаем событие</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="n">SecurityEvent</span><span class="p">(</span>
+            <span class="n">event_type</span><span class="o">=</span><span class="n">event_type</span><span class="p">,</span>
+            <span class="n">ip</span><span class="o">=</span><span class="n">client_ip</span><span class="p">,</span>
+            <span class="n">details</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+                <span class="s2">&quot;user_agent&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;User-Agent&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;referer&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Referer&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;query_params&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">query_params</span><span class="p">),</span>
+                <span class="o">**</span><span class="n">details</span>
+            <span class="p">},</span>
+            <span class="n">risk_score</span><span class="o">=</span><span class="n">risk_score</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Добавляем в мониторинг</span>
+        <span class="n">security_monitor</span><span class="o">.</span><span class="n">add_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка логирования события безопасности: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="security_monitoring_middleware">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.security_monitoring_middleware">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">security_monitoring_middleware</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">call_next</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Middleware для мониторинга безопасности&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Пропускаем статические файлы и ресурсы браузера</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/static/&quot;</span><span class="p">)</span> <span class="ow">or</span> 
+            <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/.well-known/&quot;</span><span class="p">)</span> <span class="ow">or</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="s2">&quot;/favicon.ico&quot;</span> <span class="ow">or</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="s2">&quot;/robots.txt&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        
+        <span class="c1"># Пропускаем страницу безопасности (но не API эндпоинты)</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="s2">&quot;/security&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        
+        <span class="c1"># Запускаем задачу очистки если не запущена</span>
+        <span class="k">if</span> <span class="n">security_monitor</span><span class="o">.</span><span class="n">_cleanup_task</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">security_monitor</span><span class="o">.</span><span class="n">_cleanup_task</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
+            <span class="k">await</span> <span class="n">security_monitor</span><span class="o">.</span><span class="n">start_cleanup_task</span><span class="p">()</span>
+        
+        <span class="c1"># Обрабатываем запрос</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        
+        <span class="c1"># Логируем только реальные проблемы безопасности</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">401</span><span class="p">:</span>  <span class="c1"># Неавторизованный доступ</span>
+            <span class="n">log_security_event</span><span class="p">(</span>
+                <span class="s2">&quot;UNAUTHORIZED_ACCESS&quot;</span><span class="p">,</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="p">{</span><span class="s2">&quot;status_code&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span><span class="p">},</span>
+                <span class="n">risk_score</span><span class="o">=</span><span class="mi">30</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">403</span><span class="p">:</span>  <span class="c1"># Запрещенный доступ</span>
+            <span class="n">log_security_event</span><span class="p">(</span>
+                <span class="s2">&quot;FORBIDDEN_ACCESS&quot;</span><span class="p">,</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="p">{</span><span class="s2">&quot;status_code&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span><span class="p">},</span>
+                <span class="n">risk_score</span><span class="o">=</span><span class="mi">40</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">429</span><span class="p">:</span>  <span class="c1"># Rate limit exceeded</span>
+            <span class="n">log_security_event</span><span class="p">(</span>
+                <span class="s2">&quot;RATE_LIMIT_EXCEEDED&quot;</span><span class="p">,</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="p">{</span><span class="s2">&quot;status_code&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span><span class="p">},</span>
+                <span class="n">risk_score</span><span class="o">=</span><span class="mi">25</span>
+            <span class="p">)</span>
+        <span class="c1"># НЕ логируем 404, 500 и другие ошибки как события безопасности</span>
+        
+        <span class="k">return</span> <span class="n">response</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка в security monitoring middleware: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span> </div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

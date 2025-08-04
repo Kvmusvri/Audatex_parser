@@ -1,0 +1,211 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Документация Audotex Parser &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=8b205fae" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/translations.js?v=cd1d70c9"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="genindex.html" />
+    <link rel="search" title="Поиск" href="search.html" />
+    <link rel="next" title="Модуль аутентификации (auth)" href="modules/auth.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/database.html#id3">Структура базы данных</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/database.html#er">ER-диаграмма</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Документация Audotex Parser</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> Просмотреть исходный код страницы</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="audotex-parser">
+<h1>Документация Audotex Parser<a class="headerlink" href="#audotex-parser" title="Ссылка на этот заголовок"></a></h1>
+<section id="id1">
+<h2>Обзор проекта<a class="headerlink" href="#id1" title="Ссылка на этот заголовок"></a></h2>
+<p>Audotex Parser - система парсинга данных автомобилей с сайта Audatex с использованием Selenium WebDriver.</p>
+</section>
+<section id="id2">
+<h2>Архитектура системы<a class="headerlink" href="#id2" title="Ссылка на этот заголовок"></a></h2>
+<p>Система состоит из следующих основных модулей:</p>
+<ul class="simple">
+<li><p><strong>auth</strong> - Аутентификация и управление пользователями</p></li>
+<li><p><strong>database</strong> - Модели данных и работа с базой данных</p></li>
+<li><p><strong>parser</strong> - Основной модуль парсинга данных</p></li>
+<li><p><strong>queue</strong> - Обработка очереди заявок</p></li>
+<li><p><strong>security</strong> - Система безопасности и мониторинга</p></li>
+</ul>
+</section>
+<section id="id3">
+<h2>Основные модули<a class="headerlink" href="#id3" title="Ссылка на этот заголовок"></a></h2>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules/auth.html">Модуль аутентификации (auth)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/auth.html#id1">Обзор</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/auth.html#id2">Модули</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/auth.html#core-auth-routes">core.auth.routes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/auth.html#core-auth-users">core.auth.users</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/auth.html#core-auth-decorators">core.auth.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/auth.html#core-auth-db-routes">core.auth.db_routes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/auth.html#core-auth-db-auth">core.auth.db_auth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/auth.html#core-auth-db-decorators">core.auth.db_decorators</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/database.html">Модуль базы данных (database)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#id1">Обзор</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#id2">Модули</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#core-database-models">core.database.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#core-database-requests">core.database.requests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#core-database-init-db">core.database.init_db</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/database.html#id3">Структура базы данных</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#parser-car-detail">parser_car_detail</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#parser-car-detail-group-zone">parser_car_detail_group_zone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#parser-car-request-status">parser_car_request_status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#parser-car-options">parser_car_options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#parser-schedule-settings">parser_schedule_settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#users">users</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/database.html#user-sessions">user_sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/database.html#er">ER-диаграмма</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/parser.html">Модуль парсера (parser)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#id1">Обзор</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#id2">Модули</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#core-parser-parser">core.parser.parser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#core-parser-browser">core.parser.browser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#core-parser-actions">core.parser.actions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#core-parser-auth">core.parser.auth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#core-parser-constants">core.parser.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#core-parser-folder-manager">core.parser.folder_manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#core-parser-option-processor">core.parser.option_processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#core-parser-output-manager">core.parser.output_manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#core-parser-stealth">core.parser.stealth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/parser.html#core-parser-visual-processor">core.parser.visual_processor</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/queue.html">Модуль очереди (queue)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/queue.html#id1">Обзор</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/queue.html#id2">Модули</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/queue.html#core-queue-queue-processor">core.queue.queue_processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/queue.html#core-queue-redis-manager">core.queue.redis_manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/queue.html#core-queue-api-endpoints">core.queue.api_endpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/security.html">Модуль безопасности (security)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/security.html#id1">Обзор</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/security.html#id2">Модули</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/security.html#core-security-security-monitor">core.security.security_monitor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/security.html#core-security-rate-limiter">core.security.rate_limiter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/security.html#core-security-ddos-protection">core.security.ddos_protection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/security.html#core-security-api-endpoints">core.security.api_endpoints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/security.html#core-security-auth-utils">core.security.auth_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/security.html#core-security-auth-middleware">core.security.auth_middleware</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/security.html#core-security-session-middleware">core.security.session_middleware</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+<section id="id4">
+<h1>Индексы и таблицы<a class="headerlink" href="#id4" title="Ссылка на этот заголовок"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Алфавитный указатель</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Состав модуля</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Поиск</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Нижняя область">
+        <a href="modules/auth.html" class="btn btn-neutral float-right" title="Модуль аутентификации (auth)" accesskey="n" rel="next">Следующая <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

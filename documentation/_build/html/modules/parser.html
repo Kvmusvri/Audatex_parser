@@ -1,0 +1,1261 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Модуль парсера (parser) &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=8b205fae" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../genindex.html" />
+    <link rel="search" title="Поиск" href="../search.html" />
+    <link rel="next" title="Модуль очереди (queue)" href="queue.html" />
+    <link rel="prev" title="Модуль базы данных (database)" href="database.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="database.html#id3">Структура базы данных</a></li>
+<li class="toctree-l1"><a class="reference internal" href="database.html#er">ER-диаграмма</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Модуль парсера (parser)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Обзор</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">Модули</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#core-parser-parser">core.parser.parser</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.parser.search_and_extract"><code class="docutils literal notranslate"><span class="pre">search_and_extract()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.parser.login_audatex"><code class="docutils literal notranslate"><span class="pre">login_audatex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.parser.terminate_all_processes_and_restart"><code class="docutils literal notranslate"><span class="pre">terminate_all_processes_and_restart()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-parser-browser">core.parser.browser</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.browser.kill_chrome_processes"><code class="docutils literal notranslate"><span class="pre">kill_chrome_processes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.browser.get_chromedriver_version"><code class="docutils literal notranslate"><span class="pre">get_chromedriver_version()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.browser.init_browser"><code class="docutils literal notranslate"><span class="pre">init_browser()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-parser-actions">core.parser.actions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.human_like_delay"><code class="docutils literal notranslate"><span class="pre">human_like_delay()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.human_like_click"><code class="docutils literal notranslate"><span class="pre">human_like_click()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.add_human_behavior"><code class="docutils literal notranslate"><span class="pre">add_human_behavior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.add_extended_human_behavior"><code class="docutils literal notranslate"><span class="pre">add_extended_human_behavior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.check_for_bot_detection"><code class="docutils literal notranslate"><span class="pre">check_for_bot_detection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.handle_bot_detection"><code class="docutils literal notranslate"><span class="pre">handle_bot_detection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.retry_on_failure"><code class="docutils literal notranslate"><span class="pre">retry_on_failure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.wait_for_table"><code class="docutils literal notranslate"><span class="pre">wait_for_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.click_cansel_button"><code class="docutils literal notranslate"><span class="pre">click_cansel_button()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.click_request_type_button"><code class="docutils literal notranslate"><span class="pre">click_request_type_button()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.search_in_table"><code class="docutils literal notranslate"><span class="pre">search_in_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.click_more_icon"><code class="docutils literal notranslate"><span class="pre">click_more_icon()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.open_task"><code class="docutils literal notranslate"><span class="pre">open_task()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.switch_to_frame_and_confirm"><code class="docutils literal notranslate"><span class="pre">switch_to_frame_and_confirm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.click_breadcrumb"><code class="docutils literal notranslate"><span class="pre">click_breadcrumb()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.is_table_empty"><code class="docutils literal notranslate"><span class="pre">is_table_empty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.find_claim_data"><code class="docutils literal notranslate"><span class="pre">find_claim_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.actions.get_vin_status"><code class="docutils literal notranslate"><span class="pre">get_vin_status()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-parser-auth">core.parser.auth</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.auth.check_if_authorized"><code class="docutils literal notranslate"><span class="pre">check_if_authorized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.auth.load_cookies"><code class="docutils literal notranslate"><span class="pre">load_cookies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.auth.perform_login"><code class="docutils literal notranslate"><span class="pre">perform_login()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-parser-constants">core.parser.constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#core-parser-folder-manager">core.parser.folder_manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.folder_manager.safe_remove_directory"><code class="docutils literal notranslate"><span class="pre">safe_remove_directory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.folder_manager.create_folders"><code class="docutils literal notranslate"><span class="pre">create_folders()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.folder_manager.extract_vin_and_claim_number"><code class="docutils literal notranslate"><span class="pre">extract_vin_and_claim_number()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-parser-option-processor">core.parser.option_processor</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.wait_for_element_stable"><code class="docutils literal notranslate"><span class="pre">wait_for_element_stable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.wait_for_element_clickable"><code class="docutils literal notranslate"><span class="pre">wait_for_element_clickable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.wait_for_content_loaded"><code class="docutils literal notranslate"><span class="pre">wait_for_content_loaded()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.navigate_to_options"><code class="docutils literal notranslate"><span class="pre">navigate_to_options()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.ensure_in_iframe"><code class="docutils literal notranslate"><span class="pre">ensure_in_iframe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.extract_option_zones"><code class="docutils literal notranslate"><span class="pre">extract_option_zones()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.parse_option_code_title"><code class="docutils literal notranslate"><span class="pre">parse_option_code_title()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.extract_sections_from_container"><code class="docutils literal notranslate"><span class="pre">extract_sections_from_container()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.extract_azt_options_from_container"><code class="docutils literal notranslate"><span class="pre">extract_azt_options_from_container()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.extract_predefined_options_from_container"><code class="docutils literal notranslate"><span class="pre">extract_predefined_options_from_container()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.extract_regular_options_from_container"><code class="docutils literal notranslate"><span class="pre">extract_regular_options_from_container()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.find_all_option_elements_in_container"><code class="docutils literal notranslate"><span class="pre">find_all_option_elements_in_container()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.extract_option_from_element"><code class="docutils literal notranslate"><span class="pre">extract_option_from_element()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.extract_options_with_sections"><code class="docutils literal notranslate"><span class="pre">extract_options_with_sections()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.extract_options_without_sections"><code class="docutils literal notranslate"><span class="pre">extract_options_without_sections()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.extract_zone_options_universal"><code class="docutils literal notranslate"><span class="pre">extract_zone_options_universal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.extract_all_selected_options_from_container"><code class="docutils literal notranslate"><span class="pre">extract_all_selected_options_from_container()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.collect_all_options_extended"><code class="docutils literal notranslate"><span class="pre">collect_all_options_extended()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.collect_all_options"><code class="docutils literal notranslate"><span class="pre">collect_all_options()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.option_processor.process_vehicle_options"><code class="docutils literal notranslate"><span class="pre">process_vehicle_options()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-parser-output-manager">core.parser.output_manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.output_manager.create_zones_table"><code class="docutils literal notranslate"><span class="pre">create_zones_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.output_manager.save_data_to_json"><code class="docutils literal notranslate"><span class="pre">save_data_to_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.output_manager.restore_started_at_from_db"><code class="docutils literal notranslate"><span class="pre">restore_started_at_from_db()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.output_manager.restore_last_updated_from_db"><code class="docutils literal notranslate"><span class="pre">restore_last_updated_from_db()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.output_manager.restore_completed_at_from_db"><code class="docutils literal notranslate"><span class="pre">restore_completed_at_from_db()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-parser-stealth">core.parser.stealth</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.apply_advanced_stealth_masking"><code class="docutils literal notranslate"><span class="pre">apply_advanced_stealth_masking()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.apply_headless_masking"><code class="docutils literal notranslate"><span class="pre">apply_headless_masking()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.stealth_open_url"><code class="docutils literal notranslate"><span class="pre">stealth_open_url()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.stealth_click"><code class="docutils literal notranslate"><span class="pre">stealth_click()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.add_stealth_behavior"><code class="docutils literal notranslate"><span class="pre">add_stealth_behavior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.check_stealth_detection"><code class="docutils literal notranslate"><span class="pre">check_stealth_detection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.restore_stealth_masking"><code class="docutils literal notranslate"><span class="pre">restore_stealth_masking()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.safe_stealth_execution"><code class="docutils literal notranslate"><span class="pre">safe_stealth_execution()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.handle_stealth_detection"><code class="docutils literal notranslate"><span class="pre">handle_stealth_detection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.stealth_type"><code class="docutils literal notranslate"><span class="pre">stealth_type()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.stealth.stealth_wait_for_element"><code class="docutils literal notranslate"><span class="pre">stealth_wait_for_element()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-parser-visual-processor">core.parser.visual_processor</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.is_zone_file"><code class="docutils literal notranslate"><span class="pre">is_zone_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.has_detail"><code class="docutils literal notranslate"><span class="pre">has_detail()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.prune_for_detail"><code class="docutils literal notranslate"><span class="pre">prune_for_detail()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.wait_for_document_ready"><code class="docutils literal notranslate"><span class="pre">wait_for_document_ready()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.wait_for_pictograms_grid"><code class="docutils literal notranslate"><span class="pre">wait_for_pictograms_grid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.wait_for_all_sections_loaded"><code class="docutils literal notranslate"><span class="pre">wait_for_all_sections_loaded()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.wait_for_all_svgs_ready"><code class="docutils literal notranslate"><span class="pre">wait_for_all_svgs_ready()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.wait_for_dom_stability"><code class="docutils literal notranslate"><span class="pre">wait_for_dom_stability()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.ensure_document_ready"><code class="docutils literal notranslate"><span class="pre">ensure_document_ready()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.find_pictograms_grid_reliable"><code class="docutils literal notranslate"><span class="pre">find_pictograms_grid_reliable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.wait_for_sections_stability"><code class="docutils literal notranslate"><span class="pre">wait_for_sections_stability()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.wait_for_works_in_section"><code class="docutils literal notranslate"><span class="pre">wait_for_works_in_section()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.split_svg_by_details"><code class="docutils literal notranslate"><span class="pre">split_svg_by_details()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.save_svg_sync"><code class="docutils literal notranslate"><span class="pre">save_svg_sync()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.save_main_screenshot_and_svg"><code class="docutils literal notranslate"><span class="pre">save_main_screenshot_and_svg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.extract_zones"><code class="docutils literal notranslate"><span class="pre">extract_zones()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.process_zone"><code class="docutils literal notranslate"><span class="pre">process_zone()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.ensure_zone_details_extracted"><code class="docutils literal notranslate"><span class="pre">ensure_zone_details_extracted()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.visual_processor.process_pictograms"><code class="docutils literal notranslate"><span class="pre">process_pictograms()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Модуль парсера (parser)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/modules/parser.rst.txt" rel="nofollow"> Просмотреть исходный код страницы</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="parser">
+<h1>Модуль парсера (parser)<a class="headerlink" href="#parser" title="Ссылка на этот заголовок"></a></h1>
+<section id="id1">
+<h2>Обзор<a class="headerlink" href="#id1" title="Ссылка на этот заголовок"></a></h2>
+<p>Модуль парсера обеспечивает автоматический сбор данных автомобилей с сайта Audatex с использованием Selenium WebDriver.</p>
+<p>Основные компоненты:</p>
+<ul class="simple">
+<li><p><strong>parser.py</strong> - Основной модуль парсинга</p></li>
+<li><p><strong>browser.py</strong> - Управление браузером и WebDriver</p></li>
+<li><p><strong>actions.py</strong> - Действия с веб-элементами</p></li>
+<li><p><strong>auth.py</strong> - Аутентификация на сайте Audatex</p></li>
+<li><p><strong>constants.py</strong> - Константы и настройки</p></li>
+<li><p><strong>folder_manager.py</strong> - Управление файлами и папками</p></li>
+<li><p><strong>option_processor.py</strong> - Обработка опций автомобиля</p></li>
+<li><p><strong>output_manager.py</strong> - Управление выходными данными</p></li>
+<li><p><strong>stealth.py</strong> - Скрытие автоматизации от обнаружения</p></li>
+<li><p><strong>visual_processor.py</strong> - Обработка визуальных данных (SVG, скриншоты)</p></li>
+</ul>
+</section>
+<section id="id2">
+<h2>Модули<a class="headerlink" href="#id2" title="Ссылка на этот заголовок"></a></h2>
+</section>
+<section id="core-parser-parser">
+<h2>core.parser.parser<a class="headerlink" href="#core-parser-parser" title="Ссылка на этот заголовок"></a></h2>
+<p>Основной модуль парсинга данных автомобилей.</p>
+<p id="module-core.parser.parser">Основной модуль парсинга данных автомобилей</p>
+<dl class="simple">
+<dt>Основные функции:</dt><dd><ul class="simple">
+<li><p>search_and_extract: Поиск и извлечение данных по номеру заявки и VIN</p></li>
+<li><p>login_audatex: Асинхронный вход в Audatex и запуск парсинга</p></li>
+<li><p>terminate_all_processes_and_restart: Завершение всех процессов Chrome и перезапуск парсера</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.parser.search_and_extract">
+<span class="sig-prename descclassname"><span class="pre">core.parser.parser.</span></span><span class="sig-name descname"><span class="pre">search_and_extract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">started_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/parser.html#search_and_extract"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.parser.search_and_extract" title="Ссылка на это определение"></a></dt>
+<dd><p>Поиск и извлечение данных по номеру заявки и VIN.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> – WebDriver - экземпляр браузера</p></li>
+<li><p><strong>claim_number</strong> – str - номер заявки</p></li>
+<li><p><strong>vin_number</strong> – str - VIN автомобиля</p></li>
+<li><p><strong>svg_collection</strong> – bool - собирать SVG (по умолчанию True)</p></li>
+<li><p><strong>started_at</strong> – datetime|str|None - время старта (опционально)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict - результат парсинга или описание ошибки</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.parser.login_audatex">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.parser.parser.</span></span><span class="sig-name descname"><span class="pre">login_audatex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">started_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/parser.html#login_audatex"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.parser.login_audatex" title="Ссылка на это определение"></a></dt>
+<dd><p>Асинхронный вход в Audatex и запуск парсинга.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>username</strong> (<em>str</em>) – str - логин пользователя</p></li>
+<li><p><strong>password</strong> (<em>str</em>) – str - пароль пользователя</p></li>
+<li><p><strong>claim_number</strong> (<em>str</em>) – str - номер заявки</p></li>
+<li><p><strong>vin_number</strong> (<em>str</em>) – str - VIN автомобиля</p></li>
+<li><p><strong>svg_collection</strong> (<em>bool</em>) – bool - собирать SVG (по умолчанию True)</p></li>
+<li><p><strong>started_at</strong> – datetime|str|None - время старта (опционально)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict - результат парсинга или описание ошибки</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.parser.terminate_all_processes_and_restart">
+<span class="sig-prename descclassname"><span class="pre">core.parser.parser.</span></span><span class="sig-name descname"><span class="pre">terminate_all_processes_and_restart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/parser.html#terminate_all_processes_and_restart"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.parser.terminate_all_processes_and_restart" title="Ссылка на это определение"></a></dt>
+<dd><p>Завершение всех процессов Chrome и перезапуск парсера.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>current_url</strong> – str|None - URL для восстановления (опционально)</p>
+</dd>
+<dt class="field-even">Результат<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-parser-browser">
+<h2>core.parser.browser<a class="headerlink" href="#core-parser-browser" title="Ссылка на этот заголовок"></a></h2>
+<p>Управление браузером Chrome и WebDriver.</p>
+<p id="module-core.parser.browser">Управление браузером Chrome и WebDriver</p>
+<dl class="simple">
+<dt>Основные функции:</dt><dd><ul class="simple">
+<li><p>kill_chrome_processes: Завершает все процессы Chrome и ChromeDriver</p></li>
+<li><p>get_chromedriver_version: Получает версию установленного ChromeDriver</p></li>
+<li><p>init_browser: Инициализирует браузер Chrome с настройками для обхода бот-детекта</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.browser.kill_chrome_processes">
+<span class="sig-prename descclassname"><span class="pre">core.parser.browser.</span></span><span class="sig-name descname"><span class="pre">kill_chrome_processes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/browser.html#kill_chrome_processes"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.browser.kill_chrome_processes" title="Ссылка на это определение"></a></dt>
+<dd><p>Завершает все процессы Chrome и ChromeDriver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Результат<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.browser.get_chromedriver_version">
+<span class="sig-prename descclassname"><span class="pre">core.parser.browser.</span></span><span class="sig-name descname"><span class="pre">get_chromedriver_version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/browser.html#get_chromedriver_version"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.browser.get_chromedriver_version" title="Ссылка на это определение"></a></dt>
+<dd><p>Получает версию установленного ChromeDriver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Результат<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str - версия ChromeDriver или «неизвестно»</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.browser.init_browser">
+<span class="sig-prename descclassname"><span class="pre">core.parser.browser.</span></span><span class="sig-name descname"><span class="pre">init_browser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/browser.html#init_browser"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.browser.init_browser" title="Ссылка на это определение"></a></dt>
+<dd><p>Инициализирует браузер Chrome с настройками для обхода бот-детекта.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Результат<span class="colon">:</span></dt>
+<dd class="field-odd"><p>uc.Chrome - экземпляр браузера</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-parser-actions">
+<h2>core.parser.actions<a class="headerlink" href="#core-parser-actions" title="Ссылка на этот заголовок"></a></h2>
+<p>Действия с веб-элементами и навигация по сайту.</p>
+<dl class="py function" id="module-core.parser.actions">
+<dt class="sig sig-object py" id="core.parser.actions.human_like_delay">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">human_like_delay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_seconds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_seconds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#human_like_delay"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.human_like_delay" title="Ссылка на это определение"></a></dt>
+<dd><p>Человеческая задержка с рандомизацией</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_seconds</strong> (<em>float</em>)</p></li>
+<li><p><strong>max_seconds</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.human_like_click">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">human_like_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_actions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#human_like_click"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.human_like_click" title="Ссылка на это определение"></a></dt>
+<dd><p>Человеческий клик с рандомизацией</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>use_actions</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.add_human_behavior">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">add_human_behavior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#add_human_behavior"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.add_human_behavior" title="Ссылка на это определение"></a></dt>
+<dd><p>Добавляет человеческое поведение для обхода детекции</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.add_extended_human_behavior">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">add_extended_human_behavior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#add_extended_human_behavior"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.add_extended_human_behavior" title="Ссылка на это определение"></a></dt>
+<dd><p>Расширенное человеческое поведение с контролируемой общей задержкой.
+Распределяет задержку на различные человеческие действия.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>) – WebDriver instance</p></li>
+<li><p><strong>total_delay</strong> (<em>float</em>) – Общая задержка в секундах (по умолчанию 1 минута)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.check_for_bot_detection">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">check_for_bot_detection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#check_for_bot_detection"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.check_for_bot_detection" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверяет признаки детекции бота</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.handle_bot_detection">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">handle_bot_detection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#handle_bot_detection"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.handle_bot_detection" title="Ссылка на это определение"></a></dt>
+<dd><p>Обрабатывает детекцию бота с расширенным человеческим поведением</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.retry_on_failure">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">retry_on_failure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_attempts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#retry_on_failure"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.retry_on_failure" title="Ссылка на это определение"></a></dt>
+<dd><p>Быстрый декоратор для повторных попыток.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_attempts</strong> (<em>int</em>) – Максимальное количество попыток (по умолчанию 2)</p></li>
+<li><p><strong>delay</strong> (<em>float</em>) – Задержка между попытками (по умолчанию 0.5 сек)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.wait_for_table">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">wait_for_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#wait_for_table"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.wait_for_table" title="Ссылка на это определение"></a></dt>
+<dd><p>Ожидание загрузки таблицы с явным ожиданием элементов.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>selector</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.click_cansel_button">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">click_cansel_button</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#click_cansel_button"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.click_cansel_button" title="Ссылка на это определение"></a></dt>
+<dd><p>Нажатие кнопки отмены с явным ожиданием элемента.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.click_request_type_button">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">click_request_type_button</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">req_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#click_request_type_button"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.click_request_type_button" title="Ссылка на это определение"></a></dt>
+<dd><p>Переключение между типами заявок с явным ожиданием элементов.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>req_type</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.search_in_table">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">search_in_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#search_in_table"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.search_in_table" title="Ссылка на это определение"></a></dt>
+<dd><p>Поиск в таблице с расширенным человеческим поведением для обхода детекции.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>search_value</strong> (<em>str</em>)</p></li>
+<li><p><strong>search_type</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.click_more_icon">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">click_more_icon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#click_more_icon"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.click_more_icon" title="Ссылка на это определение"></a></dt>
+<dd><p>Нажатие иконки «Еще» с явным ожиданием элементов.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.open_task">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">open_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#open_task"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.open_task" title="Ссылка на это определение"></a></dt>
+<dd><p>Открытие задачи с явным ожиданием элемента.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.switch_to_frame_and_confirm">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">switch_to_frame_and_confirm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#switch_to_frame_and_confirm"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.switch_to_frame_and_confirm" title="Ссылка на это определение"></a></dt>
+<dd><p>Надёжное переключение в iframe с человеческим поведением и дополнительными проверками.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.click_breadcrumb">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">click_breadcrumb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#click_breadcrumb"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.click_breadcrumb" title="Ссылка на это определение"></a></dt>
+<dd><p>Нажатие breadcrumb с явным ожиданием элемента.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.is_table_empty">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">is_table_empty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#BREForm</span> <span class="pre">&gt;</span> <span class="pre">div</span> <span class="pre">&gt;</span> <span class="pre">div</span> <span class="pre">&gt;</span> <span class="pre">div.gdc-contentBlock-body</span> <span class="pre">&gt;</span> <span class="pre">div</span> <span class="pre">&gt;</span> <span class="pre">div.list-grid-container</span> <span class="pre">div.noHeaderDataGrid</span> <span class="pre">&gt;</span> <span class="pre">div</span> <span class="pre">&gt;</span> <span class="pre">div.z-inner</span> <span class="pre">&gt;</span> <span class="pre">div.z-scroller</span> <span class="pre">&gt;</span> <span class="pre">div.z-content-wrapper</span> <span class="pre">&gt;</span> <span class="pre">div.z-empty-text</span> <span class="pre">&gt;</span> <span class="pre">div</span> <span class="pre">&gt;</span> <span class="pre">div.no-items-title'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#is_table_empty"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.is_table_empty" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверка пустоты таблицы с человеческим поведением.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>selector</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.find_claim_data">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">find_claim_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#find_claim_data"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.find_claim_data" title="Ссылка на это определение"></a></dt>
+<dd><p>Поиск данных заявки с расширенным человеческим поведением для обхода детекции.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>claim_number</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>vin_number</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.actions.get_vin_status">
+<span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">get_vin_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#get_vin_status"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.get_vin_status" title="Ссылка на это определение"></a></dt>
+<dd><p>Определяет активный статус VIN кнопок с человеческим поведением.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Результат<span class="colon">:</span></dt>
+<dd class="field-odd"><p>«VIN», «VIN лайт» или «Нет»</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-parser-auth">
+<h2>core.parser.auth<a class="headerlink" href="#core-parser-auth" title="Ссылка на этот заголовок"></a></h2>
+<p>Аутентификация на сайте Audatex.</p>
+<p id="module-core.parser.auth">Аутентификация на сайте Audatex</p>
+<dl class="simple">
+<dt>Основные функции:</dt><dd><ul class="simple">
+<li><p>check_if_authorized: Проверяет, авторизован ли пользователь на текущей странице</p></li>
+<li><p>load_cookies: Загружает cookies и проверяет валидность авторизации</p></li>
+<li><p>perform_login: Выполняет авторизацию с сохранением cookies</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.auth.check_if_authorized">
+<span class="sig-prename descclassname"><span class="pre">core.parser.auth.</span></span><span class="sig-name descname"><span class="pre">check_if_authorized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/auth.html#check_if_authorized"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.auth.check_if_authorized" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверяет, авторизован ли пользователь на текущей странице.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> – WebDriver - экземпляр браузера</p>
+</dd>
+<dt class="field-even">Результат<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool - True если авторизован, False если нужна авторизация</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.auth.load_cookies">
+<span class="sig-prename descclassname"><span class="pre">core.parser.auth.</span></span><span class="sig-name descname"><span class="pre">load_cookies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cookies_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/auth.html#load_cookies"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.auth.load_cookies" title="Ссылка на это определение"></a></dt>
+<dd><p>Загружает cookies и проверяет валидность авторизации.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> – WebDriver - экземпляр браузера</p></li>
+<li><p><strong>url</strong> – str - URL для загрузки</p></li>
+<li><p><strong>cookies_file</strong> – str - путь к файлу cookies</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool - True если авторизация валидна, False если нужно логиниться</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.auth.perform_login">
+<span class="sig-prename descclassname"><span class="pre">core.parser.auth.</span></span><span class="sig-name descname"><span class="pre">perform_login</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cookies_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/auth.html#perform_login"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.auth.perform_login" title="Ссылка на это определение"></a></dt>
+<dd><p>Выполняет авторизацию с сохранением cookies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> – WebDriver - экземпляр браузера</p></li>
+<li><p><strong>username</strong> – str - имя пользователя</p></li>
+<li><p><strong>password</strong> – str - пароль</p></li>
+<li><p><strong>cookies_file</strong> – str - путь к файлу cookies</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool - True если авторизация успешна</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-parser-constants">
+<h2>core.parser.constants<a class="headerlink" href="#core-parser-constants" title="Ссылка на этот заголовок"></a></h2>
+<p>Константы и настройки парсера.</p>
+<p id="module-core.parser.constants">Константы и настройки парсера Audatex</p>
+<dl class="simple">
+<dt>Основные константы:</dt><dd><ul class="simple">
+<li><p>BASE_URL: str - Базовый URL сайта Audatex</p></li>
+<li><p>COOKIES_FILE: str - Файл для сохранения cookies</p></li>
+<li><p>SCREENSHOT_DIR: str - Директория для скриншотов</p></li>
+<li><p>SVG_DIR: str - Директория для SVG файлов</p></li>
+<li><p>DATA_DIR: str - Директория для данных</p></li>
+<li><p>TIMEOUT: int - Таймаут в секундах (30)</p></li>
+</ul>
+</dd>
+<dt>CSS селекторы:</dt><dd><ul class="simple">
+<li><p>MODAL_BUTTON_SELECTOR: str - Селектор кнопки модального окна</p></li>
+<li><p>MORE_ICON_SELECTOR: str - Селектор иконки «больше»</p></li>
+<li><p>VIN_SELECTOR: str - Селектор поля VIN</p></li>
+<li><p>CLAIM_NUMBER_SELECTOR: str - Селектор номера заявки</p></li>
+<li><p>OUTGOING_TABLE_SELECTOR: str - Селектор таблицы исходящих заявок</p></li>
+<li><p>OPEN_TABLE_SELECTOR: str - Селектор таблицы открытых заявок</p></li>
+<li><p>ROW_SELECTOR: str - Селектор строки таблицы</p></li>
+<li><p>IFRAME_ID: str - ID iframe для веб-пада</p></li>
+<li><p>EMPTY_TABLE_TEXT_SELECTOR: str - Селектор текста пустой таблицы</p></li>
+</ul>
+</dd>
+<dt>Текстовые константы:</dt><dd><ul class="simple">
+<li><p>EMPTY_TABLE_TEXT: str - Текст пустой таблицы</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="core-parser-folder-manager">
+<h2>core.parser.folder_manager<a class="headerlink" href="#core-parser-folder-manager" title="Ссылка на этот заголовок"></a></h2>
+<p>Управление файлами и папками для сохранения данных.</p>
+<p id="module-core.parser.folder_manager">Управление файлами и папками для сохранения данных</p>
+<dl class="simple">
+<dt>Основные функции:</dt><dd><ul class="simple">
+<li><p>safe_remove_directory: Безопасно удаляет директорию и все её содержимое</p></li>
+<li><p>create_folders: Создаёт папки для сохранения данных с перезаписью существующих</p></li>
+<li><p>extract_vin_and_claim_number: Извлекает VIN и claim_number со страницы</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.folder_manager.safe_remove_directory">
+<span class="sig-prename descclassname"><span class="pre">core.parser.folder_manager.</span></span><span class="sig-name descname"><span class="pre">safe_remove_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/folder_manager.html#safe_remove_directory"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.folder_manager.safe_remove_directory" title="Ссылка на это определение"></a></dt>
+<dd><p>Безопасно удаляет директорию и все её содержимое кроссплатформенно</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.folder_manager.create_folders">
+<span class="sig-prename descclassname"><span class="pre">core.parser.folder_manager.</span></span><span class="sig-name descname"><span class="pre">create_folders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/folder_manager.html#create_folders"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.folder_manager.create_folders" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.folder_manager.extract_vin_and_claim_number">
+<span class="sig-prename descclassname"><span class="pre">core.parser.folder_manager.</span></span><span class="sig-name descname"><span class="pre">extract_vin_and_claim_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/folder_manager.html#extract_vin_and_claim_number"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.folder_manager.extract_vin_and_claim_number" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="core-parser-option-processor">
+<h2>core.parser.option_processor<a class="headerlink" href="#core-parser-option-processor" title="Ссылка на этот заголовок"></a></h2>
+<p>Обработка опций и комплектации автомобиля.</p>
+<p id="module-core.parser.option_processor">Модуль для сбора опций автомобиля из системы Audatex.
+Универсальный обобщенный алгоритм без жесткой типизации.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.wait_for_element_stable">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">wait_for_element_stable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#wait_for_element_stable"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.wait_for_element_stable" title="Ссылка на это определение"></a></dt>
+<dd><p>Ждет стабилизации элемента с оптимизированным polling</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.wait_for_element_clickable">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">wait_for_element_clickable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#wait_for_element_clickable"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.wait_for_element_clickable" title="Ссылка на это определение"></a></dt>
+<dd><p>Ждет готовности элемента к клику</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.wait_for_content_loaded">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">wait_for_content_loaded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#wait_for_content_loaded"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.wait_for_content_loaded" title="Ссылка на это определение"></a></dt>
+<dd><p>Ждет загрузки контента опций</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.navigate_to_options">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">navigate_to_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#navigate_to_options"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.navigate_to_options" title="Ссылка на это определение"></a></dt>
+<dd><p>Переходит к разделу опций через селектор #navigation-adjustment</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.ensure_in_iframe">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">ensure_in_iframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#ensure_in_iframe"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.ensure_in_iframe" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверяет, находимся ли мы в нужном iframe, и переключается если нужно</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.extract_option_zones">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">extract_option_zones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#extract_option_zones"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.extract_option_zones" title="Ссылка на это определение"></a></dt>
+<dd><p>Извлекает ВСЕ зоны опций из div#model-options-sections включая специальные</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.parse_option_code_title">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">parse_option_code_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option_text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#parse_option_code_title"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.parse_option_code_title" title="Ссылка на это определение"></a></dt>
+<dd><p>Парсит текст опции для извлечения кода и названия с улучшенной логикой</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.extract_sections_from_container">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">extract_sections_from_container</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_container</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#extract_sections_from_container"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.extract_sections_from_container" title="Ссылка на это определение"></a></dt>
+<dd><p>Универсально извлекает секции из контейнера если они есть</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.extract_azt_options_from_container">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">extract_azt_options_from_container</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_container</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#extract_azt_options_from_container"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.extract_azt_options_from_container" title="Ссылка на это определение"></a></dt>
+<dd><p>Извлекает опции AZT зоны с универсальными селекторами</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.extract_predefined_options_from_container">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">extract_predefined_options_from_container</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_container</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#extract_predefined_options_from_container"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.extract_predefined_options_from_container" title="Ссылка на это определение"></a></dt>
+<dd><p>Извлекает предустановленные опции из контейнера predefined-model-options</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.extract_regular_options_from_container">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">extract_regular_options_from_container</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_container</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#extract_regular_options_from_container"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.extract_regular_options_from_container" title="Ссылка на это определение"></a></dt>
+<dd><p>Специальная функция для извлечения опций из regular-options секции</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.find_all_option_elements_in_container">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">find_all_option_elements_in_container</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_container</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#find_all_option_elements_in_container"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.find_all_option_elements_in_container" title="Ссылка на это определение"></a></dt>
+<dd><p>Универсально находит все возможные элементы опций в контейнере</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.extract_option_from_element">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">extract_option_from_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option_element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section_suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#extract_option_from_element"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.extract_option_from_element" title="Ссылка на это определение"></a></dt>
+<dd><p>Универсально извлекает данные опции из элемента с улучшенной фильтрацией</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.extract_options_with_sections">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">extract_options_with_sections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sections</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#extract_options_with_sections"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.extract_options_with_sections" title="Ссылка на это определение"></a></dt>
+<dd><p>Извлекает опции сгруппированные по секциям</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.extract_options_without_sections">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">extract_options_without_sections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_container</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#extract_options_without_sections"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.extract_options_without_sections" title="Ссылка на это определение"></a></dt>
+<dd><p>Извлекает опции без группировки по секциям</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.extract_zone_options_universal">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">extract_zone_options_universal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zone</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#extract_zone_options_universal"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.extract_zone_options_universal" title="Ссылка на это определение"></a></dt>
+<dd><p>Универсальная функция извлечения опций из любой зоны с обобщенным алгоритмом</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.extract_all_selected_options_from_container">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">extract_all_selected_options_from_container</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_container</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#extract_all_selected_options_from_container"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.extract_all_selected_options_from_container" title="Ссылка на это определение"></a></dt>
+<dd><p>Специальная функция для извлечения опций из зоны „Все выбранные опции“</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.collect_all_options_extended">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">collect_all_options_extended</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#collect_all_options_extended"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.collect_all_options_extended" title="Ссылка на это определение"></a></dt>
+<dd><p>Расширенная функция сбора всех опций со всех зон с детальной отчетностью</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.collect_all_options">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">collect_all_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#collect_all_options"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.collect_all_options" title="Ссылка на это определение"></a></dt>
+<dd><p>Собирает все опции со всех зон (оригинальная функция для обратной совместимости)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.option_processor.process_vehicle_options">
+<span class="sig-prename descclassname"><span class="pre">core.parser.option_processor.</span></span><span class="sig-name descname"><span class="pre">process_vehicle_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/option_processor.html#process_vehicle_options"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.option_processor.process_vehicle_options" title="Ссылка на это определение"></a></dt>
+<dd><p>Основная функция обработки опций автомобиля</p>
+</dd></dl>
+
+</section>
+<section id="core-parser-output-manager">
+<h2>core.parser.output_manager<a class="headerlink" href="#core-parser-output-manager" title="Ссылка на этот заголовок"></a></h2>
+<p>Управление выходными данными и их сохранение.</p>
+<p id="module-core.parser.output_manager">Управление выходными данными и их сохранение</p>
+<dl class="simple">
+<dt>Основные функции:</dt><dd><ul class="simple">
+<li><p>create_zones_table: Формирует HTML-таблицу зон</p></li>
+<li><p>save_data_to_json: Сохраняет данные в JSON файл</p></li>
+<li><p>restore_started_at_from_db: Восстанавливает started_at из базы данных</p></li>
+<li><p>restore_last_updated_from_db: Восстанавливает last_updated из базы данных</p></li>
+<li><p>restore_completed_at_from_db: Восстанавливает completed_at из базы данных</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.output_manager.create_zones_table">
+<span class="sig-prename descclassname"><span class="pre">core.parser.output_manager.</span></span><span class="sig-name descname"><span class="pre">create_zones_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zone_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/output_manager.html#create_zones_table"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.output_manager.create_zones_table" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.output_manager.save_data_to_json">
+<span class="sig-prename descclassname"><span class="pre">core.parser.output_manager.</span></span><span class="sig-name descname"><span class="pre">save_data_to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vin_value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zone_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_screenshot_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_svg_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zones_table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_svgs_zip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin_status</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Нет'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">started_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">completed_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_intermediate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/output_manager.html#save_data_to_json"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.output_manager.save_data_to_json" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.output_manager.restore_started_at_from_db">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.parser.output_manager.</span></span><span class="sig-name descname"><span class="pre">restore_started_at_from_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/output_manager.html#restore_started_at_from_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.output_manager.restore_started_at_from_db" title="Ссылка на это определение"></a></dt>
+<dd><p>Восстанавливает started_at из БД если в JSON он null
+Учитывает часовой пояс: БД хранит в UTC+3, JSON должен показывать московское время</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>json_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
+<li><p><strong>vin_number</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.output_manager.restore_last_updated_from_db">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.parser.output_manager.</span></span><span class="sig-name descname"><span class="pre">restore_last_updated_from_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/output_manager.html#restore_last_updated_from_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.output_manager.restore_last_updated_from_db" title="Ссылка на это определение"></a></dt>
+<dd><p>Восстанавливает last_updated из БД если в JSON он неправильный
+Учитывает часовой пояс: БД хранит в UTC+3, JSON должен показывать московское время</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>json_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
+<li><p><strong>vin_number</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.output_manager.restore_completed_at_from_db">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.parser.output_manager.</span></span><span class="sig-name descname"><span class="pre">restore_completed_at_from_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/output_manager.html#restore_completed_at_from_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.output_manager.restore_completed_at_from_db" title="Ссылка на это определение"></a></dt>
+<dd><p>Восстанавливает completed_at из БД если в JSON он null или неправильный
+Учитывает часовой пояс: БД хранит в UTC+3, JSON должен показывать московское время</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>json_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
+<li><p><strong>vin_number</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-parser-stealth">
+<h2>core.parser.stealth<a class="headerlink" href="#core-parser-stealth" title="Ссылка на этот заголовок"></a></h2>
+<p>Скрытие автоматизации от обнаружения сайтом.</p>
+<dl class="py function" id="module-core.parser.stealth">
+<dt class="sig sig-object py" id="core.parser.stealth.apply_advanced_stealth_masking">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">apply_advanced_stealth_masking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#apply_advanced_stealth_masking"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.apply_advanced_stealth_masking" title="Ссылка на это определение"></a></dt>
+<dd><p>Применяет расширенные настройки для маскировки headless режима
+Основано на современных методах обхода бот-детекта</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.stealth.apply_headless_masking">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">apply_headless_masking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#apply_headless_masking"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.apply_headless_masking" title="Ссылка на это определение"></a></dt>
+<dd><p>Применяет дополнительные настройки для маскировки headless режима</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.stealth.stealth_open_url">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">stealth_open_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reconnect_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#stealth_open_url"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.stealth_open_url" title="Ссылка на это определение"></a></dt>
+<dd><p>Скрытное открытие URL с методами обхода детекции</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>url</strong> (<em>str</em>)</p></li>
+<li><p><strong>reconnect_time</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.stealth.stealth_click">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">stealth_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_actions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#stealth_click"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.stealth_click" title="Ссылка на это определение"></a></dt>
+<dd><p>Скрытный клик с обходом детекции</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>selector</strong> (<em>str</em>)</p></li>
+<li><p><strong>use_actions</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.stealth.add_stealth_behavior">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">add_stealth_behavior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#add_stealth_behavior"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.add_stealth_behavior" title="Ссылка на это определение"></a></dt>
+<dd><p>Добавляет stealth-поведение для обхода детекции</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.stealth.check_stealth_detection">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">check_stealth_detection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#check_stealth_detection"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.check_stealth_detection" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверяет признаки детекции stealth-методов</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.stealth.restore_stealth_masking">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">restore_stealth_masking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#restore_stealth_masking"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.restore_stealth_masking" title="Ссылка на это определение"></a></dt>
+<dd><p>Восстанавливает stealth маскировку при обнаружении детекции</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.stealth.safe_stealth_execution">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">safe_stealth_execution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation_func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#safe_stealth_execution"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.safe_stealth_execution" title="Ссылка на это определение"></a></dt>
+<dd><p>Безопасное выполнение stealth операций с восстановлением после ошибок</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>operation_name</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.stealth.handle_stealth_detection">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">handle_stealth_detection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#handle_stealth_detection"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.handle_stealth_detection" title="Ссылка на это определение"></a></dt>
+<dd><p>Обрабатывает детекцию stealth-методов с расширенным человеческим поведением</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>url</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.stealth.stealth_type">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">stealth_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#stealth_type"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.stealth_type" title="Ссылка на это определение"></a></dt>
+<dd><p>Скрытный ввод текста с человеческими паузами</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>selector</strong> (<em>str</em>)</p></li>
+<li><p><strong>text</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.stealth.stealth_wait_for_element">
+<span class="sig-prename descclassname"><span class="pre">core.parser.stealth.</span></span><span class="sig-name descname"><span class="pre">stealth_wait_for_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/stealth.html#stealth_wait_for_element"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.stealth.stealth_wait_for_element" title="Ссылка на это определение"></a></dt>
+<dd><p>Скрытное ожидание элемента с проверкой детекции</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>driver</strong> (<em>selenium.webdriver.remote.webdriver.WebDriver</em>)</p></li>
+<li><p><strong>selector</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Тип результата<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="core-parser-visual-processor">
+<h2>core.parser.visual_processor<a class="headerlink" href="#core-parser-visual-processor" title="Ссылка на этот заголовок"></a></h2>
+<p>Обработка визуальных данных: SVG схемы и скриншоты.</p>
+<dl class="py function" id="module-core.parser.visual_processor">
+<dt class="sig sig-object py" id="core.parser.visual_processor.is_zone_file">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">is_zone_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#is_zone_file"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.is_zone_file" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверяет, является ли файл файлом зоны.</p>
+<p>Файлы зон всегда начинаются с „<a href="#id3"><span class="problematic" id="id4">zone_</span></a>“ и не содержат „pictogram“ в названии.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – str - имя файла для проверки</p>
+</dd>
+<dt class="field-even">Результат<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool - True если файл является файлом зоны</p>
+</dd>
+<dt class="field-odd">Тип результата<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.has_detail">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">has_detail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detail</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#has_detail"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.has_detail" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.prune_for_detail">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">prune_for_detail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detail</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#prune_for_detail"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.prune_for_detail" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.wait_for_document_ready">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">wait_for_document_ready</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#wait_for_document_ready"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.wait_for_document_ready" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.wait_for_pictograms_grid">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">wait_for_pictograms_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#wait_for_pictograms_grid"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.wait_for_pictograms_grid" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.wait_for_all_sections_loaded">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">wait_for_all_sections_loaded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#wait_for_all_sections_loaded"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.wait_for_all_sections_loaded" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.wait_for_all_svgs_ready">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">wait_for_all_svgs_ready</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#wait_for_all_svgs_ready"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.wait_for_all_svgs_ready" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.wait_for_dom_stability">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">wait_for_dom_stability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#wait_for_dom_stability"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.wait_for_dom_stability" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.ensure_document_ready">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">ensure_document_ready</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#ensure_document_ready"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.ensure_document_ready" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.find_pictograms_grid_reliable">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">find_pictograms_grid_reliable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#find_pictograms_grid_reliable"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.find_pictograms_grid_reliable" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.wait_for_sections_stability">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">wait_for_sections_stability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#wait_for_sections_stability"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.wait_for_sections_stability" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.wait_for_works_in_section">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">wait_for_works_in_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">holder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#wait_for_works_in_section"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.wait_for_works_in_section" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.split_svg_by_details">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">split_svg_by_details</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">svg_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subfolder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#split_svg_by_details"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.split_svg_by_details" title="Ссылка на это определение"></a></dt>
+<dd><p>Разбивает SVG-файл на отдельные SVG для каждой детали, где каждая деталь соответствует уникальному data-title.
+Если svg_collection=False, извлекает только данные без сохранения файлов.
+ГАРАНТИРУЕТ извлечение деталей из любого SVG файла зоны.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.save_svg_sync">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">save_svg_sync</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#save_svg_sync"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.save_svg_sync" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.save_main_screenshot_and_svg">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">save_main_screenshot_and_svg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">screenshot_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#save_main_screenshot_and_svg"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.save_main_screenshot_and_svg" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.extract_zones">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">extract_zones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#extract_zones"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.extract_zones" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.process_zone">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">process_zone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zone</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">screenshot_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#process_zone"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.process_zone" title="Ссылка на это определение"></a></dt>
+<dd><p>Обрабатывает одну зону, включая сохранение скриншота, SVG и пиктограмм.
+max_retries: максимальное количество повторных попыток при ошибке сессии.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.ensure_zone_details_extracted">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">ensure_zone_details_extracted</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zone_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#ensure_zone_details_extracted"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.ensure_zone_details_extracted" title="Ссылка на это определение"></a></dt>
+<dd><p>Проверяет зоны в zone_data и дозаполняет детали если они отсутствуют.
+ГАРАНТИРУЕТ что все зоны имеют извлеченные детали.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.visual_processor.process_pictograms">
+<span class="sig-prename descclassname"><span class="pre">core.parser.visual_processor.</span></span><span class="sig-name descname"><span class="pre">process_pictograms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zone</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">screenshot_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zone_screenshot_relative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/visual_processor.html#process_pictograms"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.visual_processor.process_pictograms" title="Ссылка на это определение"></a></dt>
+<dd><p>Собирает данные о пиктограммах в зоне, сохраняя SVG для каждой работы.
+Использует улучшенные стратегии ожидания для надежности.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Нижняя область">
+        <a href="database.html" class="btn btn-neutral float-left" title="Модуль базы данных (database)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Предыдущая</a>
+        <a href="queue.html" class="btn btn-neutral float-right" title="Модуль очереди (queue)" accesskey="n" rel="next">Следующая <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

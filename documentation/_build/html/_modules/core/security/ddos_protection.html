@@ -1,0 +1,482 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ru" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.security.ddos_protection &mdash; документация Audotex Parser 1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=9ca2116e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/translations.js?v=cd1d70c9"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="../../../genindex.html" />
+    <link rel="search" title="Поиск" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Audotex Parser
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Меню навигации">
+              <p class="caption" role="heading"><span class="caption-text">Модули:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Меню навигации для мобильных устройств" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Audotex Parser</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Навигация по страницам">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Код модуля</a></li>
+      <li class="breadcrumb-item active">core.security.ddos_protection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Исходный код core.security.ddos_protection</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Дополнительная защита от DDoS атак</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Request</span><span class="p">,</span> <span class="n">status</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONResponse</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Список подозрительных User-Agent</span>
+<span class="n">SUSPICIOUS_USER_AGENTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;bot&quot;</span><span class="p">,</span> <span class="s2">&quot;crawler&quot;</span><span class="p">,</span> <span class="s2">&quot;spider&quot;</span><span class="p">,</span> <span class="s2">&quot;scraper&quot;</span><span class="p">,</span> <span class="s2">&quot;curl&quot;</span><span class="p">,</span> <span class="s2">&quot;wget&quot;</span><span class="p">,</span> <span class="s2">&quot;python-requests&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;masscan&quot;</span><span class="p">,</span> <span class="s2">&quot;nmap&quot;</span><span class="p">,</span> <span class="s2">&quot;sqlmap&quot;</span><span class="p">,</span> <span class="s2">&quot;nikto&quot;</span><span class="p">,</span> <span class="s2">&quot;dirbuster&quot;</span><span class="p">,</span> <span class="s2">&quot;gobuster&quot;</span><span class="p">,</span> <span class="s2">&quot;wfuzz&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;hydra&quot;</span><span class="p">,</span> <span class="s2">&quot;medusa&quot;</span><span class="p">,</span> <span class="s2">&quot;ncrack&quot;</span><span class="p">,</span> <span class="s2">&quot;john&quot;</span><span class="p">,</span> <span class="s2">&quot;hashcat&quot;</span><span class="p">,</span> <span class="s2">&quot;aircrack&quot;</span><span class="p">,</span> <span class="s2">&quot;kismet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;metasploit&quot;</span><span class="p">,</span> <span class="s2">&quot;beef&quot;</span><span class="p">,</span> <span class="s2">&quot;empire&quot;</span><span class="p">,</span> <span class="s2">&quot;cobalt&quot;</span><span class="p">,</span> <span class="s2">&quot;burp&quot;</span><span class="p">,</span> <span class="s2">&quot;zap&quot;</span><span class="p">,</span> <span class="s2">&quot;nikto&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sqlmap&quot;</span><span class="p">,</span> <span class="s2">&quot;xsser&quot;</span><span class="p">,</span> <span class="s2">&quot;commix&quot;</span><span class="p">,</span> <span class="s2">&quot;weevely&quot;</span><span class="p">,</span> <span class="s2">&quot;webshell&quot;</span><span class="p">,</span> <span class="s2">&quot;backdoor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;malware&quot;</span><span class="p">,</span> <span class="s2">&quot;virus&quot;</span><span class="p">,</span> <span class="s2">&quot;trojan&quot;</span><span class="p">,</span> <span class="s2">&quot;rootkit&quot;</span><span class="p">,</span> <span class="s2">&quot;keylogger&quot;</span><span class="p">,</span> <span class="s2">&quot;spyware&quot;</span>
+<span class="p">}</span>
+
+<span class="c1"># Список известных ботов (разрешенные)</span>
+<span class="n">ALLOWED_BOTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;googlebot&quot;</span><span class="p">,</span> <span class="s2">&quot;bingbot&quot;</span><span class="p">,</span> <span class="s2">&quot;slurp&quot;</span><span class="p">,</span> <span class="s2">&quot;duckduckbot&quot;</span><span class="p">,</span> <span class="s2">&quot;facebookexternalhit&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;twitterbot&quot;</span><span class="p">,</span> <span class="s2">&quot;linkedinbot&quot;</span><span class="p">,</span> <span class="s2">&quot;whatsapp&quot;</span><span class="p">,</span> <span class="s2">&quot;telegrambot&quot;</span><span class="p">,</span> <span class="s2">&quot;discordbot&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;slackbot&quot;</span><span class="p">,</span> <span class="s2">&quot;applebot&quot;</span><span class="p">,</span> <span class="s2">&quot;yandexbot&quot;</span><span class="p">,</span> <span class="s2">&quot;baiduspider&quot;</span><span class="p">,</span> <span class="s2">&quot;sogou&quot;</span>
+<span class="p">}</span>
+
+<span class="c1"># Паттерны для определения автоматизированных запросов</span>
+<span class="n">AUTOMATION_PATTERNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="sa">r</span><span class="s2">&quot;python-requests/\d+\.\d+\.\d+&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;curl/\d+\.\d+\.\d+&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;wget/\d+\.\d+\.\d+&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;masscan&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;nmap&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;sqlmap&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;nikto&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;dirbuster&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;gobuster&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;wfuzz&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;hydra&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;medusa&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;ncrack&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;john&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;hashcat&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;aircrack&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;kismet&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;metasploit&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;beef&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;empire&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;cobalt&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;burp&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;zap&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;xsser&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;commix&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;weevely&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;webshell&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;backdoor&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;malware&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;virus&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;trojan&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;rootkit&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;keylogger&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;spyware&quot;</span>
+<span class="p">]</span>
+
+<span class="c1"># Подозрительные заголовки</span>
+<span class="n">SUSPICIOUS_HEADERS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;x-forwarded-for&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;^(?!\d+\.\d+\.\d+\.\d+$)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;x-real-ip&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;^(?!\d+\.\d+\.\d+\.\d+$)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;x-client-ip&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;^(?!\d+\.\d+\.\d+\.\d+$)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;cf-connecting-ip&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;^(?!\d+\.\d+\.\d+\.\d+$)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;x-forwarded&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;^(?!\d+\.\d+\.\d+\.\d+$)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;forwarded-for&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;^(?!\d+\.\d+\.\d+\.\d+$)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;forwarded&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;^(?!\d+\.\d+\.\d+\.\d+$)&quot;</span>
+<span class="p">}</span>
+
+<span class="c1"># Подозрительные параметры запроса</span>
+<span class="n">SUSPICIOUS_PARAMS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;union&quot;</span><span class="p">,</span> <span class="s2">&quot;select&quot;</span><span class="p">,</span> <span class="s2">&quot;insert&quot;</span><span class="p">,</span> <span class="s2">&quot;update&quot;</span><span class="p">,</span> <span class="s2">&quot;delete&quot;</span><span class="p">,</span> <span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="s2">&quot;create&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alter&quot;</span><span class="p">,</span> <span class="s2">&quot;exec&quot;</span><span class="p">,</span> <span class="s2">&quot;execute&quot;</span><span class="p">,</span> <span class="s2">&quot;script&quot;</span><span class="p">,</span> <span class="s2">&quot;javascript&quot;</span><span class="p">,</span> <span class="s2">&quot;vbscript&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;onload&quot;</span><span class="p">,</span> <span class="s2">&quot;onerror&quot;</span><span class="p">,</span> <span class="s2">&quot;onclick&quot;</span><span class="p">,</span> <span class="s2">&quot;onmouseover&quot;</span><span class="p">,</span> <span class="s2">&quot;onfocus&quot;</span><span class="p">,</span> <span class="s2">&quot;onblur&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;eval&quot;</span><span class="p">,</span> <span class="s2">&quot;alert&quot;</span><span class="p">,</span> <span class="s2">&quot;confirm&quot;</span><span class="p">,</span> <span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;document&quot;</span><span class="p">,</span> <span class="s2">&quot;window&quot;</span><span class="p">,</span> <span class="s2">&quot;location&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;cookie&quot;</span><span class="p">,</span> <span class="s2">&quot;localstorage&quot;</span><span class="p">,</span> <span class="s2">&quot;sessionstorage&quot;</span><span class="p">,</span> <span class="s2">&quot;xmlhttprequest&quot;</span><span class="p">,</span> <span class="s2">&quot;fetch&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;websocket&quot;</span><span class="p">,</span> <span class="s2">&quot;sse&quot;</span><span class="p">,</span> <span class="s2">&quot;postmessage&quot;</span><span class="p">,</span> <span class="s2">&quot;iframe&quot;</span><span class="p">,</span> <span class="s2">&quot;embed&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;applet&quot;</span><span class="p">,</span> <span class="s2">&quot;base&quot;</span><span class="p">,</span> <span class="s2">&quot;link&quot;</span><span class="p">,</span> <span class="s2">&quot;meta&quot;</span><span class="p">,</span> <span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;html&quot;</span><span class="p">,</span> <span class="s2">&quot;xml&quot;</span><span class="p">,</span> <span class="s2">&quot;svg&quot;</span><span class="p">,</span> <span class="s2">&quot;math&quot;</span><span class="p">,</span> <span class="s2">&quot;form&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="s2">&quot;textarea&quot;</span><span class="p">,</span> <span class="s2">&quot;select&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;option&quot;</span><span class="p">,</span> <span class="s2">&quot;button&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="s2">&quot;fieldset&quot;</span><span class="p">,</span> <span class="s2">&quot;legend&quot;</span><span class="p">,</span> <span class="s2">&quot;datalist&quot;</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;progress&quot;</span><span class="p">,</span> <span class="s2">&quot;meter&quot;</span><span class="p">,</span> <span class="s2">&quot;details&quot;</span><span class="p">,</span> <span class="s2">&quot;summary&quot;</span><span class="p">,</span> <span class="s2">&quot;menu&quot;</span><span class="p">,</span> <span class="s2">&quot;menuitem&quot;</span><span class="p">,</span> <span class="s2">&quot;command&quot;</span>
+<span class="p">}</span>
+
+<span class="c1"># Подозрительные пути</span>
+<span class="n">SUSPICIOUS_PATHS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;/admin&quot;</span><span class="p">,</span> <span class="s2">&quot;/administrator&quot;</span><span class="p">,</span> <span class="s2">&quot;/wp-admin&quot;</span><span class="p">,</span> <span class="s2">&quot;/wp-login&quot;</span><span class="p">,</span> <span class="s2">&quot;/phpmyadmin&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/mysql&quot;</span><span class="p">,</span> <span class="s2">&quot;/sql&quot;</span><span class="p">,</span> <span class="s2">&quot;/database&quot;</span><span class="p">,</span> <span class="s2">&quot;/db&quot;</span><span class="p">,</span> <span class="s2">&quot;/backup&quot;</span><span class="p">,</span> <span class="s2">&quot;/backups&quot;</span><span class="p">,</span> <span class="s2">&quot;/bak&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/old&quot;</span><span class="p">,</span> <span class="s2">&quot;/new&quot;</span><span class="p">,</span> <span class="s2">&quot;/test&quot;</span><span class="p">,</span> <span class="s2">&quot;/dev&quot;</span><span class="p">,</span> <span class="s2">&quot;/development&quot;</span><span class="p">,</span> <span class="s2">&quot;/staging&quot;</span><span class="p">,</span> <span class="s2">&quot;/prod&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/production&quot;</span><span class="p">,</span> <span class="s2">&quot;/config&quot;</span><span class="p">,</span> <span class="s2">&quot;/configuration&quot;</span><span class="p">,</span> <span class="s2">&quot;/settings&quot;</span><span class="p">,</span> <span class="s2">&quot;/setup&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/install&quot;</span><span class="p">,</span> <span class="s2">&quot;/installation&quot;</span><span class="p">,</span> <span class="s2">&quot;/uninstall&quot;</span><span class="p">,</span> <span class="s2">&quot;/remove&quot;</span><span class="p">,</span> <span class="s2">&quot;/delete&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/api&quot;</span><span class="p">,</span> <span class="s2">&quot;/rest&quot;</span><span class="p">,</span> <span class="s2">&quot;/graphql&quot;</span><span class="p">,</span> <span class="s2">&quot;/swagger&quot;</span><span class="p">,</span> <span class="s2">&quot;/docs&quot;</span><span class="p">,</span> <span class="s2">&quot;/documentation&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/help&quot;</span><span class="p">,</span> <span class="s2">&quot;/support&quot;</span><span class="p">,</span> <span class="s2">&quot;/contact&quot;</span><span class="p">,</span> <span class="s2">&quot;/about&quot;</span><span class="p">,</span> <span class="s2">&quot;/info&quot;</span><span class="p">,</span> <span class="s2">&quot;/status&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/health&quot;</span><span class="p">,</span> <span class="s2">&quot;/ping&quot;</span><span class="p">,</span> <span class="s2">&quot;/pong&quot;</span><span class="p">,</span> <span class="s2">&quot;/echo&quot;</span><span class="p">,</span> <span class="s2">&quot;/test&quot;</span><span class="p">,</span> <span class="s2">&quot;/debug&quot;</span><span class="p">,</span> <span class="s2">&quot;/log&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/logs&quot;</span><span class="p">,</span> <span class="s2">&quot;/error&quot;</span><span class="p">,</span> <span class="s2">&quot;/errors&quot;</span><span class="p">,</span> <span class="s2">&quot;/exception&quot;</span><span class="p">,</span> <span class="s2">&quot;/exceptions&quot;</span><span class="p">,</span> <span class="s2">&quot;/crash&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/crashes&quot;</span><span class="p">,</span> <span class="s2">&quot;/dump&quot;</span><span class="p">,</span> <span class="s2">&quot;/dumps&quot;</span><span class="p">,</span> <span class="s2">&quot;/core&quot;</span><span class="p">,</span> <span class="s2">&quot;/cores&quot;</span><span class="p">,</span> <span class="s2">&quot;/memory&quot;</span><span class="p">,</span> <span class="s2">&quot;/cpu&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/disk&quot;</span><span class="p">,</span> <span class="s2">&quot;/network&quot;</span><span class="p">,</span> <span class="s2">&quot;/net&quot;</span><span class="p">,</span> <span class="s2">&quot;/socket&quot;</span><span class="p">,</span> <span class="s2">&quot;/sockets&quot;</span><span class="p">,</span> <span class="s2">&quot;/port&quot;</span><span class="p">,</span> <span class="s2">&quot;/ports&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/service&quot;</span><span class="p">,</span> <span class="s2">&quot;/services&quot;</span><span class="p">,</span> <span class="s2">&quot;/daemon&quot;</span><span class="p">,</span> <span class="s2">&quot;/daemons&quot;</span><span class="p">,</span> <span class="s2">&quot;/process&quot;</span><span class="p">,</span> <span class="s2">&quot;/processes&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/thread&quot;</span><span class="p">,</span> <span class="s2">&quot;/threads&quot;</span><span class="p">,</span> <span class="s2">&quot;/job&quot;</span><span class="p">,</span> <span class="s2">&quot;/jobs&quot;</span><span class="p">,</span> <span class="s2">&quot;/task&quot;</span><span class="p">,</span> <span class="s2">&quot;/tasks&quot;</span><span class="p">,</span> <span class="s2">&quot;/cron&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/crontab&quot;</span><span class="p">,</span> <span class="s2">&quot;/at&quot;</span><span class="p">,</span> <span class="s2">&quot;/batch&quot;</span><span class="p">,</span> <span class="s2">&quot;/queue&quot;</span><span class="p">,</span> <span class="s2">&quot;/queues&quot;</span><span class="p">,</span> <span class="s2">&quot;/job&quot;</span><span class="p">,</span> <span class="s2">&quot;/jobs&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/worker&quot;</span><span class="p">,</span> <span class="s2">&quot;/workers&quot;</span><span class="p">,</span> <span class="s2">&quot;/celery&quot;</span><span class="p">,</span> <span class="s2">&quot;/redis&quot;</span><span class="p">,</span> <span class="s2">&quot;/memcached&quot;</span><span class="p">,</span> <span class="s2">&quot;/cache&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/session&quot;</span><span class="p">,</span> <span class="s2">&quot;/sessions&quot;</span><span class="p">,</span> <span class="s2">&quot;/auth&quot;</span><span class="p">,</span> <span class="s2">&quot;/authentication&quot;</span><span class="p">,</span> <span class="s2">&quot;/login&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/logout&quot;</span><span class="p">,</span> <span class="s2">&quot;/register&quot;</span><span class="p">,</span> <span class="s2">&quot;/signup&quot;</span><span class="p">,</span> <span class="s2">&quot;/signin&quot;</span><span class="p">,</span> <span class="s2">&quot;/signout&quot;</span><span class="p">,</span> <span class="s2">&quot;/password&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/passwords&quot;</span><span class="p">,</span> <span class="s2">&quot;/reset&quot;</span><span class="p">,</span> <span class="s2">&quot;/forgot&quot;</span><span class="p">,</span> <span class="s2">&quot;/remember&quot;</span><span class="p">,</span> <span class="s2">&quot;/token&quot;</span><span class="p">,</span> <span class="s2">&quot;/tokens&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/key&quot;</span><span class="p">,</span> <span class="s2">&quot;/keys&quot;</span><span class="p">,</span> <span class="s2">&quot;/secret&quot;</span><span class="p">,</span> <span class="s2">&quot;/secrets&quot;</span><span class="p">,</span> <span class="s2">&quot;/private&quot;</span><span class="p">,</span> <span class="s2">&quot;/public&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/internal&quot;</span><span class="p">,</span> <span class="s2">&quot;/external&quot;</span><span class="p">,</span> <span class="s2">&quot;/local&quot;</span><span class="p">,</span> <span class="s2">&quot;/remote&quot;</span><span class="p">,</span> <span class="s2">&quot;/proxy&quot;</span><span class="p">,</span> <span class="s2">&quot;/proxies&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/gateway&quot;</span><span class="p">,</span> <span class="s2">&quot;/gateways&quot;</span><span class="p">,</span> <span class="s2">&quot;/router&quot;</span><span class="p">,</span> <span class="s2">&quot;/routers&quot;</span><span class="p">,</span> <span class="s2">&quot;/switch&quot;</span><span class="p">,</span> <span class="s2">&quot;/switches&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/firewall&quot;</span><span class="p">,</span> <span class="s2">&quot;/firewalls&quot;</span><span class="p">,</span> <span class="s2">&quot;/loadbalancer&quot;</span><span class="p">,</span> <span class="s2">&quot;/loadbalancers&quot;</span><span class="p">,</span> <span class="s2">&quot;/lb&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/cdn&quot;</span><span class="p">,</span> <span class="s2">&quot;/cdn&quot;</span><span class="p">,</span> <span class="s2">&quot;/static&quot;</span><span class="p">,</span> <span class="s2">&quot;/assets&quot;</span><span class="p">,</span> <span class="s2">&quot;/media&quot;</span><span class="p">,</span> <span class="s2">&quot;/uploads&quot;</span><span class="p">,</span> <span class="s2">&quot;/files&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/downloads&quot;</span><span class="p">,</span> <span class="s2">&quot;/temp&quot;</span><span class="p">,</span> <span class="s2">&quot;/tmp&quot;</span><span class="p">,</span> <span class="s2">&quot;/cache&quot;</span><span class="p">,</span> <span class="s2">&quot;/caches&quot;</span><span class="p">,</span> <span class="s2">&quot;/var&quot;</span><span class="p">,</span> <span class="s2">&quot;/etc&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/usr&quot;</span><span class="p">,</span> <span class="s2">&quot;/bin&quot;</span><span class="p">,</span> <span class="s2">&quot;/sbin&quot;</span><span class="p">,</span> <span class="s2">&quot;/lib&quot;</span><span class="p">,</span> <span class="s2">&quot;/lib64&quot;</span><span class="p">,</span> <span class="s2">&quot;/home&quot;</span><span class="p">,</span> <span class="s2">&quot;/root&quot;</span><span class="p">,</span> <span class="s2">&quot;/opt&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;/mnt&quot;</span><span class="p">,</span> <span class="s2">&quot;/media&quot;</span><span class="p">,</span> <span class="s2">&quot;/dev&quot;</span><span class="p">,</span> <span class="s2">&quot;/proc&quot;</span><span class="p">,</span> <span class="s2">&quot;/sys&quot;</span><span class="p">,</span> <span class="s2">&quot;/run&quot;</span><span class="p">,</span> <span class="s2">&quot;/var&quot;</span><span class="p">,</span> <span class="s2">&quot;/tmp&quot;</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="DDoSProtection">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.ddos_protection.DDoSProtection">[документация]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DDoSProtection</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Класс для защиты от DDoS атак&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="DDoSProtection.__init__">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.ddos_protection.DDoSProtection.__init__">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_suspicious_ips</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_blocked_ips</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_client_ip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение IP адреса клиента&quot;&quot;&quot;</span>
+        <span class="n">headers_to_check</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;X-Real-IP&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;X-Client-IP&quot;</span><span class="p">,</span> 
+            <span class="s2">&quot;X-Forwarded-For&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;CF-Connecting-IP&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;X-Forwarded&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Forwarded-For&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Forwarded&quot;</span>
+        <span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">headers_to_check</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+                <span class="n">ip</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">header</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">ip</span> <span class="ow">and</span> <span class="n">ip</span> <span class="o">!=</span> <span class="s2">&quot;unknown&quot;</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ip</span>
+        
+        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">host</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">client</span> <span class="k">else</span> <span class="s2">&quot;unknown&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_suspicious_user_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Проверка подозрительного User-Agent&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user_agent</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="n">user_agent_lower</span> <span class="o">=</span> <span class="n">user_agent</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        
+        <span class="c1"># Проверяем разрешенных ботов</span>
+        <span class="k">for</span> <span class="n">bot</span> <span class="ow">in</span> <span class="n">ALLOWED_BOTS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">bot</span> <span class="ow">in</span> <span class="n">user_agent_lower</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="c1"># Проверяем подозрительные паттерны</span>
+        <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">AUTOMATION_PATTERNS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">user_agent_lower</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="c1"># Проверяем подозрительные слова</span>
+        <span class="k">for</span> <span class="n">suspicious</span> <span class="ow">in</span> <span class="n">SUSPICIOUS_USER_AGENTS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">suspicious</span> <span class="ow">in</span> <span class="n">user_agent_lower</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_suspicious_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Проверка подозрительных заголовков&quot;&quot;&quot;</span>
+        <span class="n">suspicious_found</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">header_name</span><span class="p">,</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">SUSPICIOUS_HEADERS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">header_name</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+                <span class="n">header_value</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">header_name</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">header_value</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+                    <span class="n">suspicious_found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">header_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">header_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">suspicious_found</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_suspicious_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Проверка подозрительных параметров запроса&quot;&quot;&quot;</span>
+        <span class="n">suspicious_found</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># Проверяем query параметры</span>
+        <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param_value</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">query_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">param_lower</span> <span class="o">=</span> <span class="n">param_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">value_lower</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">param_value</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">param_lower</span> <span class="ow">in</span> <span class="n">SUSPICIOUS_PARAMS</span><span class="p">:</span>
+                <span class="n">suspicious_found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;query_param: </span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">param_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">suspicious</span> <span class="ow">in</span> <span class="n">value_lower</span> <span class="k">for</span> <span class="n">suspicious</span> <span class="ow">in</span> <span class="n">SUSPICIOUS_PARAMS</span><span class="p">):</span>
+                <span class="n">suspicious_found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;query_value: </span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">param_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">suspicious_found</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_suspicious_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Проверка подозрительного пути&quot;&quot;&quot;</span>
+        <span class="n">path_lower</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">suspicious_path</span> <span class="ow">in</span> <span class="n">SUSPICIOUS_PATHS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">suspicious_path</span> <span class="ow">in</span> <span class="n">path_lower</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_analyze_request_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Анализ паттерна запроса&quot;&quot;&quot;</span>
+        <span class="n">client_ip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_ip</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        
+        <span class="c1"># Инициализируем паттерн для IP</span>
+        <span class="k">if</span> <span class="n">client_ip</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">[</span><span class="n">client_ip</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># Добавляем текущий запрос</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">[</span><span class="n">client_ip</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_time</span><span class="p">)</span>
+        
+        <span class="c1"># Очищаем старые запросы (старше 1 минуты)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">[</span><span class="n">client_ip</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">req_time</span> <span class="k">for</span> <span class="n">req_time</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">[</span><span class="n">client_ip</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">req_time</span> <span class="o">&lt;</span> <span class="mi">60</span>
+        <span class="p">]</span>
+        
+        <span class="c1"># Анализируем паттерн</span>
+        <span class="n">request_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">[</span><span class="n">client_ip</span><span class="p">])</span>
+        <span class="n">time_span</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">[</span><span class="n">client_ip</span><span class="p">])</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">[</span><span class="n">client_ip</span><span class="p">])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">[</span><span class="n">client_ip</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="n">client_ip</span><span class="p">,</span>
+            <span class="s2">&quot;request_count&quot;</span><span class="p">:</span> <span class="n">request_count</span><span class="p">,</span>
+            <span class="s2">&quot;time_span&quot;</span><span class="p">:</span> <span class="n">time_span</span><span class="p">,</span>
+            <span class="s2">&quot;requests_per_second&quot;</span><span class="p">:</span> <span class="n">request_count</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">time_span</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;is_suspicious&quot;</span><span class="p">:</span> <span class="n">request_count</span> <span class="o">&gt;</span> <span class="mi">100</span> <span class="ow">or</span> <span class="p">(</span><span class="n">time_span</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">request_count</span> <span class="o">/</span> <span class="n">time_span</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="p">}</span>
+    
+<div class="viewcode-block" id="DDoSProtection.check_request">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.ddos_protection.DDoSProtection.check_request">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Проверка запроса на подозрительную активность</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict с результатами проверки</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">client_ip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_client_ip</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="n">user_agent</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;User-Agent&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span>
+        
+        <span class="c1"># Базовые проверки</span>
+        <span class="n">checks</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="n">client_ip</span><span class="p">,</span>
+            <span class="s2">&quot;user_agent&quot;</span><span class="p">:</span> <span class="n">user_agent</span><span class="p">,</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
+            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+            <span class="s2">&quot;suspicious_user_agent&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_suspicious_user_agent</span><span class="p">(</span><span class="n">user_agent</span><span class="p">),</span>
+            <span class="s2">&quot;suspicious_headers&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_suspicious_headers</span><span class="p">(</span><span class="n">request</span><span class="p">),</span>
+            <span class="s2">&quot;suspicious_params&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_suspicious_params</span><span class="p">(</span><span class="n">request</span><span class="p">),</span>
+            <span class="s2">&quot;suspicious_path&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_suspicious_path</span><span class="p">(</span><span class="n">path</span><span class="p">),</span>
+            <span class="s2">&quot;pattern_analysis&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analyze_request_pattern</span><span class="p">(</span><span class="n">request</span><span class="p">),</span>
+            <span class="s2">&quot;risk_score&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;is_suspicious&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;should_block&quot;</span><span class="p">:</span> <span class="kc">False</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Вычисляем risk score</span>
+        <span class="n">risk_score</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">if</span> <span class="n">checks</span><span class="p">[</span><span class="s2">&quot;suspicious_user_agent&quot;</span><span class="p">]:</span>
+            <span class="n">risk_score</span> <span class="o">+=</span> <span class="mi">30</span>
+        
+        <span class="k">if</span> <span class="n">checks</span><span class="p">[</span><span class="s2">&quot;suspicious_headers&quot;</span><span class="p">]:</span>
+            <span class="n">risk_score</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">checks</span><span class="p">[</span><span class="s2">&quot;suspicious_headers&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">10</span>
+        
+        <span class="k">if</span> <span class="n">checks</span><span class="p">[</span><span class="s2">&quot;suspicious_params&quot;</span><span class="p">]:</span>
+            <span class="n">risk_score</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">checks</span><span class="p">[</span><span class="s2">&quot;suspicious_params&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">15</span>
+        
+        <span class="k">if</span> <span class="n">checks</span><span class="p">[</span><span class="s2">&quot;suspicious_path&quot;</span><span class="p">]:</span>
+            <span class="n">risk_score</span> <span class="o">+=</span> <span class="mi">20</span>
+        
+        <span class="k">if</span> <span class="n">checks</span><span class="p">[</span><span class="s2">&quot;pattern_analysis&quot;</span><span class="p">][</span><span class="s2">&quot;is_suspicious&quot;</span><span class="p">]:</span>
+            <span class="n">risk_score</span> <span class="o">+=</span> <span class="mi">40</span>
+        
+        <span class="n">checks</span><span class="p">[</span><span class="s2">&quot;risk_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">risk_score</span>
+        <span class="n">checks</span><span class="p">[</span><span class="s2">&quot;is_suspicious&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">risk_score</span> <span class="o">&gt;=</span> <span class="mi">50</span>
+        <span class="n">checks</span><span class="p">[</span><span class="s2">&quot;should_block&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">risk_score</span> <span class="o">&gt;=</span> <span class="mi">80</span>
+        
+        <span class="c1"># Логируем подозрительную активность</span>
+        <span class="k">if</span> <span class="n">checks</span><span class="p">[</span><span class="s2">&quot;is_suspicious&quot;</span><span class="p">]:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Подозрительная активность: IP=</span><span class="si">{</span><span class="n">client_ip</span><span class="si">}</span><span class="s2">, Risk=</span><span class="si">{</span><span class="n">risk_score</span><span class="si">}</span><span class="s2">, UA=</span><span class="si">{</span><span class="n">user_agent</span><span class="p">[:</span><span class="mi">100</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">checks</span><span class="p">[</span><span class="s2">&quot;should_block&quot;</span><span class="p">]:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚨 Блокировка запроса: IP=</span><span class="si">{</span><span class="n">client_ip</span><span class="si">}</span><span class="s2">, Risk=</span><span class="si">{</span><span class="n">risk_score</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_blocked_ips</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">client_ip</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">checks</span></div>
+
+    
+<div class="viewcode-block" id="DDoSProtection.is_ip_blocked">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.ddos_protection.DDoSProtection.is_ip_blocked">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_ip_blocked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Проверка блокировки IP&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blocked_ips</span></div>
+
+    
+<div class="viewcode-block" id="DDoSProtection.get_statistics">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.ddos_protection.DDoSProtection.get_statistics">[документация]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получение статистики защиты&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;blocked_ips_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blocked_ips</span><span class="p">),</span>
+            <span class="s2">&quot;suspicious_ips_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_suspicious_ips</span><span class="p">),</span>
+            <span class="s2">&quot;monitored_patterns_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_patterns</span><span class="p">),</span>
+            <span class="s2">&quot;blocked_ips&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blocked_ips</span><span class="p">),</span>
+            <span class="s2">&quot;suspicious_ips&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_suspicious_ips</span><span class="p">)</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+<span class="c1"># Глобальный экземпляр защиты</span>
+<span class="n">ddos_protection</span> <span class="o">=</span> <span class="n">DDoSProtection</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="ddos_protection_middleware">
+<a class="viewcode-back" href="../../../modules/security.html#core.security.ddos_protection.ddos_protection_middleware">[документация]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">ddos_protection_middleware</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">call_next</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Middleware для защиты от DDoS&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Пропускаем статические файлы</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/static/&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        
+        <span class="c1"># Пропускаем страницу безопасности (но не API эндпоинты)</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="s2">&quot;/security&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        
+        <span class="c1"># Проверяем запрос</span>
+        <span class="n">protection_result</span> <span class="o">=</span> <span class="n">ddos_protection</span><span class="o">.</span><span class="n">check_request</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        
+        <span class="c1"># Блокируем подозрительные запросы</span>
+        <span class="k">if</span> <span class="n">protection_result</span><span class="p">[</span><span class="s2">&quot;should_block&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">JSONResponse</span><span class="p">(</span>
+                <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_403_FORBIDDEN</span><span class="p">,</span>
+                <span class="n">content</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Access denied&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Request blocked by security system&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;risk_score&quot;</span><span class="p">:</span> <span class="n">protection_result</span><span class="p">[</span><span class="s2">&quot;risk_score&quot;</span><span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+        
+        <span class="c1"># Добавляем информацию о защите в заголовки</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;X-Security-Risk&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">protection_result</span><span class="p">[</span><span class="s2">&quot;risk_score&quot;</span><span class="p">])</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;X-Security-Suspicious&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">protection_result</span><span class="p">[</span><span class="s2">&quot;is_suspicious&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="n">response</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка в DDoS protection middleware: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span> </div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Авторские права 2024. </p>
+  </div>
+
+  Собрано при помощи <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">темы,</a>
+    предоставленной <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
