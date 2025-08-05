@@ -574,6 +574,30 @@ async def history(request: Request):
                         end_time_str = completed_at if completed_at and completed_at != "null" and completed_at != "None" else last_updated
                         if end_time_str and end_time_str != "null" and end_time_str != "None":
                             end_dt = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+                            
+                            # Проверяем, что конечное время больше начального
+                            if end_dt <= start_dt:
+                                logger.warning(f"⚠️ Конечное время меньше или равно начальному для {claim_number}_{vin}: {end_dt} <= {start_dt}")
+                                # Пытаемся восстановить правильное время из БД
+                                try:
+                                    await restore_completed_at_from_db(json_path, claim_number, vin, force_restore=True)
+                                    # Перечитываем JSON после восстановления
+                                    with open(json_path, 'r', encoding='utf-8') as f:
+                                        json_data = json.load(f)
+                                    metadata = json_data.get("metadata", {})
+                                    completed_at = metadata.get("completed_at", "") if metadata else ""
+                                    last_updated = metadata.get("last_updated", "") if metadata else ""
+                                    
+                                    # Пробуем снова с восстановленным временем
+                                    end_time_str = completed_at if completed_at and completed_at != "null" and completed_at != "None" else last_updated
+                                    if end_time_str and end_time_str != "null" and end_time_str != "None":
+                                        end_dt = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+                                        logger.info(f"✅ Время восстановлено из БД: {end_dt}")
+                                    else:
+                                        logger.error(f"❌ Не удалось восстановить время из БД для {claim_number}_{vin}")
+                                except Exception as e:
+                                    logger.error(f"❌ Ошибка восстановления времени из БД для {claim_number}_{vin}: {e}")
+                            
                             completed_time = end_dt.strftime("%H:%M:%S")
                             
                             # Вычисляем длительность
@@ -735,6 +759,30 @@ async def history_detail(request: Request, folder_name: str):
                 end_time_str = completed_at if completed_at else last_updated
                 if end_time_str:
                     end_dt = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+                    
+                    # Проверяем, что конечное время больше начального
+                    if end_dt <= start_dt:
+                        logger.warning(f"⚠️ Конечное время меньше или равно начальному для {claim_number}_{vin_value}: {end_dt} <= {start_dt}")
+                        # Пытаемся восстановить правильное время из БД
+                        try:
+                            await restore_completed_at_from_db(json_path, claim_number, vin_value, force_restore=True)
+                            # Перечитываем JSON после восстановления
+                            with open(json_path, 'r', encoding='utf-8') as f:
+                                json_data = json.load(f)
+                            metadata = json_data.get("metadata", {})
+                            completed_at = metadata.get("completed_at", "") if metadata else ""
+                            last_updated = metadata.get("last_updated", "") if metadata else ""
+                            
+                            # Пробуем снова с восстановленным временем
+                            end_time_str = completed_at if completed_at and completed_at != "null" and completed_at != "None" else last_updated
+                            if end_time_str and end_time_str != "null" and end_time_str != "None":
+                                end_dt = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S")
+                                logger.info(f"✅ Время восстановлено из БД: {end_dt}")
+                            else:
+                                logger.error(f"❌ Не удалось восстановить время из БД для {claim_number}_{vin_value}")
+                        except Exception as e:
+                            logger.error(f"❌ Ошибка восстановления времени из БД для {claim_number}_{vin_value}: {e}")
+                    
                     completed_time = end_dt.strftime("%H:%M:%S")
                     
                     duration_seconds = (end_dt - start_dt).total_seconds()

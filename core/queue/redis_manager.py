@@ -50,7 +50,7 @@ class RedisQueueManager:
     def add_request_to_queue(self, request_data: Dict[str, Any]) -> bool:
         """Добавление заявки в очередь"""
         try:
-            request_data['added_at'] = datetime.now().isoformat()
+            request_data['added_at'] = get_moscow_time().isoformat()
             request_data['status'] = 'pending'
             
             # Добавляем в очередь (список)
@@ -69,7 +69,7 @@ class RedisQueueManager:
             if request_json:
                 request_data = json.loads(request_json)
                 request_data['status'] = 'processing'
-                request_data['started_at'] = datetime.now().isoformat()
+                request_data['started_at'] = get_moscow_time().isoformat()
                 
                 # Сохраняем в обработке
                 self.redis_client.hset(
@@ -89,7 +89,7 @@ class RedisQueueManager:
         """Отметка заявки как завершенной"""
         try:
             request_data['status'] = 'completed' if success else 'failed'
-            request_data['completed_at'] = datetime.now().isoformat()
+            request_data['completed_at'] = get_moscow_time().isoformat()
             request_data['success'] = success
             
             # Удаляем из обработки

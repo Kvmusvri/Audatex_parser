@@ -349,10 +349,16 @@ async def restore_last_updated_from_db(json_path: str, claim_number: str, vin_nu
         return False
 
 
-async def restore_completed_at_from_db(json_path: str, claim_number: str, vin_number: str) -> bool:
+async def restore_completed_at_from_db(json_path: str, claim_number: str, vin_number: str, force_restore: bool = False) -> bool:
     """
     Восстанавливает completed_at из БД если в JSON он null или неправильный
     Учитывает часовой пояс: БД хранит в UTC+3, JSON должен показывать московское время
+    
+    Args:
+        json_path: Путь к JSON файлу
+        claim_number: Номер заявки
+        vin_number: VIN номер
+        force_restore: Принудительное восстановление из БД
     """
     try:
         # Читаем JSON файл
@@ -366,8 +372,24 @@ async def restore_completed_at_from_db(json_path: str, claim_number: str, vin_nu
         # Проверяем, нужно ли восстановление
         should_restore = (completed_at is None or completed_at == "null" or completed_at == "None" or completed_at == "")
         
-        # Восстанавливаем только если completed_at null или пустой
-        # Если completed_at есть, но неправильный - не трогаем его
+        # Также проверяем корректность времени, если оно есть
+        if not should_restore and completed_at:
+            try:
+                # Парсим время из JSON
+                json_completed_dt = datetime.strptime(completed_at, "%Y-%m-%d %H:%M:%S")
+                # Проверяем, что время не слишком старое (признак неправильного времени)
+                current_time = datetime.now()
+                time_diff = (current_time - json_completed_dt).total_seconds()
+                if time_diff > 86400:  # Если разница больше 24 часов
+                    should_restore = True
+                    logger.info(f"🔍 completed_at в JSON слишком старое для {claim_number}_{vin_number}: {completed_at}")
+            except:
+                should_restore = True
+        
+        # Если принудительное восстановление, то восстанавливаем в любом случае
+        if force_restore:
+            should_restore = True
+            logger.info(f"🔍 Принудительное восстановление completed_at для {claim_number}_{vin_number}")
         
         if should_restore:
             logger.info(f"🔍 Восстанавливаем completed_at из БД для {claim_number}_{vin_number}")

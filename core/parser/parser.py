@@ -47,6 +47,7 @@ from .browser import kill_chrome_processes, get_chromedriver_version, init_brows
 from .auth import load_cookies, perform_login, check_if_authorized
 from .folder_manager import create_folders
 from .output_manager import create_zones_table, save_data_to_json
+from core.database.models import get_moscow_time
 from .visual_processor import (
     is_zone_file, split_svg_by_details, save_svg_sync, 
     save_main_screenshot_and_svg, extract_zones, 
@@ -235,9 +236,9 @@ def search_and_extract(driver, claim_number, vin_number, svg_collection=True, st
     
     zones_table = create_zones_table(zone_data)
     
-    # Получаем время завершения
-    completed_at = datetime.now()
-    logger.info(f"�� Парсер завершен в: {completed_at.strftime('%H:%M:%S')}")
+    # Получаем время завершения в московском часовом поясе
+    completed_at = get_moscow_time()
+    logger.info(f"✅ Парсер завершен в: {completed_at.strftime('%H:%M:%S')} (МСК)")
     
     json_path = save_data_to_json(
         vin_number, zone_data, main_screenshot_relative, main_svg_relative, 
