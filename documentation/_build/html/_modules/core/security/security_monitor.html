@@ -8,6 +8,7 @@
   <title>core.security.security_monitor &mdash; документация Audotex Parser 1.0</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8b205fae" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
@@ -44,6 +45,8 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#id3">Структура базы данных</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#er">ER-диаграмма</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
@@ -576,45 +579,6 @@
 
 <span class="c1"># Глобальный экземпляр мониторинга</span>
 <span class="n">security_monitor</span> <span class="o">=</span> <span class="n">SecurityMonitor</span><span class="p">()</span>
-
-<span class="c1"># Создаем несколько тестовых алертов для демонстрации</span>
-<div class="viewcode-block" id="create_test_alerts">
-<a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.create_test_alerts">[документация]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">create_test_alerts</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Создание тестовых алертов для демонстрации&quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="c1"># Создаем тестовые события только если их нет</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">security_monitor</span><span class="o">.</span><span class="n">events</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># Создаем события для одного IP, чтобы сгенерировать алерт</span>
-            <span class="n">malicious_ip</span> <span class="o">=</span> <span class="s2">&quot;192.168.1.100&quot;</span>
-            <span class="n">test_events</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">17</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">19</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">21</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">23</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;BRUTEFORCE_ATTEMPT&quot;</span><span class="p">,</span> <span class="n">malicious_ip</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="mi">24</span><span class="p">},</span> <span class="mi">50</span><span class="p">),</span>
-                <span class="c1"># Дополнительные события от других IP</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;SQL_INJECTION&quot;</span><span class="p">,</span> <span class="s2">&quot;10.0.0.50&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="s2">&quot;SELECT * FROM users&quot;</span><span class="p">},</span> <span class="mi">60</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;XSS_ATTEMPT&quot;</span><span class="p">,</span> <span class="s2">&quot;172.16.0.25&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;script&gt;&quot;</span><span class="p">},</span> <span class="mi">45</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;UNAUTHORIZED_ACCESS&quot;</span><span class="p">,</span> <span class="s2">&quot;203.0.113.10&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/admin&quot;</span><span class="p">},</span> <span class="mi">30</span><span class="p">),</span>
-                <span class="n">SecurityEvent</span><span class="p">(</span><span class="s2">&quot;RATE_LIMIT_EXCEEDED&quot;</span><span class="p">,</span> <span class="s2">&quot;198.51.100.5&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;requests&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span> <span class="mi">35</span><span class="p">)</span>
-            <span class="p">]</span>
-            
-            <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">test_events</span><span class="p">:</span>
-                <span class="n">security_monitor</span><span class="o">.</span><span class="n">add_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-            
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Создано </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">test_events</span><span class="p">)</span><span class="si">}</span><span class="s2"> тестовых событий безопасности&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Тестовые события уже существуют: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">security_monitor</span><span class="o">.</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2"> событий&quot;</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка создания тестовых алертов: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
-
-
 
 <div class="viewcode-block" id="log_security_event">
 <a class="viewcode-back" href="../../../modules/security.html#core.security.security_monitor.log_security_event">[документация]</a>

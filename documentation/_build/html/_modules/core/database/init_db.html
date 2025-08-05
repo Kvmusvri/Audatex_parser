@@ -8,6 +8,7 @@
   <title>core.database.init_db &mdash; документация Audotex Parser 1.0</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8b205fae" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
@@ -44,6 +45,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#id3">Структура базы данных</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
@@ -88,6 +90,23 @@
 
 <span class="n">load_dotenv</span><span class="p">()</span>
 
+<div class="viewcode-block" id="create_database_engine">
+<a class="viewcode-back" href="../../../modules/database.html#core.database.init_db.create_database_engine">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_database_engine</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Создание engine для базы данных с обработкой ошибок&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">database_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;DATABASE_URL&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">database_url</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">database_url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+asyncpg&#39;</span><span class="p">,</span> <span class="s1">&#39;+psycopg2&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Создаем dummy engine для документации</span>
+            <span class="k">return</span> <span class="n">create_engine</span><span class="p">(</span><span class="s1">&#39;sqlite:///:memory:&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Предупреждение: Не удалось создать engine: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># Создаем dummy engine для документации</span>
+        <span class="k">return</span> <span class="n">create_engine</span><span class="p">(</span><span class="s1">&#39;sqlite:///:memory:&#39;</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="init_database">
 <a class="viewcode-back" href="../../../modules/database.html#core.database.init_db.init_database">[документация]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_database</span><span class="p">():</span>
@@ -96,8 +115,7 @@
     
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Создаем синхронный движок</span>
-        <span class="n">database_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;DATABASE_URL&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+asyncpg&#39;</span><span class="p">,</span> <span class="s1">&#39;+psycopg2&#39;</span><span class="p">)</span>
-        <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">database_url</span><span class="p">)</span>
+        <span class="n">engine</span> <span class="o">=</span> <span class="n">create_database_engine</span><span class="p">()</span>
         
         <span class="c1"># Создаем все таблицы</span>
         <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>

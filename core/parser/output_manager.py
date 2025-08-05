@@ -14,6 +14,7 @@ import os
 import json
 from datetime import datetime
 import pytz
+from pathlib import Path
 from core.database.models import ParserCarRequestStatus, DatabaseSession, get_moscow_time
 from sqlalchemy import text
 
@@ -116,22 +117,31 @@ def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path,
         "options_success": options_data.get("success", False) if options_data else False
     }
     
+    def normalize_path(path):
+        if not path:
+            return ""
+        original = path
+        normalized = str(Path(path))
+        if original != normalized:
+            logger.info(f"Путь нормализован в JSON: '{original}' -> '{normalized}'")
+        return normalized
+    
     data = {
         "vin_value": vin_value,
         "vin_status": vin_status,
         "zone_data": [{
             "title": zone["title"],
-            "screenshot_path": zone["screenshot_path"].replace("\\", "/"),
-            "svg_path": zone["svg_path"].replace("\\", "/") if zone.get("svg_path") else "",
+            "screenshot_path": normalize_path(zone["screenshot_path"]),
+            "svg_path": normalize_path(zone["svg_path"]) if zone.get("svg_path") else "",
             "has_pictograms": zone["has_pictograms"],
             "graphics_not_available": zone["graphics_not_available"],
-            "details": [{"title": detail["title"], "svg_path": detail["svg_path"].replace("\\", "/")} for detail in zone["details"]],
-            "pictograms": [{"section_name": pictogram["section_name"], "works": [{"work_name1": work["work_name1"], "work_name2": work["work_name2"], "svg_path": work["svg_path"].replace("\\", "/")} for work in pictogram["works"]]} for pictogram in zone.get("pictograms", [])]
+            "details": [{"title": detail["title"], "svg_path": normalize_path(detail["svg_path"])} for detail in zone["details"]],
+            "pictograms": [{"section_name": pictogram["section_name"], "works": [{"work_name1": work["work_name1"], "work_name2": work["work_name2"], "svg_path": normalize_path(work["svg_path"])} for work in pictogram["works"]]} for pictogram in zone.get("pictograms", [])]
         } for zone in zone_data],
-        "main_screenshot_path": main_screenshot_path.replace("\\", "/") if main_screenshot_path else "",
-        "main_svg_path": main_svg_path.replace("\\", "/") if main_svg_path else "",
+        "main_screenshot_path": normalize_path(main_screenshot_path) if main_screenshot_path else "",
+        "main_svg_path": normalize_path(main_svg_path) if main_svg_path else "",
         "zones_table": zones_table,
-        "all_svgs_zip": all_svgs_zip.replace("\\", "/") if all_svgs_zip else "",
+        "all_svgs_zip": normalize_path(all_svgs_zip) if all_svgs_zip else "",
         "options_data": options_data if options_data else {"success": False, "zones": []},
         "metadata": metadata,
         "claim_number": claim_number
@@ -145,7 +155,20 @@ def save_data_to_json(vin_value, zone_data, main_screenshot_path, main_svg_path,
     # Логируем итоговое время работы парсера
     if started_at and completed_at:
         try:
-            duration_seconds = (completed_at - started_at).total_seconds()
+            # Приводим оба времени к timezone-aware формату
+            def ensure_timezone_aware(dt):
+                if dt is None:
+                    return None
+                if dt.tzinfo is None:
+                    # Если naive, считаем московским временем
+                    moscow_tz = pytz.timezone('Europe/Moscow')
+                    return moscow_tz.localize(dt)
+                return dt
+            
+            aware_started = ensure_timezone_aware(started_at)
+            aware_completed = ensure_timezone_aware(completed_at)
+            
+            duration_seconds = (aware_completed - aware_started).total_seconds()
             duration_minutes = int(duration_seconds // 60)
             duration_secs = int(duration_seconds % 60)
             logger.info(f"⏱️ Итоговое время работы парсера: {duration_minutes}м {duration_secs}с")

@@ -71,6 +71,7 @@ class ParserCarRequestStatus(Base):
     vin: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     vin_status: Mapped[str] = mapped_column(String(50), nullable=False)
     comment: Mapped[str] = mapped_column(String(50), nullable=False)
+    is_success: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)  # Успешность обработки
     file_path: Mapped[str] = mapped_column(Text, nullable=True)  # Путь к файлу из JSON
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)

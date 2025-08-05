@@ -3,15 +3,15 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="ru" data-content_root="./">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Поиск &mdash; документация Audotex Parser 1.0</title>
+  <title>ER-диаграмма &mdash; документация Audotex Parser 1.0</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/custom.css?v=8b205fae" />
 
   
-    
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=9ca2116e"></script>
@@ -19,10 +19,8 @@
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="_static/translations.js?v=cd1d70c9"></script>
     <script src="_static/js/theme.js"></script>
-    <script src="_static/searchtools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="index" title="Алфавитный указатель" href="genindex.html" />
-    <link rel="search" title="Поиск" href="#" /> 
+    <link rel="search" title="Поиск" href="search.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -37,7 +35,7 @@
             Audotex Parser
           </a>
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="#" method="get">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Поиск в документации" aria-label="Поиск в документации" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -68,8 +66,9 @@
           <div role="navigation" aria-label="Навигация по страницам">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Поиск</li>
+      <li class="breadcrumb-item active">ER-диаграмма</li>
       <li class="wy-breadcrumbs-aside">
+            <a href="_sources/database_er_diagram.rst.txt" rel="nofollow"> Просмотреть исходный код страницы</a>
       </li>
   </ul>
   <hr/>
@@ -77,18 +76,110 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <noscript>
-  <div id="fallback" class="admonition warning">
-    <p class="last">
-      Активируйте JavaScript, чтобы использовать функционал поиска.
-    </p>
-  </div>
-  </noscript>
+  <section id="er">
+<h1>ER-диаграмма<a class="headerlink" href="#er" title="Ссылка на этот заголовок"></a></h1>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+-------------------------------------+
+| parser_car_detail                   |
++-------------------------------------+
+| id (PK)        |
+| request_id            |
+| vin            |
+| group_zone            |
+| code            |
+| title            |
+| source_from            |
+| svg_path            |
+| created_date            |
++-------------------------------------+
 
-  
-  <div id="search-results">
-  
-  </div>
++------------------------------------------------+
+| parser_car_detail_group_zone                   |
++------------------------------------------------+
+| id (PK)        |
+| request_id            |
+| vin            |
+| type            |
+| title            |
+| source_from            |
+| screenshot_path            |
+| svg_path            |
+| created_date            |
++------------------------------------------------+
+
++---------------------------------------------+
+| parser_car_request_status                   |
++---------------------------------------------+
+| id (PK)        |
+| request_id            |
+| vin            |
+| vin_status            |
+| comment            |
+| is_success            |
+| file_path            |
+| started_at            |
+| completed_at            |
+| created_date            |
++---------------------------------------------+
+
++--------------------------------------+
+| parser_car_options                   |
++--------------------------------------+
+| id (PK)        |
+| request_id            |
+| vin            |
+| zone_name            |
+| option_code            |
+| option_title            |
+| is_selected            |
+| source_from            |
+| created_date            |
++--------------------------------------+
+
++--------------------------------------------+
+| parser_schedule_settings                   |
++--------------------------------------------+
+| id (PK)        |
+| start_time            |
+| end_time            |
+| is_active            |
+| created_at            |
+| updated_at            |
++--------------------------------------------+
+
++-------------------------+
+| users                   |
++-------------------------+
+| id (PK)        |
+| username            |
+| email            |
+| hashed_password            |
+| role            |
+| is_active            |
+| last_login            |
+| failed_login_attempts            |
+| locked_until            |
+| created_at            |
+| updated_at            |
++-------------------------+
+
++---------------------------------+
+| user_sessions                   |
++---------------------------------+
+| id (PK)        |
+| user_id (FK)        |
+| token_hash            |
+| expires_at            |
+| ip_address            |
+| user_agent            |
+| created_at            |
++---------------------------------+
+
+**Связи:**
+- user_sessions.user_id → users.id
+</pre></div>
+</div>
+</section>
+
 
            </div>
           </div>
@@ -114,14 +205,7 @@
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-  <script>
-    jQuery(function() { Search.loadIndex("searchindex.js"); });
-  </script>
-  
-  <script id="searchindexloader"></script>
-   
-
+  </script> 
 
 </body>
 </html>

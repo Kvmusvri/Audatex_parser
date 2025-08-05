@@ -12,14 +12,27 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def create_database_engine():
+    """Создание engine для базы данных с обработкой ошибок"""
+    try:
+        database_url = os.getenv('DATABASE_URL')
+        if database_url:
+            return create_engine(database_url.replace('+asyncpg', '+psycopg2'))
+        else:
+            # Создаем dummy engine для документации
+            return create_engine('sqlite:///:memory:')
+    except Exception as e:
+        print(f"⚠️ Предупреждение: Не удалось создать engine: {e}")
+        # Создаем dummy engine для документации
+        return create_engine('sqlite:///:memory:')
+
 def init_database():
     """Инициализация базы данных"""
     print("🔄 Инициализация базы данных...")
     
     try:
         # Создаем синхронный движок
-        database_url = os.getenv('DATABASE_URL').replace('+asyncpg', '+psycopg2')
-        engine = create_engine(database_url)
+        engine = create_database_engine()
         
         # Создаем все таблицы
         Base.metadata.create_all(bind=engine)

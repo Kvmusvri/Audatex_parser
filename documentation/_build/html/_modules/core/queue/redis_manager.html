@@ -8,6 +8,7 @@
   <title>core.queue.redis_manager &mdash; документация Audotex Parser 1.0</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8b205fae" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
@@ -44,6 +45,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#id3">Структура базы данных</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
@@ -77,8 +79,12 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">redis</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.database.requests</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_parser_data_to_db</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.database.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_moscow_time</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -86,25 +92,34 @@
 <div class="viewcode-block" id="RedisQueueManager">
 <a class="viewcode-back" href="../../../modules/queue.html#core.queue.redis_manager.RedisQueueManager">[документация]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RedisQueueManager</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Менеджер для работы с очередью заявок в Redis&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Менеджер очереди Redis для парсера&quot;&quot;&quot;</span>
     
 <div class="viewcode-block" id="RedisQueueManager.__init__">
 <a class="viewcode-back" href="../../../modules/queue.html#core.queue.redis_manager.RedisQueueManager.__init__">[документация]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6379</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Инициализация подключения к Redis&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">Redis</span><span class="p">(</span>
-            <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span>
-            <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span>
-            <span class="n">db</span><span class="o">=</span><span class="n">db</span><span class="p">,</span>
-            <span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">socket_connect_timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-            <span class="n">socket_timeout</span><span class="o">=</span><span class="mi">5</span>
-        <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="c1"># Используем переменную окружения REDIS_URL или fallback на localhost</span>
+        <span class="n">redis_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;REDIS_URL&#39;</span><span class="p">,</span> <span class="s1">&#39;redis://localhost:6379&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">host</span> <span class="ow">and</span> <span class="n">port</span><span class="p">:</span>
+            <span class="c1"># Если переданы host и port, используем их</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">Redis</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Используем URL из переменной окружения</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">from_url</span><span class="p">(</span><span class="n">redis_url</span><span class="p">,</span> <span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queue_key</span> <span class="o">=</span> <span class="s2">&quot;parser_queue&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">processing_key</span> <span class="o">=</span> <span class="s2">&quot;parser_processing&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">completed_key</span> <span class="o">=</span> <span class="s2">&quot;parser_completed&quot;</span></div>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">completed_key</span> <span class="o">=</span> <span class="s2">&quot;parser_completed&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error_count_key</span> <span class="o">=</span> <span class="s2">&quot;parser_error_count&quot;</span>  <span class="c1"># Счетчик ошибок для заявок</span>
         
+        <span class="c1"># Проверяем подключение</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">ping</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Подключение к Redis установлено&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка подключения к Redis: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span></div>
+
+    
 <div class="viewcode-block" id="RedisQueueManager.test_connection">
 <a class="viewcode-back" href="../../../modules/queue.html#core.queue.redis_manager.RedisQueueManager.test_connection">[документация]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">test_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -123,7 +138,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">add_request_to_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Добавление заявки в очередь&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;added_at&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+            <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;added_at&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
             <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;pending&#39;</span>
             
             <span class="c1"># Добавляем в очередь (список)</span>
@@ -145,7 +160,7 @@
             <span class="k">if</span> <span class="n">request_json</span><span class="p">:</span>
                 <span class="n">request_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
                 <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;processing&#39;</span>
-                <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;started_at&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+                <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;started_at&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
                 
                 <span class="c1"># Сохраняем в обработке</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span>
@@ -168,12 +183,25 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Отметка заявки как завершенной&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span> <span class="k">if</span> <span class="n">success</span> <span class="k">else</span> <span class="s1">&#39;failed&#39;</span>
-            <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;completed_at&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+            <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;completed_at&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
             <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">success</span>
             
             <span class="c1"># Удаляем из обработки</span>
             <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;claim_number&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vin_number&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">hdel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processing_key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            
+            <span class="c1"># Если неуспешно, увеличиваем счетчик ошибок</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_increment_error_count</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                
+                <span class="c1"># Проверяем, достигли ли лимита ошибок (10 раз)</span>
+                <span class="n">error_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_error_count</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">error_count</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Заявка </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> достигла лимита ошибок (</span><span class="si">{</span><span class="n">error_count</span><span class="si">}</span><span class="s2">), записываем в БД как nsvg&quot;</span><span class="p">)</span>
+                    <span class="c1"># Записываем в БД как nsvg</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_save_failed_request_to_db</span><span class="p">(</span><span class="n">request_data</span><span class="p">)</span>
+                    <span class="c1"># Очищаем счетчик ошибок</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_clear_error_count</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             
             <span class="c1"># Добавляем в завершенные</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span>
@@ -188,6 +216,83 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка отметки заявки как завершенной: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span></div>
 
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_increment_error_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Увеличивает счетчик ошибок для заявки&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">current_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error_count_key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="n">new_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">current_count</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error_count_key</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">new_count</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📊 Счетчик ошибок для </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">new_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">new_count</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка увеличения счетчика ошибок: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_error_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Получает текущий счетчик ошибок для заявки&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error_count_key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">count</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка получения счетчика ошибок: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_clear_error_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Очищает счетчик ошибок для заявки&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">hdel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error_count_key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🧹 Счетчик ошибок очищен для </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка очистки счетчика ошибок: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_save_failed_request_to_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Сохраняет неудачную заявку в БД как nsvg&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Создаем данные для сохранения в БД</span>
+            <span class="n">claim_number</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;claim_number&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">vin_number</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vin_number&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Создаем пустой результат с пометкой nsvg</span>
+            <span class="n">failed_result</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;claim_number&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
+                <span class="s2">&quot;vin_number&quot;</span><span class="p">:</span> <span class="n">vin_number</span><span class="p">,</span>
+                <span class="s2">&quot;vin_status&quot;</span><span class="p">:</span> <span class="s2">&quot;Нет&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="s2">&quot;nsvg&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Превышен лимит ошибок (10 попыток)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span>
+            <span class="p">}</span>
+            
+            <span class="c1"># Получаем текущее время</span>
+            <span class="n">started_at</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+            <span class="n">completed_at</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+            
+            <span class="c1"># Сохраняем в БД</span>
+            <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_to_db</span><span class="p">():</span>
+                <span class="k">return</span> <span class="k">await</span> <span class="n">save_parser_data_to_db</span><span class="p">(</span>
+                    <span class="n">failed_result</span><span class="p">,</span> 
+                    <span class="n">claim_number</span><span class="p">,</span> 
+                    <span class="n">vin_number</span><span class="p">,</span> 
+                    <span class="n">is_success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                    <span class="n">started_at</span><span class="o">=</span><span class="n">started_at</span><span class="p">,</span> 
+                    <span class="n">completed_at</span><span class="o">=</span><span class="n">completed_at</span>
+                <span class="p">)</span>
+            
+            <span class="c1"># Запускаем асинхронную функцию</span>
+            <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">new_event_loop</span><span class="p">()</span>
+            <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop</span><span class="p">(</span><span class="n">loop</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">success</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">save_to_db</span><span class="p">())</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;💾 Неудачная заявка </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2"> сохранена в БД как nsvg: </span><span class="si">{</span><span class="n">success</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">success</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">loop</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка сохранения неудачной заявки в БД: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
     
 <div class="viewcode-block" id="RedisQueueManager.get_queue_length">
 <a class="viewcode-back" href="../../../modules/queue.html#core.queue.redis_manager.RedisQueueManager.get_queue_length">[документация]</a>
@@ -248,8 +353,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processing_key</span><span class="p">)</span>
             <span class="c1"># Очищаем завершенные заявки</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">completed_key</span><span class="p">)</span>
+            <span class="c1"># Очищаем счетчик ошибок</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error_count_key</span><span class="p">)</span>
             
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Вся очередь полностью очищена (очередь, обработка, завершенные)&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Вся очередь полностью очищена (очередь, обработка, завершенные, счетчик ошибок)&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка очистки очереди: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

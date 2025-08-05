@@ -8,6 +8,7 @@
   <title>core.queue.queue_processor &mdash; документация Audotex Parser 1.0</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8b205fae" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
@@ -45,7 +46,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#id3">Структура базы данных</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#er">ER-диаграмма</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
@@ -210,7 +210,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_run_parser</span><span class="p">(</span><span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">,</span> <span class="n">svg_collection</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">started_at</span><span class="p">)</span>
             <span class="p">)</span>
             
-            <span class="c1"># Ждем завершения без таймаута</span>
+            <span class="c1"># Ждем завершения без таймаута - заявка должна работать без ограничений</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_parser_task</span>
                 
@@ -238,17 +238,15 @@
                     <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Парсер вернул пустой результат: </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="n">redis_manager</span><span class="o">.</span><span class="n">mark_request_completed</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                     
-
-                
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">failed_count</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка обработки заявки </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="n">redis_manager</span><span class="o">.</span><span class="n">mark_request_completed</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_parser_error</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
                 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">failed_count</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка обработки заявки </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">redis_manager</span><span class="o">.</span><span class="n">mark_request_completed</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Критическая ошибка обработки заявки </span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_parser_error</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="c1"># Очищаем ссылку на текущую задачу парсера</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_parser_task</span> <span class="o">=</span> <span class="kc">None</span>
@@ -413,7 +411,8 @@
             <span class="c1"># Сохраняем данные в БД с временными метками</span>
             <span class="n">db_success</span> <span class="o">=</span> <span class="k">await</span> <span class="n">save_parser_data_to_db</span><span class="p">(</span>
                 <span class="n">updated_json</span><span class="p">,</span> <span class="n">clean_claim_number</span><span class="p">,</span> <span class="n">clean_vin_number</span><span class="p">,</span> 
-                <span class="n">is_success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">started_at</span><span class="o">=</span><span class="n">started_at</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="n">completed_at</span>
+                <span class="n">is_success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">started_at</span><span class="o">=</span><span class="n">started_at</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="n">completed_at</span><span class="p">,</span>
+                <span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">,</span> <span class="n">svg_collection</span><span class="o">=</span><span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;svg_collection&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">db_success</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Не удалось сохранить данные в БД: </span><span class="si">{</span><span class="n">clean_claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">clean_vin_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -442,6 +441,67 @@
         <span class="n">redis_manager</span><span class="o">.</span><span class="n">clear_queue</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🗑️ Очередь очищена&quot;</span><span class="p">)</span></div>
 
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_handle_parser_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">error_message</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Обработка ошибки парсера с повторными попытками&quot;&quot;&quot;</span>
+        <span class="n">claim_number</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;claim_number&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">vin_number</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vin_number&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&quot;</span>
+        
+        <span class="c1"># Увеличиваем счетчик ошибок</span>
+        <span class="n">error_count</span> <span class="o">=</span> <span class="n">redis_manager</span><span class="o">.</span><span class="n">_increment_error_count</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка для </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error_message</span><span class="si">}</span><span class="s2"> (попытка </span><span class="si">{</span><span class="n">error_count</span><span class="si">}</span><span class="s2">/10)&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">error_count</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="c1"># Достигнут лимит попыток - сохраняем как неудачную в БД</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Заявка </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> достигла лимита ошибок (</span><span class="si">{</span><span class="n">error_count</span><span class="si">}</span><span class="s2">), сохраняем как nsvg&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Создаем неудачный результат</span>
+            <span class="n">failed_result</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;vin_value&quot;</span><span class="p">:</span> <span class="n">vin_number</span><span class="p">,</span>
+                <span class="s2">&quot;vin_status&quot;</span><span class="p">:</span> <span class="s2">&quot;Нет&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;zone_data&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;main_screenshot_path&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;main_svg_path&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;zones_table&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;all_svgs_zip&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;options_data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;zones&quot;</span><span class="p">:</span> <span class="p">[]},</span>
+                <span class="s2">&quot;claim_number&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
+                <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="n">error_message</span>
+            <span class="p">}</span>
+            
+            <span class="c1"># Сохраняем в БД как неудачную</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">core.database.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_moscow_time</span>
+            <span class="n">started_at</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+            <span class="n">completed_at</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">core.database.requests</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_parser_data_to_db</span>
+                <span class="n">success</span> <span class="o">=</span> <span class="k">await</span> <span class="n">save_parser_data_to_db</span><span class="p">(</span>
+                    <span class="n">failed_result</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">,</span> 
+                    <span class="n">is_success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">started_at</span><span class="o">=</span><span class="n">started_at</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="n">completed_at</span><span class="p">,</span>
+                    <span class="n">svg_collection</span><span class="o">=</span><span class="n">request_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;svg_collection&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Неудачная заявка </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> сохранена в БД как nsvg&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Не удалось сохранить неудачную заявку </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> в БД&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка сохранения неудачной заявки </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> в БД: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Очищаем счетчик ошибок</span>
+            <span class="n">redis_manager</span><span class="o">.</span><span class="n">_clear_error_count</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            
+            <span class="c1"># Отмечаем как завершенную с неудачей</span>
+            <span class="n">redis_manager</span><span class="o">.</span><span class="n">mark_request_completed</span><span class="p">(</span><span class="n">request_data</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Возвращаем заявку в конец очереди для повторной попытки</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔄 Возвращаем заявку </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> в очередь для повторной попытки (</span><span class="si">{</span><span class="n">error_count</span><span class="si">}</span><span class="s2">/10)&quot;</span><span class="p">)</span>
+            <span class="n">redis_manager</span><span class="o">.</span><span class="n">add_request_to_queue</span><span class="p">(</span><span class="n">request_data</span><span class="p">)</span>
+            
+            <span class="c1"># Удаляем из обработки</span>
+            <span class="n">redis_manager</span><span class="o">.</span><span class="n">redis_client</span><span class="o">.</span><span class="n">hdel</span><span class="p">(</span><span class="n">redis_manager</span><span class="o">.</span><span class="n">processing_key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
     
 <div class="viewcode-block" id="QueueProcessor.get_stats">
 <a class="viewcode-back" href="../../../modules/queue.html#core.queue.queue_processor.QueueProcessor.get_stats">[документация]</a>

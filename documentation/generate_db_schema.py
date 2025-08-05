@@ -47,45 +47,40 @@ def get_table_info():
     
     return tables_info
 
-def generate_plantuml_er_diagram(tables_info):
-    """Генерирует ER-диаграмму в формате PlantUML"""
-    plantuml = """@startuml database_schema
-!define TABLE(name,desc) class name as "desc" << (T,#FFAAAA) >>
-!define PK(x) <b>x</b>
-!define FK(x) <i>x</i>
-
-"""
-    
-    # Добавляем таблицы
-    for table_name, info in tables_info.items():
-        plantuml += f"TABLE({table_name}, {table_name})\n"
-        for col in info['columns']:
-            if col['primary_key']:
-                plantuml += f"  PK({col['name']}) : {col['type']}\n"
-            elif col['foreign_key']:
-                plantuml += f"  FK({col['name']}) : {col['type']}\n"
-            else:
-                nullable = "" if col['nullable'] else " NOT NULL"
-                plantuml += f"  {col['name']} : {col['type']}{nullable}\n"
-        plantuml += "\n"
-    
-    # Добавляем связи
-    for table_name, info in tables_info.items():
-        for rel in info['relationships']:
-            plantuml += f"{table_name} ||--o{{ {rel['to_table']} : {rel['from_column']} -> {rel['to_column']}\n"
-    
-    plantuml += "@enduml"
-    return plantuml
-
-def generate_markdown_schema(tables_info):
-    """Генерирует текстовое описание схемы в формате Markdown"""
-    md = "# Структура базы данных\n\n"
+def generate_rst_schema(tables_info):
+    """Генерирует схему БД в формате RST для интеграции в документацию"""
+    rst = "Структура базы данных\n"
+    rst += "====================\n\n"
     
     for table_name, info in tables_info.items():
-        md += f"## {table_name}\n\n"
+        # Заголовок таблицы
+        rst += f"{table_name}\n"
+        rst += "-" * len(table_name) + "\n\n"
         
-        md += "| Поле | Тип | Nullable | Primary Key | Foreign Key | Индекс |\n"
-        md += "|------|-----|----------|-------------|-------------|--------|\n"
+        # Описание таблицы (можно добавить позже)
+        table_descriptions = {
+            'parser_car_detail': 'Детали автомобиля',
+            'parser_car_detail_group_zone': 'Группы зон деталей',
+            'parser_car_request_status': 'Статус обработки заявок',
+            'parser_car_options': 'Опции автомобиля',
+            'parser_schedule_settings': 'Настройки расписания',
+            'users': 'Пользователи системы',
+            'user_sessions': 'Сессии пользователей'
+        }
+        
+        if table_name in table_descriptions:
+            rst += f"{table_descriptions[table_name]}\n\n"
+        
+        # Упрощенная RST таблица
+        rst += ".. list-table:: Структура таблицы\n"
+        rst += "   :widths: 20 15 10 12 12 8\n"
+        rst += "   :header-rows: 1\n\n"
+        rst += "   * - Поле\n"
+        rst += "     - Тип\n"
+        rst += "     - Nullable\n"
+        rst += "     - Primary Key\n"
+        rst += "     - Foreign Key\n"
+        rst += "     - Индекс\n"
         
         for col in info['columns']:
             nullable = "✓" if col['nullable'] else "✗"
@@ -93,30 +88,31 @@ def generate_markdown_schema(tables_info):
             fk = "✓" if col['foreign_key'] else ""
             index = "✓" if col['index'] else ""
             
-            md += f"| {col['name']} | {col['type']} | {nullable} | {pk} | {fk} | {index} |\n"
+            rst += f"   * - {col['name']}\n"
+            rst += f"     - {col['type']}\n"
+            rst += f"     - {nullable}\n"
+            rst += f"     - {pk}\n"
+            rst += f"     - {fk}\n"
+            rst += f"     - {index}\n"
         
+        rst += "\n"
+        
+        # Добавляем связи
         if info['relationships']:
-            md += "\n**Связи:**\n"
+            rst += "**Связи:**\n"
             for rel in info['relationships']:
-                md += f"- `{rel['from_column']}` → `{rel['to_table']}.{rel['to_column']}`\n"
-        
-        md += "\n"
+                rst += f"- {rel['from_column']} → {rel['to_table']}.{rel['to_column']}\n"
+            rst += "\n"
     
-    return md
+    return rst
 
 if __name__ == "__main__":
     tables_info = get_table_info()
     
-    # Генерируем ER-диаграмму
-    er_diagram = generate_plantuml_er_diagram(tables_info)
-    with open('database_schema.puml', 'w', encoding='utf-8') as f:
-        f.write(er_diagram)
-    
-    # Генерируем текстовое описание
-    md_schema = generate_markdown_schema(tables_info)
-    with open('database_schema.md', 'w', encoding='utf-8') as f:
-        f.write(md_schema)
+    # Генерируем RST схему
+    rst_schema = generate_rst_schema(tables_info)
+    with open('database_schema.rst', 'w', encoding='utf-8') as f:
+        f.write(rst_schema)
     
     print("Схема БД сгенерирована:")
-    print("- database_schema.puml (ER-диаграмма)")
-    print("- database_schema.md (текстовое описание)") 
+    print("- database_schema.rst (RST схема БД)") 

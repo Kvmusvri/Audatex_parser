@@ -63,6 +63,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#core.parser.browser.kill_chrome_processes"><code class="docutils literal notranslate"><span class="pre">kill_chrome_processes()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#core.parser.browser.get_chromedriver_version"><code class="docutils literal notranslate"><span class="pre">get_chromedriver_version()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#core.parser.browser.init_browser"><code class="docutils literal notranslate"><span class="pre">init_browser()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.parser.browser.apply_enhanced_stealth_masking"><code class="docutils literal notranslate"><span class="pre">apply_enhanced_stealth_masking()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#core-parser-actions">core.parser.actions</a><ul>
@@ -96,7 +97,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#core-parser-folder-manager">core.parser.folder_manager</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#core.parser.folder_manager.safe_remove_directory"><code class="docutils literal notranslate"><span class="pre">safe_remove_directory()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#core.parser.folder_manager.create_folders"><code class="docutils literal notranslate"><span class="pre">create_folders()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#core.parser.folder_manager.extract_vin_and_claim_number"><code class="docutils literal notranslate"><span class="pre">extract_vin_and_claim_number()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#core-parser-option-processor">core.parser.option_processor</a><ul>
@@ -238,8 +238,8 @@
 <dt class="field-odd">Параметры<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>driver</strong> – WebDriver - экземпляр браузера</p></li>
-<li><p><strong>claim_number</strong> – str - номер заявки</p></li>
-<li><p><strong>vin_number</strong> – str - VIN автомобиля</p></li>
+<li><p><strong>claim_number</strong> – str - номер заявки из формы</p></li>
+<li><p><strong>vin_number</strong> – str - VIN автомобиля из формы</p></li>
 <li><p><strong>svg_collection</strong> – bool - собирать SVG (по умолчанию True)</p></li>
 <li><p><strong>started_at</strong> – datetime|str|None - время старта (опционально)</p></li>
 </ul>
@@ -329,6 +329,12 @@
 <dd class="field-odd"><p>uc.Chrome - экземпляр браузера</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.parser.browser.apply_enhanced_stealth_masking">
+<span class="sig-prename descclassname"><span class="pre">core.parser.browser.</span></span><span class="sig-name descname"><span class="pre">apply_enhanced_stealth_masking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/browser.html#apply_enhanced_stealth_masking"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.browser.apply_enhanced_stealth_masking" title="Ссылка на это определение"></a></dt>
+<dd><p>Применяет дополнительную маскировку для обхода детекта</p>
 </dd></dl>
 
 </section>
@@ -431,7 +437,8 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="core.parser.actions.wait_for_table">
 <span class="sig-prename descclassname"><span class="pre">core.parser.actions.</span></span><span class="sig-name descname"><span class="pre">wait_for_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/actions.html#wait_for_table"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.actions.wait_for_table" title="Ссылка на это определение"></a></dt>
-<dd><p>Ожидание загрузки таблицы с явным ожиданием элементов.</p>
+<dd><p>Ожидание загрузки таблицы с динамическим ожиданием до 2 минут.
+Продолжает работу сразу после загрузки таблицы.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Параметры<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -707,7 +714,6 @@
 <dt>Основные функции:</dt><dd><ul class="simple">
 <li><p>safe_remove_directory: Безопасно удаляет директорию и все её содержимое</p></li>
 <li><p>create_folders: Создаёт папки для сохранения данных с перезаписью существующих</p></li>
-<li><p>extract_vin_and_claim_number: Извлекает VIN и claim_number со страницы</p></li>
 </ul>
 </dd>
 </dl>
@@ -720,11 +726,6 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="core.parser.folder_manager.create_folders">
 <span class="sig-prename descclassname"><span class="pre">core.parser.folder_manager.</span></span><span class="sig-name descname"><span class="pre">create_folders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/folder_manager.html#create_folders"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.folder_manager.create_folders" title="Ссылка на это определение"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="core.parser.folder_manager.extract_vin_and_claim_number">
-<span class="sig-prename descclassname"><span class="pre">core.parser.folder_manager.</span></span><span class="sig-name descname"><span class="pre">extract_vin_and_claim_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">driver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/folder_manager.html#extract_vin_and_claim_number"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.folder_manager.extract_vin_and_claim_number" title="Ссылка на это определение"></a></dt>
 <dd></dd></dl>
 
 </section>
@@ -918,15 +919,16 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="core.parser.output_manager.restore_completed_at_from_db">
-<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.parser.output_manager.</span></span><span class="sig-name descname"><span class="pre">restore_completed_at_from_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/output_manager.html#restore_completed_at_from_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.output_manager.restore_completed_at_from_db" title="Ссылка на это определение"></a></dt>
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.parser.output_manager.</span></span><span class="sig-name descname"><span class="pre">restore_completed_at_from_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_restore</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/parser/output_manager.html#restore_completed_at_from_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.parser.output_manager.restore_completed_at_from_db" title="Ссылка на это определение"></a></dt>
 <dd><p>Восстанавливает completed_at из БД если в JSON он null или неправильный
 Учитывает часовой пояс: БД хранит в UTC+3, JSON должен показывать московское время</p>
 <dl class="field-list simple">
 <dt class="field-odd">Параметры<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>json_path</strong> (<em>str</em>)</p></li>
-<li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
-<li><p><strong>vin_number</strong> (<em>str</em>)</p></li>
+<li><p><strong>json_path</strong> (<em>str</em>) – Путь к JSON файлу</p></li>
+<li><p><strong>claim_number</strong> (<em>str</em>) – Номер заявки</p></li>
+<li><p><strong>vin_number</strong> (<em>str</em>) – VIN номер</p></li>
+<li><p><strong>force_restore</strong> (<em>bool</em>) – Принудительное восстановление из БД</p></li>
 </ul>
 </dd>
 <dt class="field-even">Тип результата<span class="colon">:</span></dt>

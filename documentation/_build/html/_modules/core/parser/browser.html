@@ -225,6 +225,9 @@
         <span class="n">options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--password-store=basic&#39;</span><span class="p">)</span>
         <span class="n">options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--use-mock-keychain&#39;</span><span class="p">)</span>
         
+        <span class="c1"># Дополнительные настройки для обхода детекции</span>
+        <span class="n">options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--disable-blink-features=AutomationControlled&#39;</span><span class="p">)</span>
+        
         <span class="c1"># Настройки окна для headless режима</span>
         <span class="n">options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--window-size=1920,1080&#39;</span><span class="p">)</span>
         
@@ -268,13 +271,16 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Используется существующий ChromeDriver: </span><span class="si">{</span><span class="n">driver_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="n">driver</span> <span class="o">=</span> <span class="n">uc</span><span class="o">.</span><span class="n">Chrome</span><span class="p">(</span><span class="n">driver_executable_path</span><span class="o">=</span><span class="n">driver_path</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span> <span class="n">use_subprocess</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">headless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">driver</span> <span class="o">=</span> <span class="n">uc</span><span class="o">.</span><span class="n">Chrome</span><span class="p">(</span><span class="n">driver_executable_path</span><span class="o">=</span><span class="n">driver_path</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span> <span class="n">use_subprocess</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         
         <span class="c1"># Дополнительные настройки для маскировки headless режима</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Применяем расширенную маскировку из stealth модуля</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">.stealth</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_advanced_stealth_masking</span>
             <span class="n">apply_advanced_stealth_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+            
+            <span class="c1"># Применяем дополнительную маскировку после инициализации</span>
+            <span class="n">apply_enhanced_stealth_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
             
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Расширенные настройки маскировки headless режима применены&quot;</span><span class="p">)</span>
             
@@ -285,7 +291,214 @@
         <span class="k">return</span> <span class="n">driver</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ошибка при инициализации браузера: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">raise</span> </div>
+        <span class="k">raise</span></div>
+
+
+
+<div class="viewcode-block" id="apply_enhanced_stealth_masking">
+<a class="viewcode-back" href="../../../modules/parser.html#core.parser.browser.apply_enhanced_stealth_masking">[документация]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_enhanced_stealth_masking</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Применяет дополнительную маскировку для обхода детекта</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            // Дополнительная маскировка для обхода детекта</span>
+<span class="s2">            (function() {</span>
+<span class="s2">                // Маскируем webdriver</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;webdriver&#39;, {</span>
+<span class="s2">                    get: () =&gt; undefined,</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем chrome runtime</span>
+<span class="s2">                if (window.chrome) {</span>
+<span class="s2">                    window.chrome = {</span>
+<span class="s2">                        runtime: </span><span class="si">{}</span><span class="s2">,</span>
+<span class="s2">                        loadTimes: function() </span><span class="si">{}</span><span class="s2">,</span>
+<span class="s2">                        csi: function() </span><span class="si">{}</span><span class="s2">,</span>
+<span class="s2">                        app: </span><span class="si">{}</span>
+<span class="s2">                    };</span>
+<span class="s2">                }</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем permissions</span>
+<span class="s2">                const originalPermissions = navigator.permissions;</span>
+<span class="s2">                navigator.permissions = {</span>
+<span class="s2">                    ...originalPermissions,</span>
+<span class="s2">                    query: (parameters) =&gt; {</span>
+<span class="s2">                        if (parameters.name === &#39;notifications&#39;) {</span>
+<span class="s2">                            return Promise.resolve({ state: &#39;granted&#39; });</span>
+<span class="s2">                        }</span>
+<span class="s2">                        return originalPermissions.query(parameters);</span>
+<span class="s2">                    }</span>
+<span class="s2">                };</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем plugins</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;plugins&#39;, {</span>
+<span class="s2">                    get: () =&gt; [1, 2, 3, 4, 5],</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем languages</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;languages&#39;, {</span>
+<span class="s2">                    get: () =&gt; [&#39;ru-RU&#39;, &#39;ru&#39;, &#39;en-US&#39;, &#39;en&#39;],</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем connection</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;connection&#39;, {</span>
+<span class="s2">                    get: () =&gt; ({</span>
+<span class="s2">                        effectiveType: &#39;4g&#39;,</span>
+<span class="s2">                        rtt: 50,</span>
+<span class="s2">                        downlink: 10,</span>
+<span class="s2">                        saveData: false,</span>
+<span class="s2">                    }),</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем hardwareConcurrency</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;hardwareConcurrency&#39;, {</span>
+<span class="s2">                    get: () =&gt; 8,</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем deviceMemory</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;deviceMemory&#39;, {</span>
+<span class="s2">                    get: () =&gt; 8,</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем maxTouchPoints</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;maxTouchPoints&#39;, {</span>
+<span class="s2">                    get: () =&gt; 0,</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем vendor</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;vendor&#39;, {</span>
+<span class="s2">                    get: () =&gt; &#39;Google Inc.&#39;,</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем platform</span>
+<span class="s2">                Object.defineProperty(navigator, &#39;platform&#39;, {</span>
+<span class="s2">                    get: () =&gt; &#39;Win32&#39;,</span>
+<span class="s2">                    configurable: true</span>
+<span class="s2">                });</span>
+<span class="s2">                </span>
+<span class="s2">                // Удаляем признаки автоматизации</span>
+<span class="s2">                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;</span>
+<span class="s2">                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;</span>
+<span class="s2">                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем screen свойства</span>
+<span class="s2">                Object.defineProperty(screen, &#39;width&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">                Object.defineProperty(screen, &#39;height&#39;, { get: () =&gt; 1080 });</span>
+<span class="s2">                Object.defineProperty(screen, &#39;availWidth&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">                Object.defineProperty(screen, &#39;availHeight&#39;, { get: () =&gt; 1040 });</span>
+<span class="s2">                Object.defineProperty(screen, &#39;colorDepth&#39;, { get: () =&gt; 24 });</span>
+<span class="s2">                Object.defineProperty(screen, &#39;pixelDepth&#39;, { get: () =&gt; 24 });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем window свойства</span>
+<span class="s2">                Object.defineProperty(window, &#39;outerWidth&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">                Object.defineProperty(window, &#39;outerHeight&#39;, { get: () =&gt; 1080 });</span>
+<span class="s2">                Object.defineProperty(window, &#39;innerWidth&#39;, { get: () =&gt; 1920 });</span>
+<span class="s2">                Object.defineProperty(window, &#39;innerHeight&#39;, { get: () =&gt; 937 });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем devicePixelRatio</span>
+<span class="s2">                Object.defineProperty(window, &#39;devicePixelRatio&#39;, { get: () =&gt; 1 });</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем WebGL</span>
+<span class="s2">                try {</span>
+<span class="s2">                    const getParameter = WebGLRenderingContext.prototype.getParameter;</span>
+<span class="s2">                    WebGLRenderingContext.prototype.getParameter = function(parameter) {</span>
+<span class="s2">                        if (parameter === 37445) {</span>
+<span class="s2">                            return &#39;Intel Inc.&#39;;</span>
+<span class="s2">                        }</span>
+<span class="s2">                        if (parameter === 37446) {</span>
+<span class="s2">                            return &#39;Intel(R) Iris(TM) Graphics 6100&#39;;</span>
+<span class="s2">                        }</span>
+<span class="s2">                        return getParameter.call(this, parameter);</span>
+<span class="s2">                    };</span>
+<span class="s2">                } catch (e) {</span>
+<span class="s2">                    // Игнорируем ошибки WebGL</span>
+<span class="s2">                }</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем Canvas fingerprinting</span>
+<span class="s2">                try {</span>
+<span class="s2">                    const originalGetContext = HTMLCanvasElement.prototype.getContext;</span>
+<span class="s2">                    HTMLCanvasElement.prototype.getContext = function(type, ...args) {</span>
+<span class="s2">                        const context = originalGetContext.call(this, type, ...args);</span>
+<span class="s2">                        if (type === &#39;2d&#39;) {</span>
+<span class="s2">                            const originalFillText = context.fillText;</span>
+<span class="s2">                            context.fillText = function(...args) {</span>
+<span class="s2">                                return originalFillText.apply(this, args);</span>
+<span class="s2">                            };</span>
+<span class="s2">                        }</span>
+<span class="s2">                        return context;</span>
+<span class="s2">                    };</span>
+<span class="s2">                } catch (e) {</span>
+<span class="s2">                    // Игнорируем ошибки Canvas</span>
+<span class="s2">                }</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем Audio fingerprinting</span>
+<span class="s2">                try {</span>
+<span class="s2">                    const originalGetChannelData = AudioBuffer.prototype.getChannelData;</span>
+<span class="s2">                    AudioBuffer.prototype.getChannelData = function(channel) {</span>
+<span class="s2">                        const data = originalGetChannelData.call(this, channel);</span>
+<span class="s2">                        // Добавляем небольшие изменения для уникальности</span>
+<span class="s2">                        for (let i = 0; i &lt; data.length; i += 100) {</span>
+<span class="s2">                            data[i] += Math.random() * 0.0001;</span>
+<span class="s2">                        }</span>
+<span class="s2">                        return data;</span>
+<span class="s2">                    };</span>
+<span class="s2">                } catch (e) {</span>
+<span class="s2">                    // Игнорируем ошибки Audio</span>
+<span class="s2">                }</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем userAgent</span>
+<span class="s2">                try {</span>
+<span class="s2">                    const originalUserAgent = navigator.userAgent;</span>
+<span class="s2">                    Object.defineProperty(navigator, &#39;userAgent&#39;, {</span>
+<span class="s2">                        get: () =&gt; originalUserAgent.replace(&#39;HeadlessChrome&#39;, &#39;Chrome&#39;),</span>
+<span class="s2">                    });</span>
+<span class="s2">                } catch (e) {</span>
+<span class="s2">                    // Свойство уже определено, пропускаем</span>
+<span class="s2">                }</span>
+<span class="s2">                </span>
+<span class="s2">                // Добавляем случайные задержки для имитации человеческого поведения</span>
+<span class="s2">                const originalSetTimeout = window.setTimeout;</span>
+<span class="s2">                window.setTimeout = function(fn, delay, ...args) {</span>
+<span class="s2">                    if (delay &lt; 100) {</span>
+<span class="s2">                        delay += Math.random() * 50;</span>
+<span class="s2">                    }</span>
+<span class="s2">                    return originalSetTimeout.call(this, fn, delay, ...args);</span>
+<span class="s2">                };</span>
+<span class="s2">                </span>
+<span class="s2">                // Маскируем performance API</span>
+<span class="s2">                try {</span>
+<span class="s2">                    const originalGetEntries = Performance.prototype.getEntries;</span>
+<span class="s2">                    Performance.prototype.getEntries = function() {</span>
+<span class="s2">                        const entries = originalGetEntries.call(this);</span>
+<span class="s2">                        // Добавляем случайные вариации</span>
+<span class="s2">                        return entries.map(entry =&gt; {</span>
+<span class="s2">                            if (entry.duration) {</span>
+<span class="s2">                                entry.duration += Math.random() * 0.1;</span>
+<span class="s2">                            }</span>
+<span class="s2">                            return entry;</span>
+<span class="s2">                        });</span>
+<span class="s2">                    };</span>
+<span class="s2">                } catch (e) {</span>
+<span class="s2">                    // Игнорируем ошибки Performance</span>
+<span class="s2">                }</span>
+<span class="s2">                </span>
+<span class="s2">            })();</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;✅ Дополнительная маскировка применена&quot;</span><span class="p">)</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка при применении дополнительной маскировки: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> </div>
 
 </pre></div>
 

@@ -74,7 +74,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#core.security.security_monitor.SecurityMonitor.generate_alerts_from_events"><code class="docutils literal notranslate"><span class="pre">SecurityMonitor.generate_alerts_from_events()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#core.security.security_monitor.create_test_alerts"><code class="docutils literal notranslate"><span class="pre">create_test_alerts()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#core.security.security_monitor.log_security_event"><code class="docutils literal notranslate"><span class="pre">log_security_event()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#core.security.security_monitor.security_monitoring_middleware"><code class="docutils literal notranslate"><span class="pre">security_monitoring_middleware()</span></code></a></li>
 </ul>
@@ -371,12 +370,6 @@
 </dl>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="core.security.security_monitor.create_test_alerts">
-<span class="sig-prename descclassname"><span class="pre">core.security.security_monitor.</span></span><span class="sig-name descname"><span class="pre">create_test_alerts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/security/security_monitor.html#create_test_alerts"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.security.security_monitor.create_test_alerts" title="Ссылка на это определение"></a></dt>
-<dd><p>Создание тестовых алертов для демонстрации</p>
 </dd></dl>
 
 <dl class="py function">
@@ -948,7 +941,7 @@
 <dd><p>Middleware для аутентификации API эндпоинтов безопасности</p>
 <dl class="field-list simple">
 <dt class="field-odd">Параметры<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+<dd class="field-odd"><p><strong>request</strong> (<em>Request</em>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -964,7 +957,7 @@
 <dd><p>Middleware для обработки сессий</p>
 <dl class="field-list simple">
 <dt class="field-odd">Параметры<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>request</strong> (<em>fastapi.Request</em>)</p>
+<dd class="field-odd"><p><strong>request</strong> (<em>Request</em>)</p>
 </dd>
 </dl>
 </dd></dl>

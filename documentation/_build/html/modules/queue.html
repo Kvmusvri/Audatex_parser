@@ -49,7 +49,6 @@
 <li class="toctree-l1"><a class="reference internal" href="auth.html">Модуль аутентификации (auth)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="database.html">Модуль базы данных (database)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="database.html#id3">Структура базы данных</a></li>
-<li class="toctree-l1"><a class="reference internal" href="database.html#er">ER-диаграмма</a></li>
 <li class="toctree-l1"><a class="reference internal" href="parser.html">Модуль парсера (parser)</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Модуль очереди (queue)</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id1">Обзор</a></li>
@@ -193,9 +192,9 @@
 <p>Управление Redis базой данных и очередью задач.</p>
 <dl class="py class" id="module-core.queue.redis_manager">
 <dt class="sig sig-object py" id="core.queue.redis_manager.RedisQueueManager">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.queue.redis_manager.</span></span><span class="sig-name descname"><span class="pre">RedisQueueManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6379</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/queue/redis_manager.html#RedisQueueManager"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.queue.redis_manager.RedisQueueManager" title="Ссылка на это определение"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.queue.redis_manager.</span></span><span class="sig-name descname"><span class="pre">RedisQueueManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/queue/redis_manager.html#RedisQueueManager"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.queue.redis_manager.RedisQueueManager" title="Ссылка на это определение"></a></dt>
 <dd><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Менеджер для работы с очередью заявок в Redis</p>
+<p>Менеджер очереди Redis для парсера</p>
 <dl class="field-list simple">
 <dt class="field-odd">Параметры<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -207,9 +206,8 @@
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="core.queue.redis_manager.RedisQueueManager.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6379</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/queue/redis_manager.html#RedisQueueManager.__init__"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.queue.redis_manager.RedisQueueManager.__init__" title="Ссылка на это определение"></a></dt>
-<dd><p>Инициализация подключения к Redis</p>
-<dl class="field-list simple">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/queue/redis_manager.html#RedisQueueManager.__init__"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.queue.redis_manager.RedisQueueManager.__init__" title="Ссылка на это определение"></a></dt>
+<dd><dl class="field-list simple">
 <dt class="field-odd">Параметры<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>host</strong> (<em>str</em>)</p></li>

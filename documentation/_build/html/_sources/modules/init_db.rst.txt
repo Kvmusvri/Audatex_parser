@@ -1,7 +1,0 @@
-init\_db module
-===============
-
-.. automodule:: init_db
-   :members:
-   :show-inheritance:
-   :undoc-members:

@@ -46,7 +46,6 @@
 <li class="toctree-l1"><a class="reference internal" href="modules/auth.html">Модуль аутентификации (auth)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules/database.html">Модуль базы данных (database)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules/database.html#id3">Структура базы данных</a></li>
-<li class="toctree-l1"><a class="reference internal" href="modules/database.html#er">ER-диаграмма</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules/parser.html">Модуль парсера (parser)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules/queue.html">Модуль очереди (queue)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules/security.html">Модуль безопасности (security)</a></li>
@@ -102,6 +101,7 @@
  | <a href="#U"><strong>U</strong></a>
  | <a href="#V"><strong>V</strong></a>
  | <a href="#W"><strong>W</strong></a>
+ | <a href="#Z"><strong>Z</strong></a>
  
 </div>
 <h2 id="_">_</h2>
@@ -156,6 +156,8 @@
       <li><a href="modules/auth.html#core.auth.routes.api_refresh_token">api_refresh_token() (в модуле core.auth.routes)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.stealth.apply_advanced_stealth_masking">apply_advanced_stealth_masking() (в модуле core.parser.stealth)</a>
+</li>
+      <li><a href="modules/parser.html#core.parser.browser.apply_enhanced_stealth_masking">apply_enhanced_stealth_masking() (в модуле core.parser.browser)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.stealth.apply_headless_masking">apply_headless_masking() (в модуле core.parser.stealth)</a>
 </li>
@@ -243,9 +245,15 @@
 </li>
       <li><a href="modules/database.html#core.database.models.close_db">close_db() (в модуле core.database.models)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.ParserCarDetail.code">code (атрибут core.database.models.ParserCarDetail)</a>
+</li>
       <li><a href="modules/parser.html#core.parser.option_processor.collect_all_options">collect_all_options() (в модуле core.parser.option_processor)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.option_processor.collect_all_options_extended">collect_all_options_extended() (в модуле core.parser.option_processor)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.ParserCarRequestStatus.comment">comment (атрибут core.database.models.ParserCarRequestStatus)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.ParserCarRequestStatus.completed_at">completed_at (атрибут core.database.models.ParserCarRequestStatus)</a>
 </li>
       <li>
     core.auth.db_auth
@@ -324,8 +332,6 @@
         <li><a href="modules/parser.html#module-core.parser.auth">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     core.parser.browser
 
@@ -333,6 +339,8 @@
         <li><a href="modules/parser.html#module-core.parser.browser">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     core.parser.constants
 
@@ -454,6 +462,8 @@
       </ul></li>
       <li><a href="modules/security.html#core.security.auth_utils.create_access_token">create_access_token() (в модуле core.security.auth_utils)</a>
 </li>
+      <li><a href="modules/database.html#core.database.init_db.create_database_engine">create_database_engine() (в модуле core.database.init_db)</a>
+</li>
       <li><a href="modules/auth.html#core.auth.db_auth.create_default_users">create_default_users() (в модуле core.auth.db_auth)</a>
 
       <ul>
@@ -474,8 +484,6 @@
         <li><a href="modules/auth.html#core.auth.users.UserManager.create_session">(статический метод core.auth.users.UserManager)</a>
 </li>
       </ul></li>
-      <li><a href="modules/security.html#core.security.security_monitor.create_test_alerts">create_test_alerts() (в модуле core.security.security_monitor)</a>
-</li>
       <li><a href="modules/security.html#core.security.api_endpoints.create_test_security_events">create_test_security_events() (в модуле core.security.api_endpoints)</a>
 </li>
       <li><a href="modules/auth.html#core.auth.db_auth.create_user">create_user() (в модуле core.auth.db_auth)</a>
@@ -486,6 +494,24 @@
       </ul></li>
       <li><a href="modules/parser.html#core.parser.output_manager.create_zones_table">create_zones_table() (в модуле core.parser.output_manager)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.ParserScheduleSettings.created_at">created_at (атрибут core.database.models.ParserScheduleSettings)</a>
+
+      <ul>
+        <li><a href="modules/database.html#core.database.models.User.created_at">(атрибут core.database.models.User)</a>
+</li>
+        <li><a href="modules/database.html#core.database.models.UserSession.created_at">(атрибут core.database.models.UserSession)</a>
+</li>
+      </ul></li>
+      <li><a href="modules/database.html#core.database.models.ParserCarDetail.created_date">created_date (атрибут core.database.models.ParserCarDetail)</a>
+
+      <ul>
+        <li><a href="modules/database.html#core.database.models.ParserCarDetailGroupZone.created_date">(атрибут core.database.models.ParserCarDetailGroupZone)</a>
+</li>
+        <li><a href="modules/database.html#core.database.models.ParserCarOptions.created_date">(атрибут core.database.models.ParserCarOptions)</a>
+</li>
+        <li><a href="modules/database.html#core.database.models.ParserCarRequestStatus.created_date">(атрибут core.database.models.ParserCarRequestStatus)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -518,11 +544,17 @@
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/database.html#core.database.models.User.email">email (атрибут core.database.models.User)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.ParserScheduleSettings.end_time">end_time (атрибут core.database.models.ParserScheduleSettings)</a>
+</li>
       <li><a href="modules/parser.html#core.parser.visual_processor.ensure_document_ready">ensure_document_ready() (в модуле core.parser.visual_processor)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.option_processor.ensure_in_iframe">ensure_in_iframe() (в модуле core.parser.option_processor)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.visual_processor.ensure_zone_details_extracted">ensure_zone_details_extracted() (в модуле core.parser.visual_processor)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.UserSession.expires_at">expires_at (атрибут core.database.models.UserSession)</a>
 </li>
       <li><a href="modules/security.html#core.security.security_monitor.SecurityMonitor.export_events">export_events() (метод core.security.security_monitor.SecurityMonitor)</a>
 </li>
@@ -532,12 +564,12 @@
 </li>
       <li><a href="modules/parser.html#core.parser.option_processor.extract_azt_options_from_container">extract_azt_options_from_container() (в модуле core.parser.option_processor)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/database.html#core.database.requests.extract_option_code">extract_option_code() (в модуле core.database.requests)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.option_processor.extract_option_from_element">extract_option_from_element() (в модуле core.parser.option_processor)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/parser.html#core.parser.option_processor.extract_option_zones">extract_option_zones() (в модуле core.parser.option_processor)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.option_processor.extract_options_with_sections">extract_options_with_sections() (в модуле core.parser.option_processor)</a>
@@ -550,8 +582,6 @@
 </li>
       <li><a href="modules/parser.html#core.parser.option_processor.extract_sections_from_container">extract_sections_from_container() (в модуле core.parser.option_processor)</a>
 </li>
-      <li><a href="modules/parser.html#core.parser.folder_manager.extract_vin_and_claim_number">extract_vin_and_claim_number() (в модуле core.parser.folder_manager)</a>
-</li>
       <li><a href="modules/parser.html#core.parser.option_processor.extract_zone_options_universal">extract_zone_options_universal() (в модуле core.parser.option_processor)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.visual_processor.extract_zones">extract_zones() (в модуле core.parser.visual_processor)</a>
@@ -562,10 +592,14 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/parser.html#core.parser.option_processor.find_all_option_elements_in_container">find_all_option_elements_in_container() (в модуле core.parser.option_processor)</a>
+      <li><a href="modules/database.html#core.database.models.User.failed_login_attempts">failed_login_attempts (атрибут core.database.models.User)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.ParserCarRequestStatus.file_path">file_path (атрибут core.database.models.ParserCarRequestStatus)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/parser.html#core.parser.option_processor.find_all_option_elements_in_container">find_all_option_elements_in_container() (в модуле core.parser.option_processor)</a>
+</li>
       <li><a href="modules/parser.html#core.parser.actions.find_claim_data">find_claim_data() (в модуле core.parser.actions)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.visual_processor.find_pictograms_grid_reliable">find_pictograms_grid_reliable() (в модуле core.parser.visual_processor)</a>
@@ -634,10 +668,10 @@
       </ul></li>
       <li><a href="modules/queue.html#core.queue.redis_manager.RedisQueueManager.get_pending_requests">get_pending_requests() (метод core.queue.redis_manager.RedisQueueManager)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/queue.html#core.queue.redis_manager.RedisQueueManager.get_processing_requests">get_processing_requests() (метод core.queue.redis_manager.RedisQueueManager)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/auth.html#core.auth.db_routes.get_profile">get_profile() (в модуле core.auth.db_routes)</a>
 
       <ul>
@@ -692,6 +726,8 @@
       </ul></li>
       <li><a href="modules/parser.html#core.parser.actions.get_vin_status">get_vin_status() (в модуле core.parser.actions)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.ParserCarDetail.group_zone">group_zone (атрибут core.database.models.ParserCarDetail)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -708,6 +744,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/security.html#core.security.auth_utils.hash_token">hash_token() (в модуле core.security.auth_utils)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.User.hashed_password">hashed_password (атрибут core.database.models.User)</a>
+</li>
       <li><a href="modules/parser.html#core.parser.actions.human_like_click">human_like_click() (в модуле core.parser.actions)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.actions.human_like_delay">human_like_delay() (в модуле core.parser.actions)</a>
@@ -722,13 +760,19 @@
 </li>
       <li><a href="modules/database.html#core.database.init_db.init_database">init_database() (в модуле core.database.init_db)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.UserSession.ip_address">ip_address (атрибут core.database.models.UserSession)</a>
+</li>
       <li><a href="modules/security.html#core.security.auth_utils.is_account_locked">is_account_locked() (в модуле core.security.auth_utils)</a>
 </li>
-      <li><a href="modules/security.html#core.security.ddos_protection.DDoSProtection.is_ip_blocked">is_ip_blocked() (метод core.security.ddos_protection.DDoSProtection)</a>
+      <li><a href="modules/database.html#core.database.models.User.is_active">is_active (атрибут core.database.models.User)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/security.html#core.security.ddos_protection.DDoSProtection.is_ip_blocked">is_ip_blocked() (метод core.security.ddos_protection.DDoSProtection)</a>
+</li>
       <li><a href="modules/database.html#core.database.requests.is_letter_code">is_letter_code() (в модуле core.database.requests)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.ParserCarRequestStatus.is_success">is_success (атрибут core.database.models.ParserCarRequestStatus)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.actions.is_table_empty">is_table_empty() (в модуле core.parser.actions)</a>
 </li>
@@ -750,7 +794,11 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/database.html#core.database.models.User.last_login">last_login (атрибут core.database.models.User)</a>
+</li>
       <li><a href="modules/parser.html#core.parser.auth.load_cookies">load_cookies() (в модуле core.parser.auth)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.User.locked_until">locked_until (атрибут core.database.models.User)</a>
 </li>
       <li><a href="modules/security.html#core.security.security_monitor.log_security_event">log_security_event() (в модуле core.security.security_monitor)</a>
 </li>
@@ -760,10 +808,10 @@
         <li><a href="modules/auth.html#core.auth.routes.login">(в модуле core.auth.routes)</a>
 </li>
       </ul></li>
-      <li><a href="modules/parser.html#core.parser.parser.login_audatex">login_audatex() (в модуле core.parser.parser)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/parser.html#core.parser.parser.login_audatex">login_audatex() (в модуле core.parser.parser)</a>
+</li>
       <li><a href="modules/auth.html#core.auth.db_routes.login_page">login_page() (в модуле core.auth.db_routes)</a>
 
       <ul>
@@ -872,6 +920,12 @@
       <li><a href="modules/parser.html#core.parser.actions.open_task">open_task() (в модуле core.parser.actions)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/database.html#core.database.models.ParserCarOptions.option_code">option_code (атрибут core.database.models.ParserCarOptions)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.ParserCarOptions.option_title">option_title (атрибут core.database.models.ParserCarOptions)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="P">P</h2>
@@ -929,6 +983,16 @@
 </li>
       <li><a href="modules/queue.html#core.queue.redis_manager.RedisQueueManager">RedisQueueManager (класс в core.queue.redis_manager)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.ParserCarDetail.request_id">request_id (атрибут core.database.models.ParserCarDetail)</a>
+
+      <ul>
+        <li><a href="modules/database.html#core.database.models.ParserCarDetailGroupZone.request_id">(атрибут core.database.models.ParserCarDetailGroupZone)</a>
+</li>
+        <li><a href="modules/database.html#core.database.models.ParserCarOptions.request_id">(атрибут core.database.models.ParserCarOptions)</a>
+</li>
+        <li><a href="modules/database.html#core.database.models.ParserCarRequestStatus.request_id">(атрибут core.database.models.ParserCarRequestStatus)</a>
+</li>
+      </ul></li>
       <li><a href="modules/auth.html#core.auth.db_decorators.require_admin">require_admin() (в модуле core.auth.db_decorators)</a>
 
       <ul>
@@ -941,14 +1005,14 @@
         <li><a href="modules/auth.html#core.auth.decorators.require_api_user">(в модуле core.auth.decorators)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/auth.html#core.auth.db_decorators.require_auth">require_auth() (в модуле core.auth.db_decorators)</a>
 
       <ul>
         <li><a href="modules/auth.html#core.auth.decorators.require_auth">(в модуле core.auth.decorators)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/auth.html#core.auth.db_decorators.require_role">require_role() (в модуле core.auth.db_decorators)</a>
 
       <ul>
@@ -966,6 +1030,8 @@
       <li><a href="modules/parser.html#core.parser.stealth.restore_stealth_masking">restore_stealth_masking() (в модуле core.parser.stealth)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.actions.retry_on_failure">retry_on_failure() (в модуле core.parser.actions)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.User.role">role (атрибут core.database.models.User)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -995,6 +1061,8 @@
 </li>
       <li><a href="modules/database.html#core.database.requests.save_zones_batch">save_zones_batch() (в модуле core.database.requests)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.ParserCarDetailGroupZone.screenshot_path">screenshot_path (атрибут core.database.models.ParserCarDetailGroupZone)</a>
+</li>
       <li><a href="modules/parser.html#core.parser.parser.search_and_extract">search_and_extract() (в модуле core.parser.parser)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.actions.search_in_table">search_in_table() (в модуле core.parser.actions)</a>
@@ -1005,14 +1073,22 @@
 </li>
       <li><a href="modules/security.html#core.security.security_monitor.SecurityEvent">SecurityEvent (класс в core.security.security_monitor)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/security.html#core.security.security_monitor.SecurityMonitor">SecurityMonitor (класс в core.security.security_monitor)</a>
 </li>
       <li><a href="modules/security.html#core.security.session_middleware.session_middleware">session_middleware() (в модуле core.security.session_middleware)</a>
 </li>
       <li><a href="modules/database.html#core.database.models.User.sessions">sessions (атрибут core.database.models.User)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/database.html#core.database.models.ParserCarDetail.source_from">source_from (атрибут core.database.models.ParserCarDetail)</a>
+
+      <ul>
+        <li><a href="modules/database.html#core.database.models.ParserCarDetailGroupZone.source_from">(атрибут core.database.models.ParserCarDetailGroupZone)</a>
+</li>
+        <li><a href="modules/database.html#core.database.models.ParserCarOptions.source_from">(атрибут core.database.models.ParserCarOptions)</a>
+</li>
+      </ul></li>
       <li><a href="modules/parser.html#core.parser.visual_processor.split_svg_by_details">split_svg_by_details() (в модуле core.parser.visual_processor)</a>
 </li>
       <li><a href="modules/security.html#core.security.security_monitor.SecurityMonitor.start_cleanup_task">start_cleanup_task() (метод core.security.security_monitor.SecurityMonitor)</a>
@@ -1022,6 +1098,10 @@
       <li><a href="modules/queue.html#core.queue.queue_processor.QueueProcessor.start_processing">start_processing() (метод core.queue.queue_processor.QueueProcessor)</a>
 </li>
       <li><a href="modules/queue.html#core.queue.api_endpoints.start_queue_processing">start_queue_processing() (в модуле core.queue.api_endpoints)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.ParserScheduleSettings.start_time">start_time (атрибут core.database.models.ParserScheduleSettings)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.ParserCarRequestStatus.started_at">started_at (атрибут core.database.models.ParserCarRequestStatus)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.stealth.stealth_click">stealth_click() (в модуле core.parser.stealth)</a>
 </li>
@@ -1039,6 +1119,12 @@
 </li>
       <li><a href="modules/queue.html#core.queue.api_endpoints.QueueRequest.svg_collection">svg_collection (атрибут core.queue.api_endpoints.QueueRequest)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.ParserCarDetail.svg_path">svg_path (атрибут core.database.models.ParserCarDetail)</a>
+
+      <ul>
+        <li><a href="modules/database.html#core.database.models.ParserCarDetailGroupZone.svg_path">(атрибут core.database.models.ParserCarDetailGroupZone)</a>
+</li>
+      </ul></li>
       <li><a href="modules/parser.html#core.parser.actions.switch_to_frame_and_confirm">switch_to_frame_and_confirm() (в модуле core.parser.actions)</a>
 </li>
   </ul></td>
@@ -1049,11 +1135,21 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/parser.html#core.parser.parser.terminate_all_processes_and_restart">terminate_all_processes_and_restart() (в модуле core.parser.parser)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/queue.html#core.queue.redis_manager.RedisQueueManager.test_connection">test_connection() (метод core.queue.redis_manager.RedisQueueManager)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.ParserCarDetail.title">title (атрибут core.database.models.ParserCarDetail)</a>
+
+      <ul>
+        <li><a href="modules/database.html#core.database.models.ParserCarDetailGroupZone.title">(атрибут core.database.models.ParserCarDetailGroupZone)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/security.html#core.security.security_monitor.SecurityEvent.to_dict">to_dict() (метод core.security.security_monitor.SecurityEvent)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.UserSession.token_hash">token_hash (атрибут core.database.models.UserSession)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.ParserCarDetailGroupZone.type">type (атрибут core.database.models.ParserCarDetailGroupZone)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1067,6 +1163,12 @@
 </li>
       <li><a href="modules/auth.html#core.auth.users.UserManager.update_user_role">update_user_role() (статический метод core.auth.users.UserManager)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.ParserScheduleSettings.updated_at">updated_at (атрибут core.database.models.ParserScheduleSettings)</a>
+
+      <ul>
+        <li><a href="modules/database.html#core.database.models.User.updated_at">(атрибут core.database.models.User)</a>
+</li>
+      </ul></li>
       <li><a href="modules/database.html#core.database.requests.upsert_request_status">upsert_request_status() (в модуле core.database.requests)</a>
 </li>
   </ul></td>
@@ -1075,7 +1177,13 @@
 </li>
       <li><a href="modules/database.html#core.database.models.User">User (класс в core.database.models)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.UserSession.user_agent">user_agent (атрибут core.database.models.UserSession)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.UserSession.user_id">user_id (атрибут core.database.models.UserSession)</a>
+</li>
       <li><a href="modules/auth.html#core.auth.users.UserManager">UserManager (класс в core.auth.users)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.User.username">username (атрибут core.database.models.User)</a>
 </li>
       <li><a href="modules/database.html#core.database.models.UserSession">UserSession (класс в core.database.models)</a>
 </li>
@@ -1097,8 +1205,6 @@
       </ul></li>
       <li><a href="modules/auth.html#core.auth.decorators.verify_api_admin_token">verify_api_admin_token() (в модуле core.auth.decorators)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/auth.html#core.auth.decorators.verify_api_token">verify_api_token() (в модуле core.auth.decorators)</a>
 </li>
       <li><a href="modules/auth.html#core.auth.db_auth.verify_password">verify_password() (в модуле core.auth.db_auth)</a>
@@ -1107,9 +1213,23 @@
         <li><a href="modules/security.html#core.security.auth_utils.verify_password">(в модуле core.security.auth_utils)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/security.html#core.security.auth_utils.verify_token">verify_token() (в модуле core.security.auth_utils)</a>
 </li>
+      <li><a href="modules/database.html#core.database.models.ParserCarDetail.vin">vin (атрибут core.database.models.ParserCarDetail)</a>
+
+      <ul>
+        <li><a href="modules/database.html#core.database.models.ParserCarDetailGroupZone.vin">(атрибут core.database.models.ParserCarDetailGroupZone)</a>
+</li>
+        <li><a href="modules/database.html#core.database.models.ParserCarOptions.vin">(атрибут core.database.models.ParserCarOptions)</a>
+</li>
+        <li><a href="modules/database.html#core.database.models.ParserCarRequestStatus.vin">(атрибут core.database.models.ParserCarRequestStatus)</a>
+</li>
+      </ul></li>
       <li><a href="modules/queue.html#core.queue.api_endpoints.QueueRequest.vin_number">vin_number (атрибут core.queue.api_endpoints.QueueRequest)</a>
+</li>
+      <li><a href="modules/database.html#core.database.models.ParserCarRequestStatus.vin_status">vin_status (атрибут core.database.models.ParserCarRequestStatus)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1140,6 +1260,14 @@
       <li><a href="modules/parser.html#core.parser.actions.wait_for_table">wait_for_table() (в модуле core.parser.actions)</a>
 </li>
       <li><a href="modules/parser.html#core.parser.visual_processor.wait_for_works_in_section">wait_for_works_in_section() (в модуле core.parser.visual_processor)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Z">Z</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/database.html#core.database.models.ParserCarOptions.zone_name">zone_name (атрибут core.database.models.ParserCarOptions)</a>
 </li>
   </ul></td>
 </tr></table>

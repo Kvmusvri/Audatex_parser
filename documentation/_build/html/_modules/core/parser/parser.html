@@ -124,8 +124,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.constants</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.browser</span><span class="w"> </span><span class="kn">import</span> <span class="n">kill_chrome_processes</span><span class="p">,</span> <span class="n">get_chromedriver_version</span><span class="p">,</span> <span class="n">init_browser</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_cookies</span><span class="p">,</span> <span class="n">perform_login</span><span class="p">,</span> <span class="n">check_if_authorized</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.folder_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_folders</span><span class="p">,</span> <span class="n">extract_vin_and_claim_number</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.folder_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_folders</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.output_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_zones_table</span><span class="p">,</span> <span class="n">save_data_to_json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.database.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_moscow_time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.visual_processor</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">is_zone_file</span><span class="p">,</span> <span class="n">split_svg_by_details</span><span class="p">,</span> <span class="n">save_svg_sync</span><span class="p">,</span> 
     <span class="n">save_main_screenshot_and_svg</span><span class="p">,</span> <span class="n">extract_zones</span><span class="p">,</span> 
@@ -136,7 +137,7 @@
     <span class="n">wait_for_table</span><span class="p">,</span> <span class="n">click_cansel_button</span><span class="p">,</span> <span class="n">click_request_type_button</span><span class="p">,</span>
     <span class="n">search_in_table</span><span class="p">,</span> <span class="n">click_more_icon</span><span class="p">,</span> <span class="n">open_task</span><span class="p">,</span> 
     <span class="n">switch_to_frame_and_confirm</span><span class="p">,</span> <span class="n">click_breadcrumb</span><span class="p">,</span> <span class="n">is_table_empty</span><span class="p">,</span>
-    <span class="n">find_claim_data</span>
+    <span class="n">find_claim_data</span><span class="p">,</span> <span class="n">get_vin_status</span>
 <span class="p">)</span>
 
 <span class="c1"># Настройка логирования</span>
@@ -155,8 +156,8 @@
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
 <span class="sd">        driver: WebDriver - экземпляр браузера</span>
-<span class="sd">        claim_number: str - номер заявки</span>
-<span class="sd">        vin_number: str - VIN автомобиля</span>
+<span class="sd">        claim_number: str - номер заявки из формы</span>
+<span class="sd">        vin_number: str - VIN автомобиля из формы</span>
 <span class="sd">        svg_collection: bool - собирать SVG (по умолчанию True)</span>
 <span class="sd">        started_at: datetime|str|None - время старта (опционально)</span>
 <span class="sd">    </span>
@@ -198,19 +199,23 @@
     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">current_url</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">current_url</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Текущий URL: </span><span class="si">{</span><span class="n">current_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Используем данные из формы вместо извлечения из заявки</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Используем данные из формы: claim_number=&#39;</span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&#39;, vin_number=&#39;</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Получаем VIN статус после открытия задачи</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">,</span> <span class="n">vin_status</span> <span class="o">=</span> <span class="n">extract_vin_and_claim_number</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">current_url</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Извлеченные данные: claim_number=&#39;</span><span class="si">{</span><span class="n">claim_number</span><span class="si">}</span><span class="s2">&#39;, vin_number=&#39;</span><span class="si">{</span><span class="n">vin_number</span><span class="si">}</span><span class="s2">&#39;, vin_status=&#39;</span><span class="si">{</span><span class="n">vin_status</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-        
-        <span class="c1"># Проверяем, что данные не пустые</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">claim_number</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">vin_number</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Извлеченные данные пустые - claim_number и vin_number отсутствуют&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Не удалось извлечь данные VIN и номер дела&quot;</span><span class="p">}</span>
-        
+        <span class="n">vin_status</span> <span class="o">=</span> <span class="n">get_vin_status</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📊 VIN статус определен: </span><span class="si">{</span><span class="n">vin_status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при получении VIN статуса: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">vin_status</span> <span class="o">=</span> <span class="s2">&quot;Нет&quot;</span>
+    
+    <span class="k">try</span><span class="p">:</span>
         <span class="n">screenshot_dir</span><span class="p">,</span> <span class="n">svg_dir</span><span class="p">,</span> <span class="n">data_dir</span> <span class="o">=</span> <span class="n">create_folders</span><span class="p">(</span><span class="n">claim_number</span><span class="p">,</span> <span class="n">vin_number</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при извлечении данных: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Ошибка извлечения данных: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Ошибка при создании папок: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Ошибка создания папок: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
     
     <span class="c1"># Формируем URL страницы повреждений для повторного использования</span>
     <span class="n">base_url</span> <span class="o">=</span> <span class="n">current_url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;step&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;&amp;step=Damage+capturing&#39;</span>
@@ -312,9 +317,9 @@
     
     <span class="n">zones_table</span> <span class="o">=</span> <span class="n">create_zones_table</span><span class="p">(</span><span class="n">zone_data</span><span class="p">)</span>
     
-    <span class="c1"># Получаем время завершения</span>
-    <span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🕐 Парсер завершен в: </span><span class="si">{</span><span class="n">completed_at</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%H:%M:%S&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># Получаем время завершения в московском часовом поясе</span>
+    <span class="n">completed_at</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Парсер завершен в: </span><span class="si">{</span><span class="n">completed_at</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%H:%M:%S&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (МСК)&quot;</span><span class="p">)</span>
     
     <span class="n">json_path</span> <span class="o">=</span> <span class="n">save_data_to_json</span><span class="p">(</span>
         <span class="n">vin_number</span><span class="p">,</span> <span class="n">zone_data</span><span class="p">,</span> <span class="n">main_screenshot_relative</span><span class="p">,</span> <span class="n">main_svg_relative</span><span class="p">,</span> 

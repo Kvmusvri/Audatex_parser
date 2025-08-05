@@ -1,0 +1,103 @@
+ER-диаграмма
+============
+
+.. code-block:: text
+
+   +-------------------------------------+
+   | parser_car_detail                   |
+   +-------------------------------------+
+   | id (PK)        |
+   | request_id            |
+   | vin            |
+   | group_zone            |
+   | code            |
+   | title            |
+   | source_from            |
+   | svg_path            |
+   | created_date            |
+   +-------------------------------------+
+
+   +------------------------------------------------+
+   | parser_car_detail_group_zone                   |
+   +------------------------------------------------+
+   | id (PK)        |
+   | request_id            |
+   | vin            |
+   | type            |
+   | title            |
+   | source_from            |
+   | screenshot_path            |
+   | svg_path            |
+   | created_date            |
+   +------------------------------------------------+
+
+   +---------------------------------------------+
+   | parser_car_request_status                   |
+   +---------------------------------------------+
+   | id (PK)        |
+   | request_id            |
+   | vin            |
+   | vin_status            |
+   | comment            |
+   | is_success            |
+   | file_path            |
+   | started_at            |
+   | completed_at            |
+   | created_date            |
+   +---------------------------------------------+
+
+   +--------------------------------------+
+   | parser_car_options                   |
+   +--------------------------------------+
+   | id (PK)        |
+   | request_id            |
+   | vin            |
+   | zone_name            |
+   | option_code            |
+   | option_title            |
+   | is_selected            |
+   | source_from            |
+   | created_date            |
+   +--------------------------------------+
+
+   +--------------------------------------------+
+   | parser_schedule_settings                   |
+   +--------------------------------------------+
+   | id (PK)        |
+   | start_time            |
+   | end_time            |
+   | is_active            |
+   | created_at            |
+   | updated_at            |
+   +--------------------------------------------+
+
+   +-------------------------+
+   | users                   |
+   +-------------------------+
+   | id (PK)        |
+   | username            |
+   | email            |
+   | hashed_password            |
+   | role            |
+   | is_active            |
+   | last_login            |
+   | failed_login_attempts            |
+   | locked_until            |
+   | created_at            |
+   | updated_at            |
+   +-------------------------+
+
+   +---------------------------------+
+   | user_sessions                   |
+   +---------------------------------+
+   | id (PK)        |
+   | user_id (FK)        |
+   | token_hash            |
+   | expires_at            |
+   | ip_address            |
+   | user_agent            |
+   | created_at            |
+   +---------------------------------+
+
+   **Связи:**
+   - user_sessions.user_id → users.id

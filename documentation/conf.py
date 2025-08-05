@@ -3,6 +3,45 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import os
+import sys
+from pathlib import Path
+
+# Добавляем путь к корню проекта
+sys.path.insert(0, os.path.abspath('..'))
+
+# Загружаем переменные окружения из .env файла
+def load_env_file():
+    """Загружает переменные окружения из .env файла"""
+    env_path = Path(__file__).parent.parent / '.env'
+    if env_path.exists():
+        with open(env_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key] = value
+
+# Загружаем .env файл
+load_env_file()
+
+# Создаем dummy engine для документации
+def setup_dummy_engine():
+    """Создает dummy engine для SQLAlchemy в контексте документации"""
+    try:
+        from sqlalchemy import create_engine
+        # Создаем временный engine в памяти для документации
+        dummy_engine = create_engine('sqlite:///:memory:')
+        # Сохраняем в переменной окружения для использования в модулях
+        os.environ['DUMMY_ENGINE'] = 'True'
+        return dummy_engine
+    except Exception as e:
+        print(f"Warning: Could not create dummy engine: {e}")
+        return None
+
+# Настраиваем dummy engine
+setup_dummy_engine()
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
@@ -412,11 +451,6 @@ autodoc_mock_imports = [
     'selenium_retry_per_ywmd',
     'selenium_retry_per_zwmd',
 ]
-
-# Add the project root to Python path
-import os
-import sys
-sys.path.insert(0, os.path.abspath('..'))
 
 # Настройки для документации
 autodoc_member_order = 'bysource'

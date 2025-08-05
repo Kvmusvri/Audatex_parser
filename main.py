@@ -172,7 +172,7 @@ def normalize_paths(record: dict, folder_name: str) -> dict:
     return record
 
 
-async def process_parser_result_data(claim_number: str, vin_value: str, parser_result: dict, started_at=None, completed_at=None) -> bool:
+async def process_parser_result_data(claim_number: str, vin_value: str, parser_result: dict, started_at=None, completed_at=None, svg_collection: bool = True) -> bool:
     """
     Обрабатывает данные результата парсера: ищет JSON файл и сохраняет в БД
     
@@ -241,7 +241,7 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
             return False
         
         # Сохраняем данные в БД с временными метками и путем к файлу
-        db_success = await save_parser_data_to_db(updated_json, clean_claim_number, clean_vin_value, is_success=True, started_at=started_at, completed_at=completed_at, file_path=file_path)
+        db_success = await save_parser_data_to_db(updated_json, clean_claim_number, clean_vin_value, is_success=True, started_at=started_at, completed_at=completed_at, file_path=file_path, svg_collection=svg_collection)
         if not db_success:
             logger.error(f"Не удалось сохранить данные в БД: {clean_claim_number}_{clean_vin_value}")
             return False

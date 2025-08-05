@@ -255,11 +255,11 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
                 # Обычный случай - имя не слишком длинное
                 output_path = os.path.normpath(os.path.join(output_dir, f"{safe_name}.svg"))
                 relative_base = f"/static/svgs/{clean_claim_number.replace('/', '_')}_{clean_vin}"
-                output_path_relative = f"{relative_base}/{safe_name}.svg".replace("\\", "/")
+                output_path_relative = os.path.normpath(f"{relative_base}/{safe_name}.svg")
 
                 detail_data = {
                     "title": detail,
-                    "svg_path": output_path_relative.replace("\\", "/") if svg_collection else ""
+                    "svg_path": output_path_relative if svg_collection else ""
                 }
                 detail_paths.append(detail_data)
                 logger.info(f"📝 Деталь извлечена: '{detail}' ({len(detail)} символов)")
@@ -308,11 +308,11 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
                             group_filename = f"{group_safe_name}_group{part_num}.svg"
                             group_output_path = os.path.normpath(os.path.join(output_dir, group_filename))
                             relative_base = f"/static/svgs/{clean_claim_number.replace('/', '_')}_{clean_vin}"
-                            group_output_path_relative = f"{relative_base}/{group_filename}".replace("\\", "/")
+                            group_output_path_relative = os.path.normpath(f"{relative_base}/{group_filename}")
                             
                             detail_data = {
                                 "title": group_title,
-                                "svg_path": group_output_path_relative.replace("\\", "/") if svg_collection else ""
+                                "svg_path": group_output_path_relative if svg_collection else ""
                             }
                             detail_paths.append(detail_data)
                             logger.info(f"📝 Группа {part_num} извлечена: '{group_title[:100]}{'...' if len(group_title) > 100 else ''}' -> {group_filename}")
@@ -344,11 +344,11 @@ def split_svg_by_details(svg_file, output_dir, subfolder=None, claim_number="", 
                     group_filename = f"{group_safe_name}_group{part_num}.svg"
                     group_output_path = os.path.normpath(os.path.join(output_dir, group_filename))
                     relative_base = f"/static/svgs/{clean_claim_number.replace('/', '_')}_{clean_vin}"
-                    group_output_path_relative = f"{relative_base}/{group_filename}".replace("\\", "/")
+                    group_output_path_relative = os.path.normpath(f"{relative_base}/{group_filename}")
                     
                     detail_data = {
                         "title": group_title,
-                        "svg_path": group_output_path_relative.replace("\\", "/") if svg_collection else ""
+                        "svg_path": group_output_path_relative if svg_collection else ""
                     }
                     detail_paths.append(detail_data)
                     logger.info(f"📝 Финальная группа {part_num} извлечена: '{group_title[:100]}{'...' if len(group_title) > 100 else ''}' -> {group_filename}")
@@ -708,7 +708,7 @@ def save_main_screenshot_and_svg(driver, screenshot_dir, svg_dir, timestamp, cla
             # Если сбор SVG отключен, устанавливаем пустой путь
             main_svg_relative = ""
             
-        return main_screenshot_relative.replace("\\", "/"), main_svg_relative.replace("\\", "/")
+        return os.path.normpath(main_screenshot_relative), os.path.normpath(main_svg_relative)
     except Exception as e:
         logger.error(f"Ошибка при сохранении основного скриншота/SVG: {str(e)}")
         return None, None
@@ -783,10 +783,9 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
                                'ru', reversed=True).replace(" ", "_").replace("/", "_").lower().replace("'", "")
     safe_zone_title = re.sub(r'\.+', '', safe_zone_title)
     zone_screenshot_path = os.path.join(screenshot_dir, f"zone_{safe_zone_title}.png")
-    zone_screenshot_relative = f"/static/screenshots/{clean_claim_number.replace('/', '_')}_{clean_vin}/zone_{safe_zone_title}.png".replace(
-        "\\", "/")
+    zone_screenshot_relative = os.path.normpath(f"/static/screenshots/{clean_claim_number.replace('/', '_')}_{clean_vin}/zone_{safe_zone_title}.png")
     zone_svg_path = os.path.join(svg_dir, f"zone_{safe_zone_title}.svg")
-    zone_svg_relative = f"/static/svgs/{clean_claim_number.replace('/', '_')}_{clean_vin}/zone_{safe_zone_title}.svg".replace("\\", "/")
+    zone_svg_relative = os.path.normpath(f"/static/svgs/{clean_claim_number.replace('/', '_')}_{clean_vin}/zone_{safe_zone_title}.svg")
 
     # Проверяем наличие пиктограмм с надежными стратегиями ожидания
     try:
@@ -1011,7 +1010,7 @@ def process_zone(driver, zone, screenshot_dir, svg_dir, max_retries=3, claim_num
             
             # Устанавливаем путь к SVG только если сбор включён
             if svg_collection:
-                zone_svg_relative = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}/zone_{safe_zone_title}.svg".replace("\\", "/")
+                zone_svg_relative = os.path.normpath(f"/static/svgs/{claim_number.replace('/', '_')}_{vin}/zone_{safe_zone_title}.svg")
             else:
                 zone_svg_relative = ""
 
@@ -1305,7 +1304,7 @@ def process_pictograms(driver, zone, screenshot_dir, svg_dir, max_retries=2, zon
                         safe_section_name = re.sub(r'\.+', '', safe_section_name)
                         svg_filename = f"{safe_section_name}_{safe_work_name1}" + (f"_{safe_work_name2}" if work_name2 else "") + ".svg"
                         work_svg_path = os.path.join(svg_dir, svg_filename)
-                        work_svg_relative = f"/static/svgs/{claim_number.replace('/', '_')}_{vin}/{svg_filename}".replace("\\", "/")
+                        work_svg_relative = os.path.normpath(f"/static/svgs/{claim_number.replace('/', '_')}_{vin}/{svg_filename}")
                         logger.debug(f"🔍 DEBUG: claim_number='{claim_number}', vin='{vin}', work_svg_relative='{work_svg_relative}'")
 
                         # Сохраняем SVG только если включен сбор SVG

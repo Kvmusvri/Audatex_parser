@@ -3,7 +3,7 @@ import re
 import json
 import os
 from datetime import datetime, date
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func, insert, delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -14,15 +14,32 @@ from core.database.models import (
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Создаем синхронный движок для аутентификации
-sync_engine = create_engine(os.getenv('DATABASE_URL').replace('+asyncpg', '+psycopg2'))
-SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
+# Создаем синхронный движок для аутентификации только если не в контексте документации
+sync_engine = None
+SyncSessionLocal = None
+
+def _init_engine():
+    """Инициализация engine только при необходимости"""
+    global sync_engine, SyncSessionLocal
+    if sync_engine is None:
+        try:
+            database_url = os.getenv('DATABASE_URL')
+            if database_url:
+                sync_engine = create_engine(database_url.replace('+asyncpg', '+psycopg2'))
+                SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
+        except Exception as e:
+            logger.warning(f"Не удалось создать engine: {e}")
+            # Создаем dummy engine для документации
+            sync_engine = create_engine('sqlite:///:memory:')
+            SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
 
 def get_db() -> Session:
     """Получение синхронной сессии БД"""
+    _init_engine()
     db = SyncSessionLocal()
     try:
         return db
@@ -82,15 +99,31 @@ def clean_option_title(title: str) -> str:
     """Очищает заголовок опции от кода"""
     return re.sub(r'^[A-Z0-9]+\s*[-–—]\s*', '', title).strip()
 
+def normalize_path_for_os(path: str) -> str:
+    if not path:
+        logger.debug("Пустой путь, возвращаем пустую строку")
+        return ""
+    original = path
+    normalized = str(Path(path))
+    if original != normalized:
+        logger.info(f"Путь нормализован: '{original}' -> '{normalized}'")
+    return normalized
+
 async def upsert_request_status(session, claim_number: str, vin: str, status_data: dict):
     """UPSERT для статуса заявки"""
+    # Нормализуем file_path под текущую ОС
+    file_path = status_data.get('file_path', None)
+    if file_path:
+        file_path = normalize_path_for_os(file_path)
+    
     await session.execute(
         pg_insert(ParserCarRequestStatus).values(
             request_id=claim_number,
-        vin=vin,
+            vin=vin,
             vin_status=status_data.get('vin_status', 'Неизвестно'),
             comment=status_data.get('comment', ''),
-            file_path=status_data.get('file_path', None),  # Добавляем путь к файлу
+            is_success=status_data.get('is_success', True),
+            file_path=file_path,  # Нормализованный путь
             started_at=status_data.get('started_at'),
             completed_at=status_data.get('completed_at'),
             created_date=func.current_date()
@@ -99,7 +132,8 @@ async def upsert_request_status(session, claim_number: str, vin: str, status_dat
             set_={
                 'vin_status': status_data.get('vin_status', 'Неизвестно'),
                 'comment': status_data.get('comment', ''),
-                'file_path': status_data.get('file_path', None),  # Добавляем путь к файлу
+                'is_success': status_data.get('is_success', True),
+                'file_path': file_path,  # Нормализованный путь
                 'started_at': status_data.get('started_at'),
                 'completed_at': status_data.get('completed_at')
             }
@@ -122,7 +156,7 @@ async def save_details_batch(session, claim_number: str, vin: str, details: List
             "code": detail.get("code", ""),
             "title": detail.get("title", ""),
             "source_from": detail.get("source_from", ""),
-            "svg_path": detail.get("svg_path", None),  # Путь к SVG детали
+            "svg_path": normalize_path_for_os(detail.get("svg_path", None)),  # Нормализованный путь к SVG детали
             "created_date": current_date
         })
     
@@ -144,8 +178,8 @@ async def save_zones_batch(session, claim_number: str, vin: str, zones: List[dic
             "type": zone.get("type", ""),
             "title": zone.get("title", ""),
             "source_from": zone.get("source_from", ""),
-            "screenshot_path": zone.get("screenshot_path", None),  # Путь к скриншоту зоны
-            "svg_path": zone.get("svg_path", None),  # Путь к SVG зоны
+            "screenshot_path": normalize_path_for_os(zone.get("screenshot_path", None)),  # Нормализованный путь к скриншоту зоны
+            "svg_path": normalize_path_for_os(zone.get("svg_path", None)),  # Нормализованный путь к SVG зоны
             "created_date": current_date
         })
     
@@ -201,7 +235,7 @@ async def delete_existing_request_data(session, claim_number: str, vin: str):
         .where(ParserCarRequestStatus.vin == vin)
     )
 
-async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str, is_success: bool = True, started_at=None, completed_at=None, file_path: str = None) -> bool:
+async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str, is_success: bool = True, started_at=None, completed_at=None, file_path: str = None, svg_collection: bool = True) -> bool:
     """Оптимизированное сохранение данных парсера с batch операциями"""
     try:
         async with DatabaseSession() as session:
@@ -228,18 +262,26 @@ async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str,
                 else:
                     zone_type = "DETAILS"
                 
-                # Создаем зону
+                # Создаем зону с нормализованными путями
+                screenshot_path = zone.get("screenshot_path", None)
+                svg_path = zone.get("svg_path", None)
+                
+                # Нормализуем пути под текущую ОС
+                screenshot_path = normalize_path_for_os(screenshot_path)
+                svg_path = normalize_path_for_os(svg_path)
+                
                 zone_data = {
                     "request_id": claim_number,
                     "vin": vin,
                     "type": zone_type,
                     "title": zone_title,
                     "source_from": "AUDATEX",
-                    "screenshot_path": zone.get("screenshot_path", None),  # Путь к скриншоту зоны
-                    "svg_path": zone.get("svg_path", None),  # Путь к SVG зоны
+                    "screenshot_path": screenshot_path,
+                    "svg_path": svg_path,
                     "created_date": date.today()
                 }
                 zones.append(zone_data)
+                logger.info(f"✅ Зона '{zone_title}' сохранена с путями: screenshot={screenshot_path}, svg={svg_path}")
                 
                 # Сохраняем зону и получаем ID
                 await session.execute(insert(ParserCarDetailGroupZone), [zone_data])
@@ -298,6 +340,9 @@ async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str,
                             # Обычные детали идут в текущую зону
                             group_zone = str(zone_id)
                         
+                        # Нормализуем путь к SVG детали
+                        detail_svg_path = normalize_path_for_os(detail.get("svg_path", None))
+                        
                         detail_data = {
                             "request_id": claim_number,
                             "vin": vin,
@@ -305,10 +350,11 @@ async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str,
                             "code": code,
                             "title": title,
                             "source_from": "AUDATEX",
-                            "svg_path": detail.get("svg_path", None),  # Путь к SVG детали
+                            "svg_path": detail_svg_path,
                             "created_date": date.today()
                         }
                         details.append(detail_data)
+                        logger.info(f"✅ Деталь '{title}' сохранена с SVG: {detail_svg_path}")
             
             # Обрабатываем опции автомобиля
             options_data = parser_data.get('options_data', {})
@@ -347,12 +393,19 @@ async def save_parser_data_to_db(parser_data: dict, claim_number: str, vin: str,
             if completed_at is None:
                 completed_at = get_moscow_time()
             
+            # Определяем comment на основе успешности и состояния SVG
+            if is_success and svg_collection:
+                comment = "ysvg"
+            else:
+                comment = "nsvg"
+            
             status_data = {
                 "vin_status": parser_data.get("vin_status", "Неизвестно"),
-                "comment": "ysvg" if is_success else "nsvg",
+                "comment": comment,
+                "is_success": is_success,
                 "started_at": started_at,
                 "completed_at": completed_at,
-                "file_path": file_path  # Добавляем путь к файлу
+                "file_path": normalize_path_for_os(file_path) if file_path else None  # Нормализуем путь
             }
             
             # Batch операции

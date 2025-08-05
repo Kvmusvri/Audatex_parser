@@ -155,12 +155,12 @@ class QueueProcessor:
             except Exception as e:
                 self.failed_count += 1
                 logger.error(f"❌ Ошибка обработки заявки {claim_number}: {e}")
-                redis_manager.mark_request_completed(request_data, success=False)
+                await self._handle_parser_error(request_data, str(e))
                 
         except Exception as e:
             self.failed_count += 1
-            logger.error(f"❌ Ошибка обработки заявки {claim_number}: {e}")
-            redis_manager.mark_request_completed(request_data, success=False)
+            logger.error(f"❌ Критическая ошибка обработки заявки {claim_number}: {e}")
+            await self._handle_parser_error(request_data, str(e))
         finally:
             # Очищаем ссылку на текущую задачу парсера
             self.current_parser_task = None
@@ -325,7 +325,8 @@ class QueueProcessor:
             # Сохраняем данные в БД с временными метками
             db_success = await save_parser_data_to_db(
                 updated_json, clean_claim_number, clean_vin_number, 
-                is_success=True, started_at=started_at, completed_at=completed_at
+                is_success=True, started_at=started_at, completed_at=completed_at,
+                file_path=file_path, svg_collection=request_data.get('svg_collection', True)
             )
             if not db_success:
                 logger.error(f"Не удалось сохранить данные в БД: {clean_claim_number}_{clean_vin_number}")
@@ -351,6 +352,67 @@ class QueueProcessor:
         # Очищаем очередь
         redis_manager.clear_queue()
         logger.info("🗑️ Очередь очищена")
+    
+    async def _handle_parser_error(self, request_data: Dict[str, Any], error_message: str):
+        """Обработка ошибки парсера с повторными попытками"""
+        claim_number = request_data.get('claim_number', '')
+        vin_number = request_data.get('vin_number', '')
+        key = f"{claim_number}_{vin_number}"
+        
+        # Увеличиваем счетчик ошибок
+        error_count = redis_manager._increment_error_count(key)
+        logger.warning(f"⚠️ Ошибка для {key}: {error_message} (попытка {error_count}/10)")
+        
+        if error_count >= 10:
+            # Достигнут лимит попыток - сохраняем как неудачную в БД
+            logger.error(f"❌ Заявка {key} достигла лимита ошибок ({error_count}), сохраняем как nsvg")
+            
+            # Создаем неудачный результат
+            failed_result = {
+                "vin_value": vin_number,
+                "vin_status": "Нет",
+                "zone_data": [],
+                "main_screenshot_path": "",
+                "main_svg_path": "",
+                "zones_table": "",
+                "all_svgs_zip": "",
+                "options_data": {"success": False, "zones": []},
+                "claim_number": claim_number,
+                "success": False,
+                "error": error_message
+            }
+            
+            # Сохраняем в БД как неудачную
+            from core.database.models import get_moscow_time
+            started_at = get_moscow_time()
+            completed_at = get_moscow_time()
+            
+            try:
+                from core.database.requests import save_parser_data_to_db
+                success = await save_parser_data_to_db(
+                    failed_result, claim_number, vin_number, 
+                    is_success=False, started_at=started_at, completed_at=completed_at,
+                    svg_collection=request_data.get('svg_collection', True)
+                )
+                if success:
+                    logger.info(f"✅ Неудачная заявка {key} сохранена в БД как nsvg")
+                else:
+                    logger.error(f"❌ Не удалось сохранить неудачную заявку {key} в БД")
+            except Exception as e:
+                logger.error(f"❌ Ошибка сохранения неудачной заявки {key} в БД: {e}")
+            
+            # Очищаем счетчик ошибок
+            redis_manager._clear_error_count(key)
+            
+            # Отмечаем как завершенную с неудачей
+            redis_manager.mark_request_completed(request_data, success=False)
+        else:
+            # Возвращаем заявку в конец очереди для повторной попытки
+            logger.info(f"🔄 Возвращаем заявку {key} в очередь для повторной попытки ({error_count}/10)")
+            redis_manager.add_request_to_queue(request_data)
+            
+            # Удаляем из обработки
+            redis_manager.redis_client.hdel(redis_manager.processing_key, key)
     
     def get_stats(self) -> Dict[str, Any]:
         """Получение статистики обработки"""

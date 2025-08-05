@@ -52,16 +52,78 @@
 <li class="toctree-l2"><a class="reference internal" href="#id2">Модули</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#core-database-models">core.database.models</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#core.database.models.Base"><code class="docutils literal notranslate"><span class="pre">Base</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarDetail"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarOptions"><code class="docutils literal notranslate"><span class="pre">ParserCarOptions</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserScheduleSettings"><code class="docutils literal notranslate"><span class="pre">ParserScheduleSettings</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarDetail"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetail.request_id"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail.request_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetail.vin"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail.vin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetail.group_zone"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail.group_zone</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetail.code"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail.code</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetail.title"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetail.source_from"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail.source_from</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetail.svg_path"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail.svg_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetail.created_date"><code class="docutils literal notranslate"><span class="pre">ParserCarDetail.created_date</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone.request_id"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone.request_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone.vin"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone.vin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone.type"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone.type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone.title"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone.source_from"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone.source_from</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone.screenshot_path"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone.screenshot_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone.svg_path"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone.svg_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarDetailGroupZone.created_date"><code class="docutils literal notranslate"><span class="pre">ParserCarDetailGroupZone.created_date</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus.request_id"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus.request_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus.vin"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus.vin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus.vin_status"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus.vin_status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus.comment"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus.comment</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus.is_success"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus.is_success</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus.file_path"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus.file_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus.started_at"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus.started_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus.completed_at"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus.completed_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarRequestStatus.created_date"><code class="docutils literal notranslate"><span class="pre">ParserCarRequestStatus.created_date</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserCarOptions"><code class="docutils literal notranslate"><span class="pre">ParserCarOptions</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarOptions.request_id"><code class="docutils literal notranslate"><span class="pre">ParserCarOptions.request_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarOptions.vin"><code class="docutils literal notranslate"><span class="pre">ParserCarOptions.vin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarOptions.zone_name"><code class="docutils literal notranslate"><span class="pre">ParserCarOptions.zone_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarOptions.option_code"><code class="docutils literal notranslate"><span class="pre">ParserCarOptions.option_code</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarOptions.option_title"><code class="docutils literal notranslate"><span class="pre">ParserCarOptions.option_title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarOptions.source_from"><code class="docutils literal notranslate"><span class="pre">ParserCarOptions.source_from</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserCarOptions.created_date"><code class="docutils literal notranslate"><span class="pre">ParserCarOptions.created_date</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.models.ParserScheduleSettings"><code class="docutils literal notranslate"><span class="pre">ParserScheduleSettings</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserScheduleSettings.start_time"><code class="docutils literal notranslate"><span class="pre">ParserScheduleSettings.start_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserScheduleSettings.end_time"><code class="docutils literal notranslate"><span class="pre">ParserScheduleSettings.end_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserScheduleSettings.created_at"><code class="docutils literal notranslate"><span class="pre">ParserScheduleSettings.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.ParserScheduleSettings.updated_at"><code class="docutils literal notranslate"><span class="pre">ParserScheduleSettings.updated_at</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#core.database.models.User"><code class="docutils literal notranslate"><span class="pre">User</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.username"><code class="docutils literal notranslate"><span class="pre">User.username</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.email"><code class="docutils literal notranslate"><span class="pre">User.email</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.hashed_password"><code class="docutils literal notranslate"><span class="pre">User.hashed_password</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.role"><code class="docutils literal notranslate"><span class="pre">User.role</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.is_active"><code class="docutils literal notranslate"><span class="pre">User.is_active</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.last_login"><code class="docutils literal notranslate"><span class="pre">User.last_login</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.failed_login_attempts"><code class="docutils literal notranslate"><span class="pre">User.failed_login_attempts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.locked_until"><code class="docutils literal notranslate"><span class="pre">User.locked_until</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.created_at"><code class="docutils literal notranslate"><span class="pre">User.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.updated_at"><code class="docutils literal notranslate"><span class="pre">User.updated_at</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#core.database.models.User.sessions"><code class="docutils literal notranslate"><span class="pre">User.sessions</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#core.database.models.UserSession"><code class="docutils literal notranslate"><span class="pre">UserSession</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.UserSession.user_id"><code class="docutils literal notranslate"><span class="pre">UserSession.user_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.UserSession.token_hash"><code class="docutils literal notranslate"><span class="pre">UserSession.token_hash</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.UserSession.expires_at"><code class="docutils literal notranslate"><span class="pre">UserSession.expires_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.UserSession.ip_address"><code class="docutils literal notranslate"><span class="pre">UserSession.ip_address</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.UserSession.user_agent"><code class="docutils literal notranslate"><span class="pre">UserSession.user_agent</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.database.models.UserSession.created_at"><code class="docutils literal notranslate"><span class="pre">UserSession.created_at</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#core.database.models.UserSession.user"><code class="docutils literal notranslate"><span class="pre">UserSession.user</span></code></a></li>
 </ul>
 </li>
@@ -97,6 +159,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#core-database-init-db">core.database.init_db</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core.database.init_db.create_database_engine"><code class="docutils literal notranslate"><span class="pre">create_database_engine()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#core.database.init_db.init_database"><code class="docutils literal notranslate"><span class="pre">init_database()</span></code></a></li>
 </ul>
 </li>
@@ -112,7 +175,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#user-sessions">user_sessions</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="#er">ER-диаграмма</a></li>
 <li class="toctree-l1"><a class="reference internal" href="parser.html">Модуль парсера (parser)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="queue.html">Модуль очереди (queue)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="security.html">Модуль безопасности (security)</a></li>
@@ -192,6 +254,49 @@
 <dd class="field-even"><p>Any</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetail.request_id">
+<span class="sig-name descname"><span class="pre">request_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarDetail.request_id" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetail.vin">
+<span class="sig-name descname"><span class="pre">vin</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarDetail.vin" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetail.group_zone">
+<span class="sig-name descname"><span class="pre">group_zone</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarDetail.group_zone" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetail.code">
+<span class="sig-name descname"><span class="pre">code</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarDetail.code" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetail.title">
+<span class="sig-name descname"><span class="pre">title</span></span><a class="headerlink" href="#core.database.models.ParserCarDetail.title" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Text</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetail.source_from">
+<span class="sig-name descname"><span class="pre">source_from</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarDetail.source_from" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetail.svg_path">
+<span class="sig-name descname"><span class="pre">svg_path</span></span><a class="headerlink" href="#core.database.models.ParserCarDetail.svg_path" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Text</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetail.created_date">
+<span class="sig-name descname"><span class="pre">created_date</span></span><a class="headerlink" href="#core.database.models.ParserCarDetail.created_date" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Date</span></code></p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -209,6 +314,50 @@
 <dd class="field-even"><p>Any</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetailGroupZone.request_id">
+<span class="sig-name descname"><span class="pre">request_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarDetailGroupZone.request_id" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetailGroupZone.vin">
+<span class="sig-name descname"><span class="pre">vin</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarDetailGroupZone.vin" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetailGroupZone.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarDetailGroupZone.type" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetailGroupZone.title">
+<span class="sig-name descname"><span class="pre">title</span></span><a class="headerlink" href="#core.database.models.ParserCarDetailGroupZone.title" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Text</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetailGroupZone.source_from">
+<span class="sig-name descname"><span class="pre">source_from</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarDetailGroupZone.source_from" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetailGroupZone.screenshot_path">
+<span class="sig-name descname"><span class="pre">screenshot_path</span></span><a class="headerlink" href="#core.database.models.ParserCarDetailGroupZone.screenshot_path" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Text</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetailGroupZone.svg_path">
+<span class="sig-name descname"><span class="pre">svg_path</span></span><a class="headerlink" href="#core.database.models.ParserCarDetailGroupZone.svg_path" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Text</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarDetailGroupZone.created_date">
+<span class="sig-name descname"><span class="pre">created_date</span></span><a class="headerlink" href="#core.database.models.ParserCarDetailGroupZone.created_date" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Date</span></code></p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -226,6 +375,54 @@
 <dd class="field-even"><p>Any</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarRequestStatus.request_id">
+<span class="sig-name descname"><span class="pre">request_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarRequestStatus.request_id" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarRequestStatus.vin">
+<span class="sig-name descname"><span class="pre">vin</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarRequestStatus.vin" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarRequestStatus.vin_status">
+<span class="sig-name descname"><span class="pre">vin_status</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarRequestStatus.vin_status" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarRequestStatus.comment">
+<span class="sig-name descname"><span class="pre">comment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarRequestStatus.comment" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarRequestStatus.is_success">
+<span class="sig-name descname"><span class="pre">is_success</span></span><a class="headerlink" href="#core.database.models.ParserCarRequestStatus.is_success" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Boolean</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarRequestStatus.file_path">
+<span class="sig-name descname"><span class="pre">file_path</span></span><a class="headerlink" href="#core.database.models.ParserCarRequestStatus.file_path" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Text</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarRequestStatus.started_at">
+<span class="sig-name descname"><span class="pre">started_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'datetime.datetime'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DateTime(timezone=True)</span></em><a class="headerlink" href="#core.database.models.ParserCarRequestStatus.started_at" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarRequestStatus.completed_at">
+<span class="sig-name descname"><span class="pre">completed_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'datetime.datetime'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DateTime(timezone=True)</span></em><a class="headerlink" href="#core.database.models.ParserCarRequestStatus.completed_at" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarRequestStatus.created_date">
+<span class="sig-name descname"><span class="pre">created_date</span></span><a class="headerlink" href="#core.database.models.ParserCarRequestStatus.created_date" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Date</span></code></p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -243,6 +440,43 @@
 <dd class="field-even"><p>Any</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarOptions.request_id">
+<span class="sig-name descname"><span class="pre">request_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarOptions.request_id" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarOptions.vin">
+<span class="sig-name descname"><span class="pre">vin</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarOptions.vin" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarOptions.zone_name">
+<span class="sig-name descname"><span class="pre">zone_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=100)</span></em><a class="headerlink" href="#core.database.models.ParserCarOptions.zone_name" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarOptions.option_code">
+<span class="sig-name descname"><span class="pre">option_code</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarOptions.option_code" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarOptions.option_title">
+<span class="sig-name descname"><span class="pre">option_title</span></span><a class="headerlink" href="#core.database.models.ParserCarOptions.option_title" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Text</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarOptions.source_from">
+<span class="sig-name descname"><span class="pre">source_from</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.ParserCarOptions.source_from" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserCarOptions.created_date">
+<span class="sig-name descname"><span class="pre">created_date</span></span><a class="headerlink" href="#core.database.models.ParserCarOptions.created_date" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Date</span></code></p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -260,6 +494,26 @@
 <dd class="field-even"><p>Any</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserScheduleSettings.start_time">
+<span class="sig-name descname"><span class="pre">start_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=5)</span></em><a class="headerlink" href="#core.database.models.ParserScheduleSettings.start_time" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserScheduleSettings.end_time">
+<span class="sig-name descname"><span class="pre">end_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=5)</span></em><a class="headerlink" href="#core.database.models.ParserScheduleSettings.end_time" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserScheduleSettings.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'datetime.datetime'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DateTime(timezone=True)</span></em><a class="headerlink" href="#core.database.models.ParserScheduleSettings.created_at" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.ParserScheduleSettings.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'datetime.datetime'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DateTime(timezone=True)</span></em><a class="headerlink" href="#core.database.models.ParserScheduleSettings.updated_at" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -277,6 +531,58 @@
 <dd class="field-even"><p>Any</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.username">
+<span class="sig-name descname"><span class="pre">username</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=50)</span></em><a class="headerlink" href="#core.database.models.User.username" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.email">
+<span class="sig-name descname"><span class="pre">email</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=100)</span></em><a class="headerlink" href="#core.database.models.User.email" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.hashed_password">
+<span class="sig-name descname"><span class="pre">hashed_password</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=255)</span></em><a class="headerlink" href="#core.database.models.User.hashed_password" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.role">
+<span class="sig-name descname"><span class="pre">role</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=20)</span></em><a class="headerlink" href="#core.database.models.User.role" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.is_active">
+<span class="sig-name descname"><span class="pre">is_active</span></span><a class="headerlink" href="#core.database.models.User.is_active" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Boolean</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.last_login">
+<span class="sig-name descname"><span class="pre">last_login</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'datetime.datetime'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DateTime(timezone=True)</span></em><a class="headerlink" href="#core.database.models.User.last_login" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.failed_login_attempts">
+<span class="sig-name descname"><span class="pre">failed_login_attempts</span></span><a class="headerlink" href="#core.database.models.User.failed_login_attempts" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Integer</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.locked_until">
+<span class="sig-name descname"><span class="pre">locked_until</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'datetime.datetime'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DateTime(timezone=True)</span></em><a class="headerlink" href="#core.database.models.User.locked_until" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'datetime.datetime'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DateTime(timezone=True)</span></em><a class="headerlink" href="#core.database.models.User.created_at" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.User.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'datetime.datetime'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DateTime(timezone=True)</span></em><a class="headerlink" href="#core.database.models.User.updated_at" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="core.database.models.User.sessions">
 <span class="sig-name descname"><span class="pre">sessions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.list</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'UserSession'</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'UserSession'</span></em><a class="headerlink" href="#core.database.models.User.sessions" title="Ссылка на это определение"></a></dt>
@@ -299,6 +605,38 @@
 <dd class="field-even"><p>Any</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.UserSession.user_id">
+<span class="sig-name descname"><span class="pre">user_id</span></span><a class="headerlink" href="#core.database.models.UserSession.user_id" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Integer</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.UserSession.token_hash">
+<span class="sig-name descname"><span class="pre">token_hash</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=255)</span></em><a class="headerlink" href="#core.database.models.UserSession.token_hash" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.UserSession.expires_at">
+<span class="sig-name descname"><span class="pre">expires_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'datetime.datetime'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DateTime(timezone=True)</span></em><a class="headerlink" href="#core.database.models.UserSession.expires_at" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.UserSession.ip_address">
+<span class="sig-name descname"><span class="pre">ip_address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'str'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">String(length=45)</span></em><a class="headerlink" href="#core.database.models.UserSession.ip_address" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.UserSession.user_agent">
+<span class="sig-name descname"><span class="pre">user_agent</span></span><a class="headerlink" href="#core.database.models.UserSession.user_agent" title="Ссылка на это определение"></a></dt>
+<dd><p>псевдоним для <code class="xref py py-class docutils literal notranslate"><span class="pre">Text</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.database.models.UserSession.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'datetime.datetime'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DateTime(timezone=True)</span></em><a class="headerlink" href="#core.database.models.UserSession.created_at" title="Ссылка на это определение"></a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="core.database.models.UserSession.user">
 <span class="sig-name descname"><span class="pre">user</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">sqlalchemy.orm.Mapped.&lt;class</span> <span class="pre">'core.database.models.User'&gt;</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'User'</span></em><a class="headerlink" href="#core.database.models.UserSession.user" title="Ссылка на это определение"></a></dt>
@@ -348,7 +686,7 @@
 <dd><p>Получение синхронной сессии БД</p>
 <dl class="field-list simple">
 <dt class="field-odd">Тип результата<span class="colon">:</span></dt>
-<dd class="field-odd"><p>sqlalchemy.orm.Session</p>
+<dd class="field-odd"><p><em>Session</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -499,7 +837,7 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="core.database.requests.save_parser_data_to_db">
-<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">save_parser_data_to_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">started_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">completed_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#save_parser_data_to_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.save_parser_data_to_db" title="Ссылка на это определение"></a></dt>
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.database.requests.</span></span><span class="sig-name descname"><span class="pre">save_parser_data_to_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">started_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">completed_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svg_collection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/requests.html#save_parser_data_to_db"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.requests.save_parser_data_to_db" title="Ссылка на это определение"></a></dt>
 <dd><p>Оптимизированное сохранение данных парсера с batch операциями</p>
 <dl class="field-list simple">
 <dt class="field-odd">Параметры<span class="colon">:</span></dt>
@@ -508,6 +846,8 @@
 <li><p><strong>claim_number</strong> (<em>str</em>)</p></li>
 <li><p><strong>vin</strong> (<em>str</em>)</p></li>
 <li><p><strong>is_success</strong> (<em>bool</em>)</p></li>
+<li><p><strong>file_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>svg_collection</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Тип результата<span class="colon">:</span></dt>
@@ -556,7 +896,7 @@
 <dd><p>Получает текущие настройки расписания парсера</p>
 <dl class="field-list simple">
 <dt class="field-odd">Параметры<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>session</strong> (<em>sqlalchemy.ext.asyncio.AsyncSession</em>)</p>
+<dd class="field-odd"><p><strong>session</strong> (<em>AsyncSession</em>)</p>
 </dd>
 <dt class="field-even">Тип результата<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Dict</em>[str, <em>Any</em>]</p>
@@ -571,7 +911,7 @@
 <dl class="field-list simple">
 <dt class="field-odd">Параметры<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>session</strong> (<em>sqlalchemy.ext.asyncio.AsyncSession</em>)</p></li>
+<li><p><strong>session</strong> (<em>AsyncSession</em>)</p></li>
 <li><p><strong>start_time</strong> (<em>str</em>)</p></li>
 <li><p><strong>end_time</strong> (<em>str</em>)</p></li>
 </ul>
@@ -633,6 +973,12 @@
 <p>Инициализация базы данных и создание таблиц.</p>
 <p id="module-core.database.init_db">Скрипт для инициализации базы данных</p>
 <dl class="py function">
+<dt class="sig sig-object py" id="core.database.init_db.create_database_engine">
+<span class="sig-prename descclassname"><span class="pre">core.database.init_db.</span></span><span class="sig-name descname"><span class="pre">create_database_engine</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/init_db.html#create_database_engine"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.init_db.create_database_engine" title="Ссылка на это определение"></a></dt>
+<dd><p>Создание engine для базы данных с обработкой ошибок</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="core.database.init_db.init_database">
 <span class="sig-prename descclassname"><span class="pre">core.database.init_db.</span></span><span class="sig-name descname"><span class="pre">init_database</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/core/database/init_db.html#init_database"><span class="viewcode-link"><span class="pre">[исходный</span> <span class="pre">код]</span></span></a><a class="headerlink" href="#core.database.init_db.init_database" title="Ссылка на это определение"></a></dt>
 <dd><p>Инициализация базы данных</p>
@@ -645,7 +991,16 @@
 <section id="parser-car-detail">
 <h2>parser_car_detail<a class="headerlink" href="#parser-car-detail" title="Ссылка на этот заголовок"></a></h2>
 <p>Детали автомобиля</p>
-<table class="docutils align-default">
+<table class="docutils align-default" id="id4">
+<caption><span class="caption-text">Структура таблицы</span><a class="headerlink" href="#id4" title="Ссылка на эту таблицу"></a></caption>
+<colgroup>
+<col style="width: 26.0%" />
+<col style="width: 19.5%" />
+<col style="width: 13.0%" />
+<col style="width: 15.6%" />
+<col style="width: 15.6%" />
+<col style="width: 10.4%" />
+</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Поле</p></th>
 <th class="head"><p>Тип</p></th>
@@ -705,7 +1060,14 @@
 <td></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>created_date</p></td>
+<tr class="row-odd"><td><p>svg_path</p></td>
+<td><p>TEXT</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>created_date</p></td>
 <td><p>DATE</p></td>
 <td><p>✗</p></td>
 <td></td>
@@ -718,7 +1080,16 @@
 <section id="parser-car-detail-group-zone">
 <h2>parser_car_detail_group_zone<a class="headerlink" href="#parser-car-detail-group-zone" title="Ссылка на этот заголовок"></a></h2>
 <p>Группы зон деталей</p>
-<table class="docutils align-default">
+<table class="docutils align-default" id="id5">
+<caption><span class="caption-text">Структура таблицы</span><a class="headerlink" href="#id5" title="Ссылка на эту таблицу"></a></caption>
+<colgroup>
+<col style="width: 26.0%" />
+<col style="width: 19.5%" />
+<col style="width: 13.0%" />
+<col style="width: 15.6%" />
+<col style="width: 15.6%" />
+<col style="width: 10.4%" />
+</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Поле</p></th>
 <th class="head"><p>Тип</p></th>
@@ -771,6 +1142,20 @@
 <td></td>
 <td></td>
 </tr>
+<tr class="row-even"><td><p>screenshot_path</p></td>
+<td><p>TEXT</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>svg_path</p></td>
+<td><p>TEXT</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
 <tr class="row-even"><td><p>created_date</p></td>
 <td><p>DATE</p></td>
 <td><p>✗</p></td>
@@ -784,7 +1169,16 @@
 <section id="parser-car-request-status">
 <h2>parser_car_request_status<a class="headerlink" href="#parser-car-request-status" title="Ссылка на этот заголовок"></a></h2>
 <p>Статус обработки заявок</p>
-<table class="docutils align-default">
+<table class="docutils align-default" id="id6">
+<caption><span class="caption-text">Структура таблицы</span><a class="headerlink" href="#id6" title="Ссылка на эту таблицу"></a></caption>
+<colgroup>
+<col style="width: 26.0%" />
+<col style="width: 19.5%" />
+<col style="width: 13.0%" />
+<col style="width: 15.6%" />
+<col style="width: 15.6%" />
+<col style="width: 10.4%" />
+</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Поле</p></th>
 <th class="head"><p>Тип</p></th>
@@ -830,6 +1224,20 @@
 <td></td>
 <td></td>
 </tr>
+<tr class="row-odd"><td><p>is_success</p></td>
+<td><p>BOOLEAN</p></td>
+<td><p>✗</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>file_path</p></td>
+<td><p>TEXT</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
 <tr class="row-odd"><td><p>started_at</p></td>
 <td><p>DATETIME</p></td>
 <td><p>✓</p></td>
@@ -857,7 +1265,16 @@
 <section id="parser-car-options">
 <h2>parser_car_options<a class="headerlink" href="#parser-car-options" title="Ссылка на этот заголовок"></a></h2>
 <p>Опции автомобиля</p>
-<table class="docutils align-default">
+<table class="docutils align-default" id="id7">
+<caption><span class="caption-text">Структура таблицы</span><a class="headerlink" href="#id7" title="Ссылка на эту таблицу"></a></caption>
+<colgroup>
+<col style="width: 26.0%" />
+<col style="width: 19.5%" />
+<col style="width: 13.0%" />
+<col style="width: 15.6%" />
+<col style="width: 15.6%" />
+<col style="width: 10.4%" />
+</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Поле</p></th>
 <th class="head"><p>Тип</p></th>
@@ -936,8 +1353,17 @@
 </section>
 <section id="parser-schedule-settings">
 <h2>parser_schedule_settings<a class="headerlink" href="#parser-schedule-settings" title="Ссылка на этот заголовок"></a></h2>
-<p>Настройки расписания работы парсера</p>
-<table class="docutils align-default">
+<p>Настройки расписания</p>
+<table class="docutils align-default" id="id8">
+<caption><span class="caption-text">Структура таблицы</span><a class="headerlink" href="#id8" title="Ссылка на эту таблицу"></a></caption>
+<colgroup>
+<col style="width: 26.0%" />
+<col style="width: 19.5%" />
+<col style="width: 13.0%" />
+<col style="width: 15.6%" />
+<col style="width: 15.6%" />
+<col style="width: 10.4%" />
+</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Поле</p></th>
 <th class="head"><p>Тип</p></th>
@@ -996,7 +1422,16 @@
 <section id="users">
 <h2>users<a class="headerlink" href="#users" title="Ссылка на этот заголовок"></a></h2>
 <p>Пользователи системы</p>
-<table class="docutils align-default">
+<table class="docutils align-default" id="id9">
+<caption><span class="caption-text">Структура таблицы</span><a class="headerlink" href="#id9" title="Ссылка на эту таблицу"></a></caption>
+<colgroup>
+<col style="width: 26.0%" />
+<col style="width: 19.5%" />
+<col style="width: 13.0%" />
+<col style="width: 15.6%" />
+<col style="width: 15.6%" />
+<col style="width: 10.4%" />
+</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Поле</p></th>
 <th class="head"><p>Тип</p></th>
@@ -1019,7 +1454,7 @@
 <td><p>✗</p></td>
 <td></td>
 <td></td>
-<td><p>✓</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>email</p></td>
 <td><p>VARCHAR(100)</p></td>
@@ -1090,7 +1525,16 @@
 <section id="user-sessions">
 <h2>user_sessions<a class="headerlink" href="#user-sessions" title="Ссылка на этот заголовок"></a></h2>
 <p>Сессии пользователей</p>
-<table class="docutils align-default">
+<table class="docutils align-default" id="id10">
+<caption><span class="caption-text">Структура таблицы</span><a class="headerlink" href="#id10" title="Ссылка на эту таблицу"></a></caption>
+<colgroup>
+<col style="width: 26.0%" />
+<col style="width: 19.5%" />
+<col style="width: 13.0%" />
+<col style="width: 15.6%" />
+<col style="width: 15.6%" />
+<col style="width: 10.4%" />
+</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Поле</p></th>
 <th class="head"><p>Тип</p></th>
@@ -1120,7 +1564,7 @@
 <td><p>✗</p></td>
 <td></td>
 <td></td>
-<td><p>✓</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>expires_at</p></td>
 <td><p>DATETIME</p></td>
@@ -1153,69 +1597,8 @@
 </tbody>
 </table>
 <p><strong>Связи:</strong>
-- user_sessions.user_id → users.id</p>
+- user_id → users.id</p>
 </section>
-</section>
-<section id="er">
-<h1>ER-диаграмма<a class="headerlink" href="#er" title="Ссылка на этот заголовок"></a></h1>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------+       +------------------+
-| users          |       | user_sessions    |
-+----------------+       +------------------+
-| id (PK)        |&lt;------| user_id (FK)     |
-| username       |       | token_hash       |
-| email          |       | expires_at       |
-| hashed_password|       | ip_address       |
-| role           |       | user_agent       |
-| is_active      |       | created_at       |
-| last_login     |       +------------------+
-| failed_login_  |
-| attempts       |
-| locked_until   |
-| created_at     |
-| updated_at     |
-+----------------+
-
-+----------------------+       +------------------------+
-| parser_car_detail    |       | parser_car_options     |
-+----------------------+       +------------------------+
-| id (PK)              |       | id (PK)                |
-| request_id (INDEX)   |       | request_id (INDEX)     |
-| vin (INDEX)          |       | vin (INDEX)            |
-| group_zone           |       | zone_name              |
-| code                 |       | option_code            |
-| title                |       | option_title           |
-| source_from          |       | is_selected            |
-| created_date         |       | source_from            |
-+----------------------+       | created_date           |
-                                +------------------------+
-
-+---------------------------+       +------------------------+
-| parser_car_detail_group_  |       | parser_car_request_    |
-| zone                      |       | status                 |
-+---------------------------+       +------------------------+
-| id (PK)                  |       | id (PK)                |
-| request_id (INDEX)       |       | request_id (INDEX)     |
-| vin (INDEX)              |       | vin (INDEX)            |
-| type                     |       | vin_status             |
-| title                    |       | comment                |
-| source_from              |       | started_at             |
-| created_date             |       | completed_at           |
-+---------------------------+       | created_date           |
-                                     +------------------------+
-
-+------------------------+
-| parser_schedule_       |
-| settings               |
-+------------------------+
-| id (PK)                |
-| start_time             |
-| end_time               |
-| is_active              |
-| created_at             |
-| updated_at             |
-+------------------------+
-</pre></div>
-</div>
 </section>
 
 

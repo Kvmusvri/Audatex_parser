@@ -8,6 +8,7 @@
   <title>core.parser.actions &mdash; документация Audotex Parser 1.0</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8b205fae" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
@@ -44,6 +45,8 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#id3">Структура базы данных</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#er">ER-диаграмма</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
@@ -353,48 +356,89 @@
 <span class="nd">@retry_on_failure</span><span class="p">(</span><span class="n">max_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wait_for_table</span><span class="p">(</span><span class="n">driver</span><span class="p">:</span> <span class="n">WebDriver</span><span class="p">,</span> <span class="n">selector</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Ожидание загрузки таблицы с явным ожиданием элементов.</span>
+<span class="sd">    Ожидание загрузки таблицы с динамическим ожиданием до 2 минут.</span>
+<span class="sd">    Продолжает работу сразу после загрузки таблицы.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Добавляем человеческое поведение перед ожиданием таблицы</span>
     <span class="n">add_human_behavior</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
     
     <span class="n">selectors_to_check</span> <span class="o">=</span> <span class="p">[</span><span class="n">selector</span><span class="p">]</span> <span class="k">if</span> <span class="n">selector</span> <span class="k">else</span> <span class="p">[</span><span class="n">OPEN_TABLE_SELECTOR</span><span class="p">,</span> <span class="n">OUTGOING_TABLE_SELECTOR</span><span class="p">]</span>
     
-    <span class="c1"># Увеличиваем таймаут для медленного сайта</span>
-    <span class="n">timeout</span> <span class="o">=</span> <span class="mi">60</span>  <span class="c1"># 60 секунд для полной загрузки</span>
+    <span class="c1"># Максимальный таймаут 2 минуты (120 секунд)</span>
+    <span class="n">max_timeout</span> <span class="o">=</span> <span class="mi">120</span>
     
     <span class="k">for</span> <span class="n">sel</span> <span class="ow">in</span> <span class="n">selectors_to_check</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ожидание таблицы с селектором: </span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             
-            <span class="c1"># Ждем появления элемента</span>
-            <span class="n">table_element</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
-                <span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">sel</span><span class="p">))</span>
-            <span class="p">)</span>
+            <span class="c1"># Ждем появления элемента с динамическим таймаутом</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">table_element</span> <span class="o">=</span> <span class="kc">None</span>
             
-            <span class="c1"># Дополнительно ждем, что элемент стал видимым и интерактивным</span>
-            <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
-                <span class="n">EC</span><span class="o">.</span><span class="n">visibility_of</span><span class="p">(</span><span class="n">table_element</span><span class="p">)</span>
-            <span class="p">)</span>
+            <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&lt;</span> <span class="n">max_timeout</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Проверяем наличие элемента каждые 0.5 секунды</span>
+                    <span class="n">table_element</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">sel</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">table_element</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Элемент таблицы найден: </span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">break</span>
+                <span class="k">except</span> <span class="n">NoSuchElementException</span><span class="p">:</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                    <span class="k">continue</span>
             
-            <span class="c1"># Проверяем, что таблица не пустая (есть строки или сообщение о пустоте)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">table_element</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Таблица с селектором &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; не найдена за </span><span class="si">{</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> секунд&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+            
+            <span class="c1"># Сразу после нахождения элемента проверяем видимость с динамическим ожиданием</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># Ждем либо строки таблицы, либо сообщения о пустоте</span>
-                <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">poll_frequency</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
-                    <span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="p">(</span>
-                        <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">find_elements</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">ROW_SELECTOR</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span>
-                        <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">find_elements</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">EMPTY_TABLE_TEXT_SELECTOR</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Таблица &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; полностью загружена и готова&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="kc">True</span>
-            <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Таблица &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; найдена, но содержимое не загрузилось&quot;</span><span class="p">)</span>
-                <span class="c1"># Возвращаем True, так как таблица есть, просто может быть пустая</span>
-                <span class="k">return</span> <span class="kc">True</span>
+                <span class="c1"># Ждем, что элемент стал видимым (динамически до 2 минут)</span>
+                <span class="n">visibility_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">visibility_start_time</span> <span class="o">&lt;</span> <span class="n">max_timeout</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">table_element</span><span class="o">.</span><span class="n">is_displayed</span><span class="p">():</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Таблица &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; стала видимой&quot;</span><span class="p">)</span>
+                            <span class="k">break</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                        <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Таблица &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; найдена, но не стала видимой за </span><span class="si">{</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> секунд&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
                 
-        <span class="k">except</span> <span class="n">TimeoutException</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Таблица с селектором &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; не найдена за </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2"> секунд&quot;</span><span class="p">)</span>
+                <span class="c1"># Проверяем, что таблица не пустая (есть строки или сообщение о пустоте) с динамическим ожиданием</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Ждем либо строки таблицы, либо сообщения о пустоте (динамически до 2 минут)</span>
+                    <span class="n">content_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                    <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">content_start_time</span> <span class="o">&lt;</span> <span class="n">max_timeout</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">rows</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_elements</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">ROW_SELECTOR</span><span class="p">)</span>
+                            <span class="n">empty_text</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_elements</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="n">EMPTY_TABLE_TEXT_SELECTOR</span><span class="p">)</span>
+                            
+                            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">empty_text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Таблица &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; полностью загружена и готова&quot;</span><span class="p">)</span>
+                                <span class="k">return</span> <span class="kc">True</span>
+                            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                            <span class="k">continue</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Таблица &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39; найдена и видима, но содержимое не загрузилось за </span><span class="si">{</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> секунд&quot;</span><span class="p">)</span>
+                        <span class="c1"># Возвращаем True, так как таблица есть и видима, просто может быть пустая</span>
+                        <span class="k">return</span> <span class="kc">True</span>
+                        
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка при проверке содержимого таблицы &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="c1"># Возвращаем True, так как таблица есть и видима</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+                    
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка при проверке видимости таблицы &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Ошибка при ожидании таблицы &#39;</span><span class="si">{</span><span class="n">sel</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">continue</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;❌ Ни одна из таблиц не загрузилась&quot;</span><span class="p">)</span>

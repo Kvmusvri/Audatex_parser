@@ -8,6 +8,7 @@
   <title>core.database.requests &mdash; документация Audotex Parser 1.0</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=8b205fae" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
@@ -44,6 +45,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/auth.html">Модуль аутентификации (auth)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html">Модуль базы данных (database)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/database.html#id3">Структура базы данных</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/parser.html">Модуль парсера (parser)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/queue.html">Модуль очереди (queue)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules/security.html">Модуль безопасности (security)</a></li>
@@ -93,14 +95,30 @@
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="c1"># Создаем синхронный движок для аутентификации</span>
-<span class="n">sync_engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;DATABASE_URL&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+asyncpg&#39;</span><span class="p">,</span> <span class="s1">&#39;+psycopg2&#39;</span><span class="p">))</span>
-<span class="n">SyncSessionLocal</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">autocommit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">autoflush</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bind</span><span class="o">=</span><span class="n">sync_engine</span><span class="p">)</span>
+<span class="c1"># Создаем синхронный движок для аутентификации только если не в контексте документации</span>
+<span class="n">sync_engine</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">SyncSessionLocal</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_init_engine</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Инициализация engine только при необходимости&quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">sync_engine</span><span class="p">,</span> <span class="n">SyncSessionLocal</span>
+    <span class="k">if</span> <span class="n">sync_engine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">database_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;DATABASE_URL&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">database_url</span><span class="p">:</span>
+                <span class="n">sync_engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">database_url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+asyncpg&#39;</span><span class="p">,</span> <span class="s1">&#39;+psycopg2&#39;</span><span class="p">))</span>
+                <span class="n">SyncSessionLocal</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">autocommit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">autoflush</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bind</span><span class="o">=</span><span class="n">sync_engine</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Не удалось создать engine: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Создаем dummy engine для документации</span>
+            <span class="n">sync_engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="s1">&#39;sqlite:///:memory:&#39;</span><span class="p">)</span>
+            <span class="n">SyncSessionLocal</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">autocommit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">autoflush</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bind</span><span class="o">=</span><span class="n">sync_engine</span><span class="p">)</span>
 
 <div class="viewcode-block" id="get_db">
 <a class="viewcode-back" href="../../../modules/database.html#core.database.requests.get_db">[документация]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_db</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Session</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Получение синхронной сессии БД&quot;&quot;&quot;</span>
+    <span class="n">_init_engine</span><span class="p">()</span>
     <span class="n">db</span> <span class="o">=</span> <span class="n">SyncSessionLocal</span><span class="p">()</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">db</span>
@@ -183,9 +201,11 @@
     <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
         <span class="n">pg_insert</span><span class="p">(</span><span class="n">ParserCarRequestStatus</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">(</span>
             <span class="n">request_id</span><span class="o">=</span><span class="n">claim_number</span><span class="p">,</span>
-        <span class="n">vin</span><span class="o">=</span><span class="n">vin</span><span class="p">,</span>
+            <span class="n">vin</span><span class="o">=</span><span class="n">vin</span><span class="p">,</span>
             <span class="n">vin_status</span><span class="o">=</span><span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vin_status&#39;</span><span class="p">,</span> <span class="s1">&#39;Неизвестно&#39;</span><span class="p">),</span>
             <span class="n">comment</span><span class="o">=</span><span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;comment&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="n">is_success</span><span class="o">=</span><span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_success&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="n">file_path</span><span class="o">=</span><span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;file_path&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>  <span class="c1"># Добавляем путь к файлу</span>
             <span class="n">started_at</span><span class="o">=</span><span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;started_at&#39;</span><span class="p">),</span>
             <span class="n">completed_at</span><span class="o">=</span><span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;completed_at&#39;</span><span class="p">),</span>
             <span class="n">created_date</span><span class="o">=</span><span class="n">func</span><span class="o">.</span><span class="n">current_date</span><span class="p">()</span>
@@ -194,6 +214,8 @@
             <span class="n">set_</span><span class="o">=</span><span class="p">{</span>
                 <span class="s1">&#39;vin_status&#39;</span><span class="p">:</span> <span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vin_status&#39;</span><span class="p">,</span> <span class="s1">&#39;Неизвестно&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;comment&#39;</span><span class="p">:</span> <span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;comment&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;is_success&#39;</span><span class="p">:</span> <span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_success&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;file_path&#39;</span><span class="p">:</span> <span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;file_path&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>  <span class="c1"># Добавляем путь к файлу</span>
                 <span class="s1">&#39;started_at&#39;</span><span class="p">:</span> <span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;started_at&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;completed_at&#39;</span><span class="p">:</span> <span class="n">status_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;completed_at&#39;</span><span class="p">)</span>
             <span class="p">}</span>
@@ -219,6 +241,7 @@
             <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_from&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;svg_path&quot;</span><span class="p">:</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;svg_path&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>  <span class="c1"># Путь к SVG детали</span>
             <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">current_date</span>
         <span class="p">})</span>
     
@@ -243,6 +266,8 @@
             <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_from&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;screenshot_path&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;screenshot_path&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>  <span class="c1"># Путь к скриншоту зоны</span>
+            <span class="s2">&quot;svg_path&quot;</span><span class="p">:</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;svg_path&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>  <span class="c1"># Путь к SVG зоны</span>
             <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">current_date</span>
         <span class="p">})</span>
     
@@ -307,7 +332,7 @@
 
 <div class="viewcode-block" id="save_parser_data_to_db">
 <a class="viewcode-back" href="../../../modules/database.html#core.database.requests.save_parser_data_to_db">[документация]</a>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_parser_data_to_db</span><span class="p">(</span><span class="n">parser_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">is_success</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">started_at</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_parser_data_to_db</span><span class="p">(</span><span class="n">parser_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">claim_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">is_success</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">started_at</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">completed_at</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">svg_collection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Оптимизированное сохранение данных парсера с batch операциями&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">async</span> <span class="k">with</span> <span class="n">DatabaseSession</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
@@ -334,16 +359,28 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">zone_type</span> <span class="o">=</span> <span class="s2">&quot;DETAILS&quot;</span>
                 
-                <span class="c1"># Создаем зону</span>
+                <span class="c1"># Создаем зону с нормализованными путями</span>
+                <span class="n">screenshot_path</span> <span class="o">=</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;screenshot_path&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">svg_path</span> <span class="o">=</span> <span class="n">zone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;svg_path&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                
+                <span class="c1"># Нормализуем пути под текущую ОС</span>
+                <span class="k">if</span> <span class="n">screenshot_path</span><span class="p">:</span>
+                    <span class="n">screenshot_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">screenshot_path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">svg_path</span><span class="p">:</span>
+                    <span class="n">svg_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">svg_path</span><span class="p">)</span>
+                
                 <span class="n">zone_data</span> <span class="o">=</span> <span class="p">{</span>
                     <span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
                     <span class="s2">&quot;vin&quot;</span><span class="p">:</span> <span class="n">vin</span><span class="p">,</span>
                     <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">zone_type</span><span class="p">,</span>
                     <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">zone_title</span><span class="p">,</span>
                     <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="s2">&quot;AUDATEX&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;screenshot_path&quot;</span><span class="p">:</span> <span class="n">screenshot_path</span><span class="p">,</span>
+                    <span class="s2">&quot;svg_path&quot;</span><span class="p">:</span> <span class="n">svg_path</span><span class="p">,</span>
                     <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
                 <span class="p">}</span>
                 <span class="n">zones</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">zone_data</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Зона &#39;</span><span class="si">{</span><span class="n">zone_title</span><span class="si">}</span><span class="s2">&#39; сохранена с путями: screenshot=</span><span class="si">{</span><span class="n">screenshot_path</span><span class="si">}</span><span class="s2">, svg=</span><span class="si">{</span><span class="n">svg_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 
                 <span class="c1"># Сохраняем зону и получаем ID</span>
                 <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">insert</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="p">),</span> <span class="p">[</span><span class="n">zone_data</span><span class="p">])</span>
@@ -382,6 +419,8 @@
                                     <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;EQUIPMENT&quot;</span><span class="p">,</span>
                                     <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Комплектация&quot;</span><span class="p">,</span>
                                     <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="s2">&quot;AUDATEX&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;screenshot_path&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># У зоны комплектации нет скриншота</span>
+                                    <span class="s2">&quot;svg_path&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># У зоны комплектации нет SVG</span>
                                     <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
                                 <span class="p">}</span>
                                 <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">insert</span><span class="p">(</span><span class="n">ParserCarDetailGroupZone</span><span class="p">),</span> <span class="p">[</span><span class="n">equipment_zone_data</span><span class="p">])</span>
@@ -400,6 +439,11 @@
                             <span class="c1"># Обычные детали идут в текущую зону</span>
                             <span class="n">group_zone</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">zone_id</span><span class="p">)</span>
                         
+                        <span class="c1"># Нормализуем путь к SVG детали</span>
+                        <span class="n">detail_svg_path</span> <span class="o">=</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;svg_path&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">detail_svg_path</span><span class="p">:</span>
+                            <span class="n">detail_svg_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">detail_svg_path</span><span class="p">)</span>
+                        
                         <span class="n">detail_data</span> <span class="o">=</span> <span class="p">{</span>
                             <span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">claim_number</span><span class="p">,</span>
                             <span class="s2">&quot;vin&quot;</span><span class="p">:</span> <span class="n">vin</span><span class="p">,</span>
@@ -407,9 +451,11 @@
                             <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
                             <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
                             <span class="s2">&quot;source_from&quot;</span><span class="p">:</span> <span class="s2">&quot;AUDATEX&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;svg_path&quot;</span><span class="p">:</span> <span class="n">detail_svg_path</span><span class="p">,</span>
                             <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
                         <span class="p">}</span>
                         <span class="n">details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">detail_data</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Деталь &#39;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; сохранена с SVG: </span><span class="si">{</span><span class="n">detail_svg_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             
             <span class="c1"># Обрабатываем опции автомобиля</span>
             <span class="n">options_data</span> <span class="o">=</span> <span class="n">parser_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;options_data&#39;</span><span class="p">,</span> <span class="p">{})</span>
@@ -448,11 +494,19 @@
             <span class="k">if</span> <span class="n">completed_at</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">completed_at</span> <span class="o">=</span> <span class="n">get_moscow_time</span><span class="p">()</span>
             
+            <span class="c1"># Определяем comment на основе успешности и состояния SVG</span>
+            <span class="k">if</span> <span class="n">is_success</span> <span class="ow">and</span> <span class="n">svg_collection</span><span class="p">:</span>
+                <span class="n">comment</span> <span class="o">=</span> <span class="s2">&quot;ysvg&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">comment</span> <span class="o">=</span> <span class="s2">&quot;nsvg&quot;</span>
+            
             <span class="n">status_data</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;vin_status&quot;</span><span class="p">:</span> <span class="n">parser_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vin_status&quot;</span><span class="p">,</span> <span class="s2">&quot;Неизвестно&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="s2">&quot;ysvg&quot;</span> <span class="k">if</span> <span class="n">is_success</span> <span class="k">else</span> <span class="s2">&quot;nsvg&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="n">comment</span><span class="p">,</span>
+                <span class="s2">&quot;is_success&quot;</span><span class="p">:</span> <span class="n">is_success</span><span class="p">,</span>
                 <span class="s2">&quot;started_at&quot;</span><span class="p">:</span> <span class="n">started_at</span><span class="p">,</span>
-                <span class="s2">&quot;completed_at&quot;</span><span class="p">:</span> <span class="n">completed_at</span>
+                <span class="s2">&quot;completed_at&quot;</span><span class="p">:</span> <span class="n">completed_at</span><span class="p">,</span>
+                <span class="s2">&quot;file_path&quot;</span><span class="p">:</span> <span class="n">file_path</span>  <span class="c1"># Добавляем путь к файлу</span>
             <span class="p">}</span>
             
             <span class="c1"># Batch операции</span>
