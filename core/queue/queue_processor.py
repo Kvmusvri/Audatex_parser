@@ -133,24 +133,24 @@ class QueueProcessor:
                 
                 if result:
                     # Обрабатываем результат парсера
-                    success = await self._process_parser_result(
+                    process_result = await self._process_parser_result(
                         result, started_at, completed_at, request_data
                     )
                     
-                    if success:
+                    if process_result == 'success':
                         self.processed_count += 1
                         logger.info(f"✅ Заявка успешно обработана: {claim_number} (время: {duration:.1f}с)")
                         redis_manager.mark_request_completed(request_data, success=True)
+                    elif process_result == 'parser_error':
+                        # Возвращаем заявку в очередь для повторной попытки
+                        await self._handle_parser_error(request_data, "Ошибка парсера")
                     else:
                         self.failed_count += 1
-                        logger.error(f"❌ Ошибка обработки результата парсера: {claim_number}")
-                        
-                        # Отмечаем как неудачную
+                        logger.error(f"❌ Неизвестный результат обработки: {claim_number}")
                         redis_manager.mark_request_completed(request_data, success=False)
                 else:
-                    self.failed_count += 1
-                    logger.error(f"❌ Парсер вернул пустой результат: {claim_number}")
-                    redis_manager.mark_request_completed(request_data, success=False)
+                    # Парсер вернул пустой результат - возвращаем в очередь для повторной попытки
+                    await self._handle_parser_error(request_data, "Парсер вернул пустой результат")
                     
             except Exception as e:
                 self.failed_count += 1
@@ -202,7 +202,7 @@ class QueueProcessor:
     
     async def _process_parser_result(self, parser_result: Dict[str, Any], 
                                    started_at: datetime, completed_at: datetime,
-                                   request_data: Dict[str, Any]) -> bool:
+                                   request_data: Dict[str, Any]) -> str:
         """Обработка результата парсера"""
         try:
             logger.info(f"🔍 Обрабатываем результат парсера: {parser_result}")
@@ -225,7 +225,7 @@ class QueueProcessor:
                         logger.warning(f"⚠️ Парсер был отменен по техническим причинам: {error_msg}")
                 else:
                     logger.error(f"❌ Парсер вернул ошибку: {error_msg}")
-                return False
+                return 'parser_error'
             
             # Получаем извлеченные данные из результата парсера
             extracted_claim_number = parser_result.get("claim_number", "")
@@ -240,7 +240,7 @@ class QueueProcessor:
             # Проверяем, что данные не пустые
             if not clean_claim_number and not clean_vin_number:
                 logger.error("❌ Извлеченные данные пустые - claim_number и vin_number отсутствуют")
-                return False
+                return 'parser_error'
             
             # Формируем имя папки
             folder_name = f"{clean_claim_number}_{clean_vin_number}"
@@ -255,7 +255,7 @@ class QueueProcessor:
             base_data_dir = "static/data"
             if not os.path.isdir(base_data_dir):
                 logger.error(f"❌ Основная папка {base_data_dir} не существует")
-                return False
+                return 'parser_error'
             
             if not os.path.isdir(folder_path):
                 logger.error(f"❌ Папка {folder_path} не существует после парсинга")
@@ -284,9 +284,9 @@ class QueueProcessor:
                         clean_vin_number = original_vin
                     else:
                         logger.error(f"❌ Папка по исходным данным тоже не найдена: {fallback_path}")
-                        return False
+                        return 'parser_error'
                 else:
-                    return False
+                    return 'parser_error'
             
             # Ищем JSON файлы в папке
             json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
@@ -300,7 +300,7 @@ class QueueProcessor:
                     logger.error(f"📁 Содержимое папки {folder_path}: {all_files}")
                 except Exception as e:
                     logger.error(f"❌ Не удалось прочитать содержимое папки: {e}")
-                return False
+                return 'parser_error'
             
             # Берем самый новый JSON файл
             latest_json = max(json_files, key=lambda f: os.path.getctime(os.path.join(folder_path, f)))
@@ -320,7 +320,7 @@ class QueueProcessor:
             save_success = await save_updated_json_to_file(updated_json, file_path)
             if not save_success:
                 logger.error(f"Не удалось сохранить обновленный JSON: {file_path}")
-                return False
+                return 'parser_error'
             
             # Сохраняем данные в БД с временными метками
             db_success = await save_parser_data_to_db(
@@ -330,13 +330,13 @@ class QueueProcessor:
             )
             if not db_success:
                 logger.error(f"Не удалось сохранить данные в БД: {clean_claim_number}_{clean_vin_number}")
-                return False
+                return 'parser_error'
             
-            return True
+            return 'success'
             
         except Exception as e:
             logger.error(f"❌ Ошибка обработки результата парсера: {e}")
-            return False
+            return 'parser_error'
     
     def stop_processing(self):
         """Остановка обработки очереди"""

@@ -15,6 +15,7 @@ from core.database.models import (
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from pathlib import Path
+from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
@@ -583,3 +584,111 @@ def get_time_to_end(end_time: str) -> int:
     except Exception as e:
         logger.error(f"❌ Ошибка расчета времени до окончания: {e}")
         return 0
+
+async def fetch_history_records(session: AsyncSession, start_date: Optional[str] = None, 
+                               end_date: Optional[str] = None, status_filter: Optional[str] = None):
+    """Выполняет SQL запрос для получения записей истории заявок"""
+    base_query = """
+        SELECT 
+            created_date as date,
+            is_success,
+            request_id
+        FROM parser_car_request_status 
+    """
+    
+    where_conditions = []
+    params = {}
+    
+    if start_date and start_date.strip():
+        try:
+            where_conditions.append("created_date >= :start_date")
+            params["start_date"] = datetime.strptime(start_date, "%Y-%m-%d").date()
+            logger.info(f"Добавлен фильтр start_date: {start_date}")
+        except ValueError:
+            logger.error(f"Неверный формат start_date: {start_date}")
+    
+    if end_date and end_date.strip():
+        try:
+            where_conditions.append("created_date <= :end_date")
+            params["end_date"] = datetime.strptime(end_date, "%Y-%m-%d").date()
+            logger.info(f"Добавлен фильтр end_date: {end_date}")
+        except ValueError:
+            logger.error(f"Неверный формат end_date: {end_date}")
+    
+    if status_filter and status_filter.strip() and status_filter != "all":
+        if status_filter == "success":
+            where_conditions.append("is_success = true")
+            logger.info("Добавлен фильтр: только успешные")
+        elif status_filter == "error":
+            where_conditions.append("is_success = false")
+            logger.info("Добавлен фильтр: только ошибки")
+    
+    if where_conditions:
+        query_text = base_query + " WHERE " + " AND ".join(where_conditions) + " ORDER BY created_date"
+    else:
+        query_text = base_query + " ORDER BY created_date"
+    
+    query = text(query_text)
+    logger.info(f"Выполняем SQL запрос: {query_text}")
+    logger.info(f"С параметрами: {params}")
+    
+    result = await session.execute(query, params)
+    records = result.fetchall()
+    logger.info(f"Получено {len(records)} записей из БД")
+    return records
+
+async def get_history_table_data(session: AsyncSession, start_date: Optional[str] = None, 
+                                end_date: Optional[str] = None, status_filter: Optional[str] = None) -> Dict[str, Any]:
+    """Получает агрегированные данные для таблицы истории заявок"""
+    try:
+        logger.info(f"=== get_history_table_data вызвана с параметрами: start_date='{start_date}', end_date='{end_date}', status_filter='{status_filter}'")
+        
+        records = await fetch_history_records(session, start_date, end_date, status_filter)
+        
+        table_data = {}
+        date_range = []
+        
+        for record in records:
+            date_str = record.date.strftime("%d.%m.%Y")
+            if date_str not in table_data:
+                table_data[date_str] = {
+                    "success": {"count": 0, "claims": []},
+                    "error": {"count": 0, "claims": []}
+                }
+                date_range.append(date_str)
+            
+            if record.is_success:
+                table_data[date_str]["success"]["claims"].append(record.request_id)
+            else:
+                table_data[date_str]["error"]["claims"].append(record.request_id)
+        
+        for date_str in table_data:
+            table_data[date_str]["success"]["count"] = len(table_data[date_str]["success"]["claims"])
+            table_data[date_str]["error"]["count"] = len(table_data[date_str]["error"]["claims"])
+        
+        if status_filter and status_filter != "all":
+            filtered_table_data = {}
+            filtered_date_range = []
+            for date_str in date_range:
+                should_include = False
+                if status_filter == "success" and table_data[date_str]["success"]["count"] > 0:
+                    should_include = True
+                elif status_filter == "error" and table_data[date_str]["error"]["count"] > 0:
+                    should_include = True
+                
+                if should_include:
+                    filtered_table_data[date_str] = table_data[date_str]
+                    filtered_date_range.append(date_str)
+            
+            table_data = filtered_table_data
+            date_range = filtered_date_range
+        
+        date_range.sort(key=lambda x: datetime.strptime(x, "%d.%m.%Y"))
+        logger.info(f"Обработано данных для {len(date_range)} дат")
+        logger.info(f"Возвращаем: table_data keys = {list(table_data.keys())[:5]}, date_range length = {len(date_range)}")
+        
+        return {"table_data": table_data, "date_range": date_range}
+        
+    except Exception as e:
+        logger.error(f"Ошибка при получении данных таблицы истории: {e}")
+        raise

@@ -1,27 +1,38 @@
 import asyncio
-import uvicorn
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Form, HTTPException, status
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-from core.parser.parser import login_audatex, terminate_all_processes_and_restart
+import concurrent.futures
+import io
 import json
-import os
-from datetime import datetime
 import logging
-from core.database.models import ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, get_moscow_time, async_session
+import os
+import re
+import threading
+import time
+from contextlib import asynccontextmanager
+from datetime import datetime
+from typing import List, Optional
+import psutil
+import urllib3
+import uvicorn
+from fastapi import FastAPI, Request, Form, HTTPException, status
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+from openpyxl.utils import get_column_letter
 from pydantic import BaseModel
-from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.sql import text
-import re
+
+from core.auth.db_auth import authenticate_user, create_default_users, validate_session
+from core.auth.db_decorators import require_auth, get_current_user
+from core.auth.db_routes import router as auth_router
+from core.database.models import ParserCarDetail, ParserCarDetailGroupZone, ParserCarRequestStatus, get_moscow_time, async_session, start_db, close_db
 from core.database.requests import (
     save_parser_data_to_db,
     update_json_with_claim_number,
     save_updated_json_to_file,
-)
-from core.database.requests import (
+    get_history_table_data,
     get_schedule_settings,
     save_schedule_settings,
     is_time_in_working_hours,
@@ -29,25 +40,16 @@ from core.database.requests import (
     get_time_to_end,
 )
 from core.parser.output_manager import restore_started_at_from_db, restore_last_updated_from_db, restore_completed_at_from_db
+from core.parser.parser import login_audatex, terminate_all_processes_and_restart
 from core.queue.api_endpoints import router as queue_router
-from core.queue.redis_manager import redis_manager
 from core.queue.queue_processor import queue_processor
-from core.auth.db_routes import router as auth_router
-from core.auth.db_decorators import require_auth, get_current_user
-from core.security.rate_limiter import rate_limit_middleware
-from core.security.ddos_protection import ddos_protection_middleware
-from core.security.security_monitor import security_monitoring_middleware
-from core.security.auth_middleware import security_api_auth_middleware
+from core.queue.redis_manager import redis_manager
 from core.security.api_endpoints import router as security_router
+from core.security.auth_middleware import security_api_auth_middleware
+from core.security.ddos_protection import ddos_protection_middleware
+from core.security.rate_limiter import rate_limit_middleware
+from core.security.security_monitor import security_monitoring_middleware
 from core.security.session_middleware import session_middleware
-
-import time
-import concurrent.futures
-import threading
-import psutil
-
-# Отключаем retry логику urllib3 для предотвращения WARNING сообщений
-import urllib3
 urllib3.disable_warnings()
 logging.getLogger("urllib3").setLevel(logging.ERROR)
 
@@ -66,12 +68,10 @@ async def lifespan(app: FastAPI):
     # Startup
     try:
         # Создаем таблицы базы данных
-        from core.database.models import start_db
         await start_db()
         logger.info("✅ Таблицы базы данных созданы")
         
         # Создаем пользователей по умолчанию
-        from core.auth.db_auth import create_default_users
         create_default_users()
         logger.info("✅ Аутентификация через базу данных инициализирована")
     except Exception as e:
@@ -96,7 +96,6 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Ошибка закрытия Redis: {e}")
     
     try:
-        from core.database.models import close_db
         await close_db()
         logger.info("✅ Соединение с базой данных закрыто")
     except Exception as e:
@@ -199,7 +198,6 @@ async def process_parser_result_data(claim_number: str, vin_value: str, parser_r
         logger.info(f"🔍 Используем данные из формы: claim_number='{clean_claim_number}', vin='{clean_vin_value}'")
         
         # Формируем имя папки с безопасной обработкой символов
-        import re
         safe_claim_number = re.sub(r'[<>:"/\\|?*]', '_', clean_claim_number)
         safe_claim_number = safe_claim_number.replace('-', '_').replace('.', '_')
         safe_claim_number = re.sub(r'_+', '_', safe_claim_number)
@@ -899,7 +897,6 @@ async def api_parse(request: SearchRequest):
     """API эндпоинт для парсинга заявок и добавления их в очередь"""
     try:
         # Аутентифицируем пользователя
-        from core.auth.db_auth import authenticate_user
         user = authenticate_user(request.app_credentials.username, request.app_credentials.password)
         
         if not user:
@@ -1103,7 +1100,6 @@ async def terminate_parser():
 async def get_processing_stats(request: Request):
     """Получение статистики обработки"""
     # Проверяем токен сессии
-    from core.auth.db_auth import validate_session
     session_token = request.cookies.get("session_token")
     if not session_token:
         raise HTTPException(
@@ -1118,7 +1114,7 @@ async def get_processing_stats(request: Request):
             detail="Недействительная сессия"
         )
     
-    """Получает статистику времени обработки заявок из истории"""
+ 
     try:
         data_dir = "static/data"
         if not os.path.exists(data_dir):
@@ -1295,7 +1291,6 @@ async def get_processing_stats(request: Request):
 async def get_schedule_settings_api(request: Request):
     """Получение настроек расписания"""
     # Проверяем токен сессии
-    from core.auth.db_auth import validate_session
     session_token = request.cookies.get("session_token")
     if not session_token:
         raise HTTPException(
@@ -1326,7 +1321,6 @@ async def get_schedule_settings_api(request: Request):
 async def save_schedule_settings_api(request_data: ScheduleSettingsRequest, request: Request):
     """Сохранение настроек расписания"""
     # Проверяем токен сессии
-    from core.auth.db_auth import validate_session
     session_token = request.cookies.get("session_token")
     if not session_token:
         raise HTTPException(
@@ -1392,7 +1386,6 @@ async def save_schedule_settings_api(request_data: ScheduleSettingsRequest, requ
 async def get_schedule_status_api(request: Request):
     """Получение статуса расписания"""
     # Проверяем токен сессии
-    from core.auth.db_auth import validate_session
     session_token = request.cookies.get("session_token")
     if not session_token:
         raise HTTPException(
@@ -1456,7 +1449,6 @@ async def get_schedule_status_api(request: Request):
 async def get_queue_status_api(request: Request):
     """Получение статуса очереди"""
     # Проверяем токен сессии
-    from core.auth.db_auth import validate_session
     session_token = request.cookies.get("session_token")
     if not session_token:
         raise HTTPException(
@@ -1487,6 +1479,154 @@ async def get_queue_status_api(request: Request):
             content={"error": "Ошибка получения статуса очереди"}
         )
 
+@app.get("/history_table", response_class=HTMLResponse)
+@require_auth()
+async def history_table(request: Request):
+    try:
+        async with async_session() as session:
+            result = await get_history_table_data(session)
+            return templates.TemplateResponse("history_table.html", {
+                "request": request, 
+                "table_data": result["table_data"],
+                "date_range": result["date_range"]
+            })
+            
+    except Exception as e:
+        logger.error(f"Ошибка при получении таблицы истории: {e}")
+        return templates.TemplateResponse("error.html", {
+            "request": request, 
+            "error": f"Ошибка при получении таблицы истории: {e}"
+        })
+
+@app.get("/history_table_data")
+@require_auth()
+async def history_table_data(
+    request: Request,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    status_filter: Optional[str] = None
+):
+    try:
+        async with async_session() as session:
+            result = await get_history_table_data(session, start_date, end_date, status_filter)
+            return result
+            
+    except Exception as e:
+        logger.error(f"Ошибка при получении данных таблицы: {e}")
+        return {"error": str(e)}
+
+@app.get("/export_history_excel")
+@require_auth()
+async def export_history_excel(
+    request: Request,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    status_filter: Optional[str] = None
+):
+    try:
+        # Получаем данные
+        async with async_session() as session:
+            data_response = await get_history_table_data(session, start_date, end_date, status_filter)
+        
+        if "error" in data_response:
+            return {"error": data_response["error"]}
+        
+        table_data = data_response["table_data"]
+        date_range = data_response["date_range"]
+        
+        # Создаем Excel файл
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "История заявок"
+        
+        # Стили
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        center_alignment = Alignment(horizontal='center', vertical='center')
+        
+        # Заголовки
+        ws['E20'] = "Дата"
+        ws['E20'].font = header_font
+        ws['E20'].fill = header_fill
+        ws['E20'].border = border
+        ws['E20'].alignment = center_alignment
+        
+        # Заполняем даты в заголовках
+        for i, date_str in enumerate(date_range):
+            col_letter = get_column_letter(6 + i)
+            ws[f'{col_letter}20'] = date_str
+            ws[f'{col_letter}20'].font = header_font
+            ws[f'{col_letter}20'].fill = header_fill
+            ws[f'{col_letter}20'].border = border
+            ws[f'{col_letter}20'].alignment = center_alignment
+        
+        # Строка "Успешно"
+        ws['E22'] = "Успешно"
+        ws['E22'].font = Font(bold=True)
+        ws['E22'].border = border
+        ws['E22'].alignment = center_alignment
+        
+        # Строка "Сбой"
+        ws['E28'] = "Сбой"
+        ws['E28'].font = Font(bold=True)
+        ws['E28'].border = border
+        ws['E28'].alignment = center_alignment
+        
+        # Заполняем данные
+        for i, date_str in enumerate(date_range):
+            col_letter = get_column_letter(6 + i)
+            
+            # Количество успешных
+            success_count = table_data[date_str]["success"]["count"]
+            ws[f'{col_letter}22'] = success_count
+            ws[f'{col_letter}22'].border = border
+            ws[f'{col_letter}22'].alignment = center_alignment
+            
+            # Номера успешных заявок
+            success_claims = table_data[date_str]["success"]["claims"]
+            for j, claim in enumerate(success_claims[:3]):
+                ws[f'{col_letter}{23 + j}'] = claim
+                ws[f'{col_letter}{23 + j}'].border = border
+                ws[f'{col_letter}{23 + j}'].alignment = center_alignment
+            
+            # Количество ошибок
+            error_count = table_data[date_str]["error"]["count"]
+            ws[f'{col_letter}28'] = error_count
+            ws[f'{col_letter}28'].border = border
+            ws[f'{col_letter}28'].alignment = center_alignment
+            
+            # Номера заявок с ошибками
+            error_claims = table_data[date_str]["error"]["claims"]
+            for j, claim in enumerate(error_claims[:3]):
+                ws[f'{col_letter}{29 + j}'] = claim
+                ws[f'{col_letter}{29 + j}'].border = border
+                ws[f'{col_letter}{29 + j}'].alignment = center_alignment
+        
+        # Устанавливаем ширину столбцов
+        for col in range(5, 6 + len(date_range)):
+            ws.column_dimensions[get_column_letter(col)].width = 15
+        
+        # Сохраняем в буфер
+        excel_buffer = io.BytesIO()
+        wb.save(excel_buffer)
+        excel_buffer.seek(0)
+        
+        # Возвращаем файл
+        return StreamingResponse(
+            excel_buffer,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=history_table_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Ошибка при экспорте Excel: {e}")
+        return {"error": str(e)}
 
 
 if __name__ == "__main__":

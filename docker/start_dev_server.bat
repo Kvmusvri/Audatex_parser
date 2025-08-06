@@ -1,6 +1,30 @@
 @echo off
 echo 🐳 Запуск сервера разработки...
 
+REM Проверяем и запускаем Docker Desktop если нужно
+echo 🔍 Проверка Docker Desktop...
+docker version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo 🐋 Запуск Docker Desktop...
+    if exist "C:\Program Files\Docker\Docker\Docker Desktop.exe" (
+        start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    ) else if exist "%USERPROFILE%\AppData\Local\Docker\Docker Desktop.exe" (
+        start "" "%USERPROFILE%\AppData\Local\Docker\Docker Desktop.exe"
+    ) else (
+        echo ❌ Docker Desktop не найден. Установите Docker Desktop с https://www.docker.com/products/docker-desktop/
+        pause
+        exit /b 1
+    )
+    echo ⏳ Ожидание запуска Docker Desktop...
+    :wait_docker
+    timeout /t 3 /nobreak >nul
+    docker version >nul 2>&1
+    if %errorlevel% neq 0 goto wait_docker
+    echo ✅ Docker Desktop запущен
+) else (
+    echo ✅ Docker Desktop уже запущен
+)
+
 REM Переходим в папку docker
 cd docker
 

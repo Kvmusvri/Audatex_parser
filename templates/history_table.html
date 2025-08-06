@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Таблица истории заявок</title>
+    <link rel="stylesheet" href="/static/css/history_table.css">
+</head>
+<body>
+    <div class="container">
+        <div class="form-wrapper">
+            <div class="header-section">
+                <a href="/history" class="back-button">← Назад к истории</a>
+                <h1>Таблица истории заявок</h1>
+            </div>
+
+            <div class="filters-section">
+                <div class="filter-group">
+                    <label for="start-date">Начальная дата:</label>
+                    <input type="date" id="start-date" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label for="end-date">Конечная дата:</label>
+                    <input type="date" id="end-date" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label for="status-filter">Статус:</label>
+                    <select id="status-filter" class="filter-input">
+                        <option value="all">Все</option>
+                        <option value="success">Успешно</option>
+                        <option value="error">Ошибки</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button id="apply-filters" class="filter-button">Применить фильтры</button>
+                    <button id="clear-dates" class="filter-button secondary">Сбросить даты</button>
+                    <button id="clear-filters" class="filter-button secondary">Сбросить</button>
+                    <button id="export-excel" class="export-button">Экспорт в Excel</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th class="row-header">Дата</th>
+                            {% for date in date_range %}
+                            <th class="date-header">{{ date }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="success-count-row">
+                            <td class="row-label">Успешно</td>
+                            {% for date in date_range %}
+                            <td class="success-count-cell">{{ table_data[date].success.count }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% for i in range(3) %}
+                        <tr class="success-claims-row">
+                            <td class="row-label"></td>
+                            {% for date in date_range %}
+                            <td class="success-claim-cell">
+                                {% if table_data[date].success.claims[i] %}
+                                {{ table_data[date].success.claims[i] }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        <tr class="error-count-row">
+                            <td class="row-label">Сбой</td>
+                            {% for date in date_range %}
+                            <td class="error-count-cell">{{ table_data[date].error.count }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% for i in range(3) %}
+                        <tr class="error-claims-row">
+                            <td class="row-label"></td>
+                            {% for date in date_range %}
+                            <td class="error-claim-cell">
+                                {% if table_data[date].error.claims[i] %}
+                                {{ table_data[date].error.claims[i] }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if not date_range %}
+            <div class="no-data">
+                <p>Нет данных для отображения</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="/static/js/history_table.js"></script>
+</body>
+</html> 
